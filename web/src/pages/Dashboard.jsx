@@ -1,3 +1,4 @@
+
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
@@ -74,8 +75,8 @@ export default function Dashboard() {
   }, [rep, period]);
 
   if (!d) return <div className="empty">{t('กำลังโหลด...')}</div>;
-  const owners = (rep?.byOwner || []).filter(o => (o.won_value + o.open_value) > 0).slice(0, 5);
-  const maxOwner = Math.max(1, ...owners.map(o => o.won_value + o.open_value));
+  const owners = (rep?.byOwner || []).filter(o => (+o.won_value + +o.open_value) > 0).slice(0, 5);
+  const maxOwner = Math.max(1, ...owners.map(o => +o.won_value + +o.open_value));
   const funnel = (d.funnel || []).filter(f => f.cnt > 0);
   const maxF = Math.max(1, ...funnel.map(f => f.cnt));
   const A_STATUS = { done: [t('เสร็จ'), 'green'], pending: [t('รอดำเนินการ'), 'orange'] };
@@ -113,7 +114,7 @@ export default function Dashboard() {
         </div>
         <div className="panel">
           <div className="panel-head"><h3>{t('Top ผู้ทำยอด')}</h3></div>
-          {owners.length ? owners.map((o, i) => { const total = o.won_value + o.open_value; return (
+          {owners.length ? owners.map((o, i) => { const total = +o.won_value + +o.open_value; return (
             <div className="stage" key={i}>
               <span style={{ width: 84, flexShrink: 0, color: '#5A6678', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{o.name}</span>
               <span className="bartrack"><span className="bar" style={{ width: Math.round(total / maxOwner * 100) + '%', background: ['#12B981', '#3B82C4', '#6E6FCB', '#E0972B', '#2BB6D6'][i % 5] }} /></span>
