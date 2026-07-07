@@ -37,6 +37,8 @@ async function main() {
   console.log(`เสร็จ! เข้าระบบด้วย ${adminEmail} / ${adminPass}`);
   console.log('ค่าตั้งต้นพร้อม (ไปป์ไลน์ 8 ขั้น, แท็ก, วิธีติดต่อ) — ยังไม่มีลูกค้า/โครงการ');
   console.log('นำเข้าลูกค้าได้ด้วย: npm run import:customers -- path/to/customers.csv');
-  await pool.end();
 }
-main().catch(e => { console.error(e); process.exit(1); });
+module.exports = { run: main };
+if (require.main === module) {
+  main().then(() => pool.end()).catch(e => { console.error(e); pool.end(); process.exit(1); });
+}

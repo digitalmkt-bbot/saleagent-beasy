@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { login, authMiddleware } = require('./auth');
+const { autoInit } = require('./auto-init');
 
 const app = express();
 app.use(cors());
@@ -27,4 +28,15 @@ app.use((err, req, res, next) => { // eslint-disable-line
 });
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`Jubili-clone API running on :${PORT}`));
+
+async function start() {
+  try {
+    await autoInit();               // สร้างตาราง + ข้อมูลตั้งต้นอัตโนมัติ (ครั้งแรก)
+  } catch (e) {
+    console.error('[auto-init] ผิดพลาด:', e.message);
+    // ไม่ล้มเซิร์ฟเวอร์: ปล่อยให้สตาร์ทต่อ เผื่อ DB ยังไม่พร้อมชั่วคราว
+  }
+  app.listen(PORT, () => console.log(`Jubili-clone API running on :${PORT}`));
+}
+
+start();

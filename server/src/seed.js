@@ -104,6 +104,8 @@ async function main() {
   await q(`INSERT INTO quotation_item (quotation_id,description,qty,unit_price,amount) VALUES ($1,'แพ็กเกจ 4 เกาะ',40,3000,120000)`, [qh]);
 
   console.log('Seed complete. Login: admin@loveandaman.com / password');
-  await pool.end();
 }
-main().catch(e => { console.error(e); process.exit(1); });
+module.exports = { run: main };
+if (require.main === module) {
+  main().then(() => pool.end()).catch(e => { console.error(e); pool.end(); process.exit(1); });
+}

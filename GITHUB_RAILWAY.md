@@ -2,50 +2,48 @@
 
 ## ส่วนที่ 1 — Push ขึ้น GitHub
 
-โปรเจกต์นี้ init git + commit แรกไว้ให้แล้ว เหลือแค่เชื่อมกับ GitHub ของคุณ
-
 1. ไปที่ https://github.com/new สร้าง repository เปล่า (เช่นชื่อ `saleagent-beasy`) — **ไม่ต้องติ๊ก** Add README
 2. ในโฟลเดอร์โปรเจกต์ รันคำสั่ง (แทน URL ด้วยของ repo คุณ):
 ```bash
-git remote add origin https://github.com/<username>/saleagent-beasy.git
+git init
+git add -A
+git commit -m "SaleAgent.Beasy initial commit"
 git branch -M main
+git remote add origin https://github.com/<username>/saleagent-beasy.git
 git push -u origin main
 ```
+> (ถ้าไฟล์มี .git อยู่แล้ว ข้าม `git init/add/commit` ไปที่ `git remote add` ได้เลย)
 > ครั้งแรก GitHub จะให้ล็อกอิน — ใช้ Personal Access Token แทนรหัสผ่าน (Settings → Developer settings → Tokens)
 
-## ส่วนที่ 2 — Deploy บน Railway (https://railway.app)
+## ส่วนที่ 2 — Deploy บน Railway (แบบง่าย: บริการเดียว)
 
-Railway จะรัน 3 บริการ: ฐานข้อมูล + backend + frontend
+ตอนนี้ปรับให้ backend เสิร์ฟหน้าเว็บในตัว เหลือแค่ **1 บริการ + ฐานข้อมูล**
 
-### 2.1 สร้างโปรเจกต์ + ฐานข้อมูล
-1. Railway → **New Project** → **Deploy from GitHub repo** → เลือก repo ที่เพิ่ง push
-2. ในโปรเจกต์ กด **New** → **Database** → **Add PostgreSQL**
+### 2.1 สร้างโปรเจกต์
+1. ไปที่ https://railway.app → **Login with GitHub**
+2. **New Project** → **Deploy from GitHub repo** → เลือก repo `saleagent-beasy`
+   (Railway อ่าน `nixpacks.toml` เอง: build หน้าเว็บ + สตาร์ท backend)
 
-### 2.2 บริการ Backend
-1. **New** → **GitHub Repo** (repo เดิม) → ตั้ง **Root Directory = `server`**
-2. ไปแท็บ **Variables** ใส่:
-   - `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`  (อ้างอิงจาก Postgres)
-   - `JWT_SECRET` = (สุ่มค่ายาว ๆ)
-   - (Railway ตั้ง `PORT` ให้อัตโนมัติ)
-3. Deploy เสร็จ เปิดแท็บ backend service → คัดลอก **public URL** (เช่น `https://server-production-xxxx.up.railway.app`)
-4. รันสร้างตาราง + ข้อมูลเริ่มต้น (ครั้งเดียว) — เปิด **Terminal/Shell** ของ service หรือใช้ Railway CLI:
+### 2.2 เพิ่มฐานข้อมูล
+- ในโปรเจกต์ กด **New** → **Database** → **Add PostgreSQL**
+
+### 2.3 ตั้งค่าตัวแปร (ที่กล่องบริการหลัก → แท็บ Variables)
+- `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`
+- `JWT_SECRET` = (สุ่มค่ายาว ๆ เช่นกด Generate)
+- (Railway ใส่ `PORT` ให้อัตโนมัติ)
+- กด **Deploy** อีกครั้งให้รับค่าตัวแปรใหม่
+
+### 2.4 สร้างตาราง + ข้อมูลเริ่มต้น (ครั้งเดียว)
+เปิด **Shell/Terminal** ของบริการ (หรือใช้ Railway CLI) แล้วรัน:
 ```bash
-npm run db:init
-npm run seed:clean         # หรือ npm run seed เพื่อใส่ข้อมูลตัวอย่าง
+node server/src/db-init.js
+node server/src/seed-clean.js      # หรือ server/src/seed.js เพื่อใส่ข้อมูลตัวอย่าง
 ```
-   (ผ่าน Railway CLI บนเครื่อง: `railway run --service server npm run db:init`)
 
-### 2.3 บริการ Frontend
-1. **New** → **GitHub Repo** (repo เดิม) → ตั้ง **Root Directory = `web`**
-2. แท็บ **Variables** ใส่:
-   - `VITE_API_URL` = `<public URL ของ backend>/api`  เช่น `https://server-production-xxxx.up.railway.app/api`
-3. Deploy → Railway จะ build (vite) แล้วเสิร์ฟด้วย `serve` → กด **Generate Domain** เพื่อได้ลิงก์เปิดใช้งาน
+### 2.5 เปิดใช้งาน
+- ที่บริการหลัก → **Settings** → **Generate Domain** → ได้ลิงก์ `https://xxx.up.railway.app`
+- เปิดลิงก์ → เข้าสู่ระบบด้วยแอดมินที่ตั้งใน seed
+  (ค่า default: `admin@loveandaman.com` / `password`)
 
-### เข้าใช้งาน
-เปิดโดเมนของ frontend → เข้าสู่ระบบด้วยแอดมินที่ตั้งใน `seed:clean`
-(ค่า default: `admin@loveandaman.com` / `password`)
-
-## หมายเหตุ
-- Backend เปิด CORS ให้แล้ว frontend เรียกข้าม service ได้
-- เปลี่ยน `JWT_SECRET` และรหัสแอดมินก่อนใช้จริงเสมอ
-- นำเข้าลูกค้าเดิม: ดู DEPLOY.md หัวข้อ "นำเข้าลูกค้าจาก Excel/CSV"
+> **หมายเหตุ:** หน้าเว็บกับ API อยู่โดเมนเดียวกัน จึงไม่ต้องตั้ง `VITE_API_URL`
+> (ไฟล์ 2-service เดิม railway.json ในโฟลเดอร์ server/web ยังใช้ได้ถ้าต้องการแยกบริการ)

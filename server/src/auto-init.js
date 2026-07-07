@@ -1,0 +1,76 @@
+// auto-init.js — ตั้งค่าฐานข้อมูลอัตโนมัติตอนเซิร์ฟเวอร์บูตครั้งแรก
+// ใช้กับ Railway / managed Postgres: ไม่ต้องรันคำสั่ง db แยกอีกต่อไป
+//
+// พฤติกรรม (idempotent — รันซ้ำได้ปลอดภัย):
+//   1) รอ Postgres พร้อมรับการเชื่อมต่อ (retry)
+//   2) ถ้ายังไม่มีตาราง app_user  -> สร้างตารางทั้งหมดจาก db/schema.sql
+//   3) ถ้ายังไม่มีผู้ใช้เลย        -> ใส่ข้อมูลตั้งต้น (seed)
+//        - ค่าเริ่มต้น = seed แบบสะอาด (บริษัท + admin + master data)
+//        - ตั้ง SEED_DEMO=true เพื่อใส่ข้อมูลตัวอย่าง (ลูกค้า/โครงการ) แทน
+//
+// ปิดการทำงานได้ด้วย  AUTO_INIT=false
+require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
+const { pool, q } = require('./db');
+
+function log(...a) { console.log('[auto-init]', ...a); }
+
+async function waitForDb(retries = 30, delayMs = 2000) {
+  for (let i = 1; i <= retries; i++) {
+    try { await q('SELECT 1'); return; }
+    catch (e) {
+      log(`รอฐานข้อมูลพร้อม... (${i}/${retries}) ${e.code || e.message}`);
+      await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
+  throw new Error('เชื่อมต่อฐานข้อมูลไม่สำเร็จหลังจากรอครบกำหนด');
+}
+
+async function tableExists(name) {
+  const r = await q('SELECT to_regclass($1) AS t', [name]);
+  return !!r.rows[0].t;
+}
+
+async function ensureSchema() {
+  if (await tableExists('app_user')) { log('พบตารางอยู่แล้ว ข้ามการสร้าง schema'); return false; }
+  const candidates = [
+    path.join(__dirname, '../../db/schema.sql'),
+    path.join(__dirname, '../db/schema.sql'),
+    path.join(process.cwd(), 'db/schema.sql'),
+    'db/schema.sql',
+  ];
+  const file = candidates.find(f => fs.existsSync(f));
+  if (!file) throw new Error('ไม่พบไฟล์ db/schema.sql');
+  const sql = fs.readFileSync(file, 'utf8');
+  await pool.query(sql);
+  log('สร้างตารางทั้งหมดเรียบร้อยจาก', file);
+  return true;
+}
+
+async function ensureSeed() {
+  const r = await q('SELECT count(*)::int AS c FROM app_user');
+  if (r.rows[0].c > 0) { log('มีข้อมูลผู้ใช้อยู่แล้ว ข้ามการ seed'); return false; }
+  const demo = String(process.env.SEED_DEMO || '').toLowerCase() === 'true';
+  if (demo) {
+    log('SEED_DEMO=true -> ใส่ข้อมูลตัวอย่าง (demo)');
+    await require('./seed').run();
+  } else {
+    log('ใส่ข้อมูลตั้งต้นแบบสะอาด (clean)');
+    await require('./seed-clean').run();
+  }
+  return true;
+}
+
+async function autoInit() {
+  if (String(process.env.AUTO_INIT || '').toLowerCase() === 'false') {
+    log('AUTO_INIT=false — ข้ามการตั้งค่าอัตโนมัติ');
+    return;
+  }
+  await waitForDb();
+  const created = await ensureSchema();
+  const seeded = await ensureSeed();
+  log(`เสร็จสิ้น (สร้างตาราง: ${created ? 'ใช่' : 'ไม่'}, seed: ${seeded ? 'ใช่' : 'ไม่'})`);
+}
+
+module.exports = { autoInit };

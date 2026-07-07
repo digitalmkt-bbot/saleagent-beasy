@@ -1,0 +1,12 @@
+const Module=require('module');const bcrypt=require('bcryptjs');const H=bcrypt.hashSync('password',10);const o=Module._load;
+Module._load=function(r,p,m){if(r==='pg'){return{Pool:class{on(){}async connect(){return{query:async()=>({rows:[{id:1}]}),release(){}}}async query(t){if(/app_user WHERE email/.test(t))return{rows:[{id:1,company_id:1,display_name:'A',role:'admin',password_hash:H}]};return{rows:[{id:1,tags:[]}]};}}};}return o.apply(this,arguments);};
+process.env.DATABASE_URL='x';process.env.JWT_SECRET='t';process.env.PORT='4996';require('./src/index.js');
+setTimeout(async()=>{const B='http://localhost:4996';
+ const root=await fetch(B+'/');const rootTxt=await root.text();
+ const health=await fetch(B+'/api/health');const h=await health.json();
+ const spa=await fetch(B+'/customers/123');const spaTxt=await spa.text();
+ console.log('GET / ->',root.status, rootTxt.includes('<div id="root">')?'serves SPA index':'NO index');
+ console.log('GET /api/health ->',health.status, h.ok?'API works':'API fail');
+ console.log('GET /customers/123 (SPA route) ->',spa.status, spaTxt.includes('<div id="root">')?'SPA fallback OK':'NO fallback');
+ const ok=root.status===200&&rootTxt.includes('root')&&h.ok&&spaTxt.includes('root');
+ console.log(ok?'\nSINGLE-SERVICE OK':'\nFAIL');process.exit(ok?0:1);},700);
