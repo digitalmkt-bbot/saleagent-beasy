@@ -1,0 +1,19 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: jubili_db
+    environment:
+      POSTGRES_USER: jubili
+      POSTGRES_PASSWORD: jubili
+      POSTGRES_DB: jubili
+    ports: ["5432:5432"]
+    volumes:
+      - jubili_pg:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jubili"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+volumes:
+  jubili_pg:

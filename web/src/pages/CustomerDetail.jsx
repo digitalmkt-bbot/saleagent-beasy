@@ -1,0 +1,47 @@
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { api, baht } from '../api.js';
+import { LIFE, DIR, Stars } from '../lib.jsx';
+
+export default function CustomerDetail() {
+  const { id } = useParams(); const nav = useNavigate();
+  const [c, setC] = useState(null);
+  useEffect(() => { api('/customers/' + id).then(setC).catch(() => {}); }, [id]);
+  if (!c) return <div>กำลังโหลด...</div>;
+  const l = LIFE[c.lifecycle_stage] || ['-', 'gray'];
+  return (
+    <div>
+      <span className="back" onClick={() => nav('/customers')}>← กลับรายการลูกค้า</span>
+      <h1 className="page">{c.name}</h1>
+      <div className="grid2">
+        <div className="panel"><h3 style={{ marginTop: 0 }}>ข้อมูลลูกค้า</h3><table><tbody>
+          <tr><td className="muted">สถานะ</td><td><span className={'pill ' + l[1]}>{l[0]}</span></td></tr>
+          <tr><td className="muted">รหัสอ้างอิง</td><td>{c.ref_code || '-'}</td></tr>
+          <tr><td className="muted">เลขผู้เสียภาษี</td><td>{c.tax_id || '-'}</td></tr>
+          <tr><td className="muted">โทร / อีเมล</td><td>{c.phone || '-'} · {c.email || '-'}</td></tr>
+          <tr><td className="muted">ที่ตั้ง</td><td>{[c.district, c.province].filter(Boolean).join(', ') || '-'}</td></tr>
+          <tr><td className="muted">ความสำคัญ</td><td><Stars n={c.priority_id} /></td></tr>
+          <tr><td className="muted">ผู้รับผิดชอบ / ทีม</td><td>{c.owner_name} · {c.team_name}</td></tr>
+          <tr><td className="muted">แท็ก</td><td>{(c.tags || []).map(t => <span key={t.id} className="pill blue">{t.name}</span>)}</td></tr>
+        </tbody></table></div>
+        <div className="panel"><h3 style={{ marginTop: 0 }}>ผู้ติดต่อ ({c.contacts.length})</h3>
+          {c.contacts.map(ct => <div key={ct.id} style={{ padding: '6px 0', borderBottom: '1px solid #eef' }}>{ct.is_primary && <span className="pill green">หลัก</span>} <b>{ct.name}</b> — {ct.position}<div className="muted">{ct.phone} · {ct.email}</div></div>)}
+          <h3>สาขา/ที่อยู่ ({c.branches.length})</h3>
+          {c.branches.map(b => <div key={b.id} className="muted" style={{ padding: '4px 0' }}>{b.branch_name}: {b.address} {b.province}</div>)}
+        </div>
+      </div>
+      <div className="panel"><h3 style={{ marginTop: 0 }}>โครงการของลูกค้า ({c.projects.length})</h3>
+        <table><thead><tr><th>รหัส</th><th>โครงการ</th><th>สถานะ</th><th>มูลค่า</th></tr></thead>
+          <tbody>{c.projects.map(p => <tr key={p.id}><td>{p.code}</td><td><a onClick={() => nav('/projects/' + p.id)}>{p.name}</a></td><td><span className={'pill ' + (p.is_open ? 'blue' : 'green')}>{p.stage_seq}. {p.stage_name}</span></td><td>{baht(p.estimated_value)}</td></tr>)}
+            {!c.projects.length && <tr><td colSpan="4" className="muted">ยังไม่มีโครงการ</td></tr>}</tbody></table></div>
+      <div className="panel"><h3 style={{ marginTop: 0 }}>Timeline กิจกรรม ({c.activities.length})</h3>
+        {c.activities.map(a => <TL key={a.id} a={a} />)}
+        {!c.activities.length && <div className="muted">ยังไม่มีกิจกรรม</div>}</div>
+    </div>
+  );
+}
+export function TL({ a }) {
+  const d = DIR[a.direction] || ['-', 'gray'];
+  return <div className="tl"><div style={{ fontSize: 13, color: '#556' }}><b>{(a.activity_at || '').slice(0, 10)} {a.activity_time || ''}</b> · <span className={'pill ' + d[1]}>{d[0]}</span> · {a.method_name} · <span className={'pill ' + (a.status === 'done' ? 'green' : 'orange')}>{a.status === 'done' ? 'เสร็จสิ้น' : 'รอ'}</span></div>
+    <div style={{ margin: '5px 0' }}>{a.detail}</div>{(a.tags || []).map((t, i) => <span key={i} className="pill orange">{t}</span>)}{a.image_url && <div><img src={a.image_url} style={{ maxHeight: 70, borderRadius: 6, marginTop: 6 }} /></div>}</div>;
+}

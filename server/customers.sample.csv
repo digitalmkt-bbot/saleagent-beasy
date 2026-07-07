@@ -1,0 +1,3 @@
+name,ref_code,tax_id,phone,email,province,contact_name,contact_phone,contact_email
+"บริษัท ตัวอย่าง ทัวร์ จำกัด",REF001,0105551234567,02-1234567,info@example.com,ภูเก็ต,คุณสมชาย,081-1112222,somchai@example.com
+"รีสอร์ต ริมทะเล",REF002,0835551234,076-556677,book@resort.com,กระบี่,คุณสมหญิง,082-3334444,somying@resort.com

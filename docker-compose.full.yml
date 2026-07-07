@@ -1,0 +1,41 @@
+# ชุด deploy เต็ม: ฐานข้อมูล + backend + frontend
+# ใช้งาน:  docker compose -f docker-compose.full.yml up -d --build
+#         docker compose -f docker-compose.full.yml exec server npm run seed   # ครั้งแรก
+# เปิดใช้งานที่ http://localhost  (หรือ IP เซิร์ฟเวอร์)
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: saleagent
+      POSTGRES_PASSWORD: change-me-in-prod
+      POSTGRES_DB: saleagent
+    volumes:
+      - sa_pg:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U saleagent"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  server:
+    build: ./server
+    environment:
+      DATABASE_URL: postgres://saleagent:change-me-in-prod@db:5432/saleagent
+      JWT_SECRET: change-this-secret-in-production
+      PORT: 4000
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build: ./web
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+    restart: unless-stopped
+
+volumes:
+  sa_pg:

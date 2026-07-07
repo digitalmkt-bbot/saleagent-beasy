@@ -1,0 +1,58 @@
+# Production + HTTPS อัตโนมัติ (Caddy + Let's Encrypt)
+# ต้องมีโดเมนชี้มาที่ IP เซิร์ฟเวอร์ก่อน แล้วตั้งค่า DOMAIN/EMAIL ในไฟล์ .env
+# ใช้งาน:  docker compose -f docker-compose.prod.yml up -d --build
+#         docker compose -f docker-compose.prod.yml exec server npm run seed:clean
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: saleagent
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-change-me}
+      POSTGRES_DB: saleagent
+    volumes:
+      - sa_pg:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U saleagent"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  server:
+    build: ./server
+    environment:
+      DATABASE_URL: postgres://saleagent:${DB_PASSWORD:-change-me}@db:5432/saleagent
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret}
+      PORT: 4000
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build: ./web
+    depends_on:
+      - server
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+      EMAIL: ${EMAIL:-admin@example.com}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+    restart: unless-stopped
+
+volumes:
+  sa_pg:
+  caddy_data:
+  caddy_config:

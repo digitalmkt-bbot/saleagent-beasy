@@ -1,0 +1,5 @@
+# Caddy จะขอใบรับรอง HTTPS จาก Let's Encrypt ให้อัตโนมัติตามโดเมนที่ตั้งไว้
+{$DOMAIN} {
+	tls {$EMAIL}
+	reverse_proxy web:80
+}
