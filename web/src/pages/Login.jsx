@@ -18,7 +18,7 @@ export default function Login() {
   return (
     <div className="login-wrap">
       <form className="login-box" onSubmit={submit}>
-        <div style={{ fontSize: 26, fontWeight: 800, color: '#1A2B33' }}>SaleAgent<span style={{ color: '#5BB85B' }}>.</span>Beasy</div>
+        <div style={{ fontSize: 26, fontWeight: 800, color: '#4338CA' }}>SaleAgent<span style={{ color: '#6366F1' }}>.</span>Beasy</div>
         <div className="muted" style={{ marginBottom: 16 }}>{t('ระบบบริหารงานขาย (Sales CRM)')}</div>
         <label>{t('อีเมล')}</label>
         <input value={email} onChange={e => setEmail(e.target.value)} />
