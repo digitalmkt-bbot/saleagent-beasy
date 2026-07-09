@@ -86,11 +86,13 @@ tr:hover td{background:rgba(255,255,255,.35);}
 .btn.sm{padding:6px 11px;font-size:13px;box-shadow:none;}
 
 /* ---------- Forms ---------- */
-input,select,textarea{font-family:inherit;font-size:14px;padding:9px 11px;border:1px solid var(--glass-border);border-radius:12px;width:100%;background:rgba(255,255,255,.55);color:var(--ink);transition:border .15s,box-shadow .15s;backdrop-filter:var(--blur);}
+input,select,textarea{font-family:inherit;font-size:14px;padding:9px 11px;border:1px solid var(--glass-border);border-radius:12px;width:100%;min-width:0;max-width:100%;box-sizing:border-box;background:rgba(255,255,255,.55);color:var(--ink);transition:border .15s,box-shadow .15s;backdrop-filter:var(--blur);}
+input[type="date"],input[type="time"],input[type="datetime-local"],input[type="month"]{-webkit-appearance:none;appearance:none;display:block;width:100%;min-width:0;}
+input[type="date"]::-webkit-date-and-time-value{text-align:left;margin:0;}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-tint);}
 label{display:block;font-size:13px;color:var(--ink-2);margin:10px 0 4px;font-weight:600;}
 .row{display:flex;gap:12px;flex-wrap:wrap;}
-.row>*{flex:1;min-width:150px;}
+.row>*{flex:1 1 200px;min-width:0;}
 
 /* ---------- Pills / chips ---------- */
 .pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;}
