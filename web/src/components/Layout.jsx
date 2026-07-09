@@ -41,6 +41,10 @@ export default function Layout() {
               <NavLink key={to} to={to} end={to === '/'} onClick={() => setMenu(false)}><Ic d={I[icon]} />{t(label)}</NavLink>)}</nav>
           </div>
         ))}
+        <div className="side-foot">
+          <span className="side-user"><span className="avatar">{initial}</span><span className="side-uname">{user?.name}</span></span>
+          <a className="side-logout" onClick={logout}>{t('ออกจากระบบ')}</a>
+        </div>
       </aside>
       {menu && <div className="overlay" onClick={() => setMenu(false)} />}
       <div className="main">
