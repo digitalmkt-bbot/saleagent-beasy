@@ -47,10 +47,10 @@ router.post('/', wrap(async (req, res) => {
   const b = req.body; const cid = req.user.company_id;
   const r = await q(
     `INSERT INTO activity (company_id,customer_id,contact_id,project_id,stage_id,direction,activity_type,activity_time,contact_method_id,
-       activity_at,detail,image_url,is_follow_up,due_at,status,priority_id,assignee_user_id,created_by)
-     VALUES ($1,$2,$3,$4,$5,COALESCE($6,'outbound'),$7,$8,$9,COALESCE($10,now()),$11,$12,COALESCE($13,false),$14,COALESCE($15,'done'),$16,$17,$18) RETURNING *`,
+       activity_at,detail,image_url,is_follow_up,due_at,status,priority_id,assignee_user_id,created_by,check_in_at,check_out_at)
+     VALUES ($1,$2,$3,$4,$5,COALESCE($6,'outbound'),$7,$8,$9,COALESCE($10,now()),$11,$12,COALESCE($13,false),$14,COALESCE($15,'done'),$16,$17,$18,$19,$20) RETURNING *`,
     [cid, b.customer_id, b.contact_id, b.project_id, b.stage_id, b.direction, b.activity_type, b.activity_time, b.contact_method_id,
-     b.activity_at, b.detail, b.image_url, b.is_follow_up, b.due_at, b.status, b.priority_id, b.assignee_user_id || req.user.id, req.user.id]);
+     b.activity_at, b.detail, b.image_url, b.is_follow_up, b.due_at, b.status, b.priority_id, b.assignee_user_id || req.user.id, req.user.id, b.check_in_at || null, b.check_out_at || null]);
   await setTagsMentions(r.rows[0].id, b, cid);
   if (b.customer_id) await q('UPDATE customer SET last_activity_id=$1, updated_at=now() WHERE id=$2 AND company_id=$3', [r.rows[0].id, b.customer_id, cid]);
   res.status(201).json(r.rows[0]);
@@ -60,10 +60,10 @@ router.put('/:id', wrap(async (req, res) => {
   const b = req.body;
   const r = await q(
     `UPDATE activity SET customer_id=$3,contact_id=$4,project_id=$5,stage_id=$6,direction=$7,activity_type=$8,activity_time=$9,
-       contact_method_id=$10,activity_at=$11,detail=$12,image_url=$13,is_follow_up=$14,due_at=$15,status=$16,priority_id=$17,assignee_user_id=$18
+       contact_method_id=$10,activity_at=$11,detail=$12,image_url=$13,is_follow_up=$14,due_at=$15,status=$16,priority_id=$17,assignee_user_id=$18,check_in_at=$19,check_out_at=$20
      WHERE id=$1 AND company_id=$2 RETURNING *`,
     [req.params.id, req.user.company_id, b.customer_id, b.contact_id, b.project_id, b.stage_id, b.direction, b.activity_type, b.activity_time,
-     b.contact_method_id, b.activity_at, b.detail, b.image_url, b.is_follow_up, b.due_at, b.status, b.priority_id, b.assignee_user_id]);
+     b.contact_method_id, b.activity_at, b.detail, b.image_url, b.is_follow_up, b.due_at, b.status, b.priority_id, b.assignee_user_id, b.check_in_at || null, b.check_out_at || null]);
   if (!r.rows[0]) return res.status(404).json({ error: 'not found' });
   await setTagsMentions(req.params.id, b, req.user.company_id);
   res.json(r.rows[0]);

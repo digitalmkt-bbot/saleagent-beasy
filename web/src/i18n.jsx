@@ -102,6 +102,8 @@ const EN = {
   'วิธีการติดต่อ': 'Contact methods', 'ประเภทงานติดตาม': 'Activity types', 'ประเภทโครงการ': 'Project types',
   'เลือกรูป': 'Choose photo',
   'ถ่ายรูป': 'Take photo',
+  'เช็คอิน': 'Check-in',
+  'เช็คเอาท์': 'Check-out',
 };
 
 const Ctx = createContext({ t: (s) => s, lang: 'th', toggle: () => {} });

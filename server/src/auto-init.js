@@ -67,6 +67,9 @@ async function runMigrations() {
   try {
     await q("ALTER TABLE activity ALTER COLUMN image_url TYPE TEXT");
     log('migration: activity.image_url -> TEXT');
+    await q("ALTER TABLE activity ADD COLUMN IF NOT EXISTS check_in_at TIMESTAMPTZ");
+    await q("ALTER TABLE activity ADD COLUMN IF NOT EXISTS check_out_at TIMESTAMPTZ");
+    log('migration: activity check_in_at/check_out_at ensured');
   } catch (e) { log('migration skipped/failed: ' + e.message); }
 }
 
