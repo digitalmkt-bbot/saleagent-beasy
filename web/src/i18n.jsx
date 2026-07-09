@@ -100,6 +100,8 @@ const EN = {
   'แท็กกิจกรรม': 'Activity tags', 'ค่าตั้งต้นอื่น ๆ': 'Other defaults', 'ชื่อแท็กใหม่': 'New tag name',
   'แหล่งที่มา': 'Source', 'ประเภทลูกค้า': 'Customer type', 'เกรดลูกค้า': 'Customer grade', 'อื่น ๆ': 'Other',
   'วิธีการติดต่อ': 'Contact methods', 'ประเภทงานติดตาม': 'Activity types', 'ประเภทโครงการ': 'Project types',
+  'เลือกรูป': 'Choose photo',
+  'ถ่ายรูป': 'Take photo',
 };
 
 const Ctx = createContext({ t: (s) => s, lang: 'th', toggle: () => {} });

@@ -62,6 +62,14 @@ async function ensureSeed() {
   return true;
 }
 
+async function runMigrations() {
+  // ปรับคอลัมน์ที่เคยเป็น VARCHAR(500) ให้เก็บรูป base64 ได้ (idempotent)
+  try {
+    await q("ALTER TABLE activity ALTER COLUMN image_url TYPE TEXT");
+    log('migration: activity.image_url -> TEXT');
+  } catch (e) { log('migration skipped/failed: ' + e.message); }
+}
+
 async function autoInit() {
   if (String(process.env.AUTO_INIT || '').toLowerCase() === 'false') {
     log('AUTO_INIT=false — ข้ามการตั้งค่าอัตโนมัติ');
@@ -70,6 +78,7 @@ async function autoInit() {
   await waitForDb();
   const created = await ensureSchema();
   const seeded = await ensureSeed();
+  await runMigrations();
   log(`เสร็จสิ้น (สร้างตาราง: ${created ? 'ใช่' : 'ไม่'}, seed: ${seeded ? 'ใช่' : 'ไม่'})`);
 }
 

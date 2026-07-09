@@ -200,3 +200,5 @@ label{display:block;font-size:13px;color:var(--ink-2);margin:10px 0 4px;font-wei
 
 .grid-glass-3{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) minmax(0,1fr);gap:16px;margin-bottom:16px;}
 @media (max-width:1000px){.grid-glass-3{grid-template-columns:1fr;}}
+.filebtn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border:1px solid var(--glass-border);border-radius:12px;background:rgba(255,255,255,.55);color:var(--ink-2);font-size:14px;font-weight:600;cursor:pointer;}
+.filebtn:hover{border-color:var(--brand);color:var(--brand-text);}

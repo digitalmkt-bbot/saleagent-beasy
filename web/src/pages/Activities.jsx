@@ -99,7 +99,24 @@ function ActivityModal({ meta, t, edit, onClose, onSaved }) {
   const PR = ['ต่ำ', 'ปานกลาง', 'สูง', 'สูงมาก', 'ด่วนที่สุด'];
   useEffect(() => { if (!f.customer_id) { setContacts([]); return; } api('/customers/' + f.customer_id).then(c => setContacts(c.contacts || [])).catch(() => {}); }, [f.customer_id]);
   const toggle = (arr, setArr, id) => setArr(arr.includes(id) ? arr.filter(x => x !== id) : [...arr, id]);
-  function readImg(e) { const file = e.target.files[0]; if (!file) return; const r = new FileReader(); r.onload = ev => setImage(ev.target.result); r.readAsDataURL(file); }
+  function readImg(e) {
+    const file = e.target.files[0]; if (!file) return;
+    const r = new FileReader();
+    r.onload = ev => {
+      const img = new Image();
+      img.onload = () => {
+        const max = 1280; let w = img.width, h = img.height;
+        if (w > max || h > max) { const sc = Math.min(max / w, max / h); w = Math.round(w * sc); h = Math.round(h * sc); }
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        setImage(c.toDataURL('image/jpeg', 0.72));
+      };
+      img.onerror = () => setImage(ev.target.result);
+      img.src = ev.target.result;
+    };
+    r.readAsDataURL(file);
+    e.target.value = '';
+  }
   async function save(again) {
     if (!f.customer_id) return setErr(t('เลือกลูกค้า'));
     const body = { ...f, contact_id: f.contact_id || null, project_id: f.project_id || null, stage_id: f.stage_id || null,
@@ -133,7 +150,12 @@ function ActivityModal({ meta, t, edit, onClose, onSaved }) {
       <label>{t('รายละเอียดการติดต่อ')}</label><textarea rows="3" value={f.detail} onChange={e => set('detail', e.target.value)} />
       <label>{t('@ แท็กเพื่อนร่วมงาน')}</label><div>{meta.users.map(u => <span key={u.id} className={'chip' + (mentions.includes(u.id) ? ' on' : '')} onClick={() => toggle(mentions, setMentions, u.id)}>@{u.display_name}</span>)}</div>
       <label>{t('แท็กกิจกรรม')}</label><div>{meta.atags.map(x => <span key={x.id} className={'chip' + (tagIds.includes(x.id) ? ' on' : '')} onClick={() => toggle(tagIds, setTagIds, x.id)}>{x.name}</span>)}</div>
-      <label>{t('แนบรูป')}</label><input type="file" accept="image/*" onChange={readImg} />{image && <div style={{ marginTop: 8 }}><img src={image} style={{ maxHeight: 80, borderRadius: 6 }} /></div>}
+      <label>{t('แนบรูป')}</label>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <label className="filebtn"><input type="file" accept="image/*" onChange={readImg} style={{ display: 'none' }} /><span>🖼 {t('เลือกรูป')}</span></label>
+        <label className="filebtn"><input type="file" accept="image/*" capture="environment" onChange={readImg} style={{ display: 'none' }} /><span>📷 {t('ถ่ายรูป')}</span></label>
+      </div>
+      {image && <div style={{ marginTop: 8, position: 'relative', display: 'inline-block' }}><img src={image} style={{ maxHeight: 90, borderRadius: 8 }} /><span onClick={() => setImage(null)} style={{ position: 'absolute', top: -8, right: -8, background: '#F2637E', color: '#fff', width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>×</span></div>}
       <div className="row" style={{ marginTop: 10, alignItems: 'center' }}>
         <div style={{ flex: '0 0 auto' }}><label style={{ display: 'inline' }}><input type="checkbox" style={{ width: 'auto', marginRight: 6 }} checked={f.is_follow_up} onChange={e => set('is_follow_up', e.target.checked)} />{t('สร้างงานติดตาม')}</label></div>
         {f.is_follow_up && <div><label>{t('กำหนดติดตาม')}</label><input type="date" value={f.due_at} onChange={e => set('due_at', e.target.value)} /></div>}
