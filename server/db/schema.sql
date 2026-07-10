@@ -308,6 +308,7 @@ CREATE TABLE checkin (
     check_out_at    TIMESTAMPTZ,
     check_out_lat   DOUBLE PRECISION,
     check_out_lng   DOUBLE PRECISION,
+    image_url       TEXT,
     note            TEXT,
     created_at      TIMESTAMPTZ DEFAULT now()
 );

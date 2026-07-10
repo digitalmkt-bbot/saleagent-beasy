@@ -152,12 +152,6 @@ function ActivityModal({ meta, t, edit, onClose, onSaved }) {
       <label>{t('รายละเอียดการติดต่อ')}</label><textarea rows="3" value={f.detail} onChange={e => set('detail', e.target.value)} />
       <label>{t('@ แท็กเพื่อนร่วมงาน')}</label><div>{meta.users.map(u => <span key={u.id} className={'chip' + (mentions.includes(u.id) ? ' on' : '')} onClick={() => toggle(mentions, setMentions, u.id)}>@{u.display_name}</span>)}</div>
       <label>{t('แท็กกิจกรรม')}</label><div>{meta.atags.map(x => <span key={x.id} className={'chip' + (tagIds.includes(x.id) ? ' on' : '')} onClick={() => toggle(tagIds, setTagIds, x.id)}>{x.name}</span>)}</div>
-      <label>{t('แนบรูป')}</label>
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-        <label className="filebtn"><input type="file" accept="image/*" onChange={readImg} style={{ display: 'none' }} /><span>🖼 {t('เลือกรูป')}</span></label>
-        <label className="filebtn"><input type="file" accept="image/*" capture="environment" onChange={readImg} style={{ display: 'none' }} /><span>📷 {t('ถ่ายรูป')}</span></label>
-      </div>
-      {image && <div style={{ marginTop: 8, position: 'relative', display: 'inline-block' }}><img src={image} style={{ maxHeight: 90, borderRadius: 8 }} /><span onClick={() => setImage(null)} style={{ position: 'absolute', top: -8, right: -8, background: '#F2637E', color: '#fff', width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>×</span></div>}
       <div className="row" style={{ marginTop: 10, alignItems: 'center' }}>
         <div style={{ flex: '0 0 auto' }}><label style={{ display: 'inline' }}><input type="checkbox" style={{ width: 'auto', marginRight: 6 }} checked={f.is_follow_up} onChange={e => set('is_follow_up', e.target.checked)} />{t('สร้างงานติดตาม')}</label></div>
         {f.is_follow_up && <div><label>{t('กำหนดติดตาม')}</label><input type="date" value={f.due_at} onChange={e => set('due_at', e.target.value)} /></div>}

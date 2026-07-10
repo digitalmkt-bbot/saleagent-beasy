@@ -28,13 +28,13 @@ router.get('/active', wrap(async (req, res) => {
 // เช็คอิน + สร้างรายการ activity เชื่อมกับลูกค้า/โครงการ ให้ขึ้นใน Timeline
 router.post('/', wrap(async (req, res) => {
   const b = req.body; const cid = req.user.company_id; const uid = req.user.id;
-  const ck = (await q(`INSERT INTO checkin (company_id,customer_id,project_id,user_id,check_in_at,check_in_lat,check_in_lng,note)
-    VALUES ($1,$2,$3,$4,now(),$5,$6,$7) RETURNING *`,
-    [cid, b.customer_id || null, b.project_id || null, uid, b.lat ?? null, b.lng ?? null, b.note || null])).rows[0];
+  const ck = (await q(`INSERT INTO checkin (company_id,customer_id,project_id,user_id,check_in_at,check_in_lat,check_in_lng,note,image_url)
+    VALUES ($1,$2,$3,$4,now(),$5,$6,$7,$8) RETURNING *`,
+    [cid, b.customer_id || null, b.project_id || null, uid, b.lat ?? null, b.lng ?? null, b.note || null, b.image_url || null])).rows[0];
   const detail = '📍 เช็คอิน' + (b.note ? (' — ' + b.note) : '');
-  const act = (await q(`INSERT INTO activity (company_id,customer_id,project_id,direction,activity_at,activity_time,detail,status,assignee_user_id,created_by)
-    VALUES ($1,$2,$3,'inbound',$4,$5,$6,'done',$7,$7) RETURNING id`,
-    [cid, ck.customer_id, ck.project_id, ck.check_in_at, bkk(ck.check_in_at), detail, uid])).rows[0];
+  const act = (await q(`INSERT INTO activity (company_id,customer_id,project_id,direction,activity_at,activity_time,detail,status,assignee_user_id,created_by,image_url)
+    VALUES ($1,$2,$3,'inbound',$4,$5,$6,'done',$7,$7,$8) RETURNING id`,
+    [cid, ck.customer_id, ck.project_id, ck.check_in_at, bkk(ck.check_in_at), detail, uid, ck.image_url])).rows[0];
   await q('UPDATE checkin SET activity_id=$1 WHERE id=$2', [act.id, ck.id]);
   if (ck.customer_id) await q('UPDATE customer SET last_activity_id=$1, updated_at=now() WHERE id=$2 AND company_id=$3', [act.id, ck.customer_id, cid]);
   res.status(201).json({ ...ck, activity_id: act.id });

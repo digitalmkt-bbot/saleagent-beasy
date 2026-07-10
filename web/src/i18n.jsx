@@ -125,6 +125,8 @@ const EN = {
   'ติดต่อมา': 'Inbound',
   'ติดต่อกลับ': 'Outbound',
   'เตรียมข้อมูล': 'Prep / research',
+  'รูปถ่ายหน้างาน': 'On-site photo',
+  'รูป': 'Photo',
 };
 
 const Ctx = createContext({ t: (s) => s, lang: 'th', toggle: () => {} });
