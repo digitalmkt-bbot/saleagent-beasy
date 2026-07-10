@@ -14,14 +14,6 @@ export default function Activities() {
   const [modal, setModal] = useState(null);
   const set = (k, v) => setF(p => ({ ...p, [k]: v }));
   const fmtDT = (iso) => iso ? new Date(iso).toLocaleString('th-TH', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
-  function pickDir(k) {
-    setF(p => {
-      const n = { ...p, direction: k };
-      if (k === 'inbound') n.check_in_at = new Date().toISOString();
-      if (k === 'outbound') n.check_out_at = new Date().toISOString();
-      return n;
-    });
-  }
 
   function load() { api('/activities', { params: { bucket: f.bucket, status: f.status, type: f.type, team: f.team, assignee: f.assignee, search: f.search, sort: f.sort, limit: 200 } }).then(setData).catch(() => {}); }
   useEffect(() => { load(); }, [f.bucket, f.status, f.type, f.team, f.assignee, f.sort]);
@@ -98,7 +90,6 @@ function ActivityModal({ meta, t, edit, onClose, onSaved }) {
     priority_id: init.priority_id || 3, assignee_user_id: init.assignee_user_id || '', project_id: init.project_id || '',
     stage_id: init.stage_id || '', detail: init.detail || '', is_follow_up: init.id ? init.status === 'pending' : true,
     due_at: (init.due_at || today()).slice(0, 10),
-    check_in_at: init.check_in_at || null, check_out_at: init.check_out_at || null,
   });
   const [contacts, setContacts] = useState([]);
   const [tagIds, setTagIds] = useState([]);
@@ -107,14 +98,6 @@ function ActivityModal({ meta, t, edit, onClose, onSaved }) {
   const [err, setErr] = useState('');
   const set = (k, v) => setF(p => ({ ...p, [k]: v }));
   const fmtDT = (iso) => iso ? new Date(iso).toLocaleString('th-TH', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
-  function pickDir(k) {
-    setF(p => {
-      const n = { ...p, direction: k };
-      if (k === 'inbound') n.check_in_at = new Date().toISOString();
-      if (k === 'outbound') n.check_out_at = new Date().toISOString();
-      return n;
-    });
-  }
   const PR = ['ต่ำ', 'ปานกลาง', 'สูง', 'สูงมาก', 'ด่วนที่สุด'];
   useEffect(() => { if (!f.customer_id) { setContacts([]); return; } api('/customers/' + f.customer_id).then(c => setContacts(c.contacts || [])).catch(() => {}); }, [f.customer_id]);
   const toggle = (arr, setArr, id) => setArr(arr.includes(id) ? arr.filter(x => x !== id) : [...arr, id]);
@@ -139,7 +122,7 @@ function ActivityModal({ meta, t, edit, onClose, onSaved }) {
   async function save(again) {
     if (!f.customer_id) return setErr(t('เลือกลูกค้า'));
     const body = { ...f, contact_id: f.contact_id || null, project_id: f.project_id || null, stage_id: f.stage_id || null,
-      due_at: f.is_follow_up ? f.due_at : null, status: f.is_follow_up ? 'pending' : 'done', tag_ids: tagIds, mentions, image_url: image, check_in_at: f.check_in_at, check_out_at: f.check_out_at };
+      due_at: f.is_follow_up ? f.due_at : null, status: f.is_follow_up ? 'pending' : 'done', tag_ids: tagIds, mentions, image_url: image };
     try { if (edit) await api('/activities/' + edit.id, { method: 'PUT', body }); else await api('/activities', { method: 'POST', body }); onSaved(again); }
     catch (e) { setErr(e.message); }
   }
@@ -150,12 +133,8 @@ function ActivityModal({ meta, t, edit, onClose, onSaved }) {
         <div><label>{t('ชื่อกิจการ *')}</label><select value={f.customer_id} onChange={e => set('customer_id', e.target.value)}><option value="">{t('- เลือกลูกค้า -')}</option>{meta.customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
         <div><label>{t('ผู้ติดต่อ')}</label><select value={f.contact_id} onChange={e => set('contact_id', e.target.value)}><option value="">-</option>{contacts.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
       </div>
-      <label>{t('สถานะ')}</label>
-      <div style={{ display: 'flex', gap: 10 }}>{Object.entries(DIR).map(([k, v]) => <div key={k} className={'dirbtn' + (f.direction === k ? ' on' : '')} onClick={() => pickDir(k)}>{t(v[0])}</div>)}</div>
-      {(f.check_in_at || f.check_out_at) && <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 8, fontSize: 13 }}>
-        {f.check_in_at && <span className="chip on" style={{ cursor: 'default' }}>🟢 {t('เช็คอิน')} {fmtDT(f.check_in_at)} <b onClick={() => set('check_in_at', null)} style={{ cursor: 'pointer', marginLeft: 4 }}>×</b></span>}
-        {f.check_out_at && <span className="chip on" style={{ cursor: 'default' }}>🔵 {t('เช็คเอาท์')} {fmtDT(f.check_out_at)} <b onClick={() => set('check_out_at', null)} style={{ cursor: 'pointer', marginLeft: 4 }}>×</b></span>}
-      </div>}
+      <label>{t('ทิศทาง')}</label>
+      <div style={{ display: 'flex', gap: 10 }}>{Object.entries(DIR).map(([k, v]) => <div key={k} className={'dirbtn' + (f.direction === k ? ' on' : '')} onClick={() => set('direction', k)}>{t(v[0])}</div>)}</div>
       <div className="row">
         <div><label>{t('วันที่ *')}</label><input type="date" value={f.activity_at} onChange={e => set('activity_at', e.target.value)} /></div>
         <div><label>{t('เวลา *')}</label><input type="time" value={f.activity_time} onChange={e => set('activity_time', e.target.value)} /></div>

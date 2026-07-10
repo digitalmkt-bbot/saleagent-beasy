@@ -122,6 +122,9 @@ const EN = {
   'โครงการที่คุย': 'Project discussed',
   'ถ้ามี': 'optional',
   '- ไม่ระบุ -': '- none -',
+  'ติดต่อมา': 'Inbound',
+  'ติดต่อกลับ': 'Outbound',
+  'เตรียมข้อมูล': 'Prep / research',
 };
 
 const Ctx = createContext({ t: (s) => s, lang: 'th', toggle: () => {} });
