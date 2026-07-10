@@ -119,6 +119,9 @@ const EN = {
   'แผนที่': 'Map',
   'ยังไม่ออก': 'Still in',
   'ยังไม่มีประวัติ': 'No history yet',
+  'โครงการที่คุย': 'Project discussed',
+  'ถ้ามี': 'optional',
+  '- ไม่ระบุ -': '- none -',
 };
 
 const Ctx = createContext({ t: (s) => s, lang: 'th', toggle: () => {} });

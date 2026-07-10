@@ -84,6 +84,8 @@ async function runMigrations() {
       note TEXT,
       created_at TIMESTAMPTZ DEFAULT now()
     )`);
+    await q("ALTER TABLE checkin ADD COLUMN IF NOT EXISTS project_id BIGINT");
+    await q("ALTER TABLE checkin ADD COLUMN IF NOT EXISTS activity_id BIGINT");
     await q("CREATE INDEX IF NOT EXISTS idx_checkin_company ON checkin(company_id)");
     log('migration: checkin table ensured');
   } catch (e) { log('migration skipped/failed: ' + e.message); }

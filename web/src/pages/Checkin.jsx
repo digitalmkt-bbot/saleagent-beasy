@@ -24,9 +24,11 @@ const mapUrl = (lat, lng) => (lat != null && lng != null) ? `https://www.google.
 export default function Checkin() {
   const { t } = useI18n();
   const [customers, setCustomers] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [active, setActive] = useState(null);
   const [history, setHistory] = useState([]);
   const [cid, setCid] = useState('');
+  const [pid, setPid] = useState('');
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
@@ -38,6 +40,7 @@ export default function Checkin() {
   }
   useEffect(() => {
     api('/customers', { params: { limit: 300 } }).then(d => setCustomers(d.rows || [])).catch(() => {});
+    api('/projects', { params: { limit: 300 } }).then(d => setProjects(d.rows || [])).catch(() => {});
     loadAll();
     const id = setInterval(() => tick(x => x + 1), 30000);
     return () => clearInterval(id);
@@ -48,8 +51,8 @@ export default function Checkin() {
     setBusy(true); setMsg(t('กำลังขอตำแหน่ง...'));
     const g = await getGeo();
     try {
-      await api('/checkins', { method: 'POST', body: { customer_id: cid, lat: g && g.lat, lng: g && g.lng, note } });
-      setNote(''); setCid(''); setMsg(g ? '' : t('เช็คอินสำเร็จ (ไม่ได้พิกัด)'));
+      await api('/checkins', { method: 'POST', body: { customer_id: cid, project_id: pid || null, lat: g && g.lat, lng: g && g.lng, note } });
+      setNote(''); setCid(''); setPid(''); setMsg(g ? '' : t('เช็คอินสำเร็จ (ไม่ได้พิกัด)'));
       loadAll();
     } catch (e) { setMsg(e.message); } finally { setBusy(false); }
   }
@@ -71,6 +74,7 @@ export default function Checkin() {
         <div className="card" style={{ background: 'var(--brand-tint)', border: '1px solid var(--brand)' }}>
           <div style={{ fontSize: 13, color: 'var(--brand-text)', fontWeight: 700 }}>🟢 {t('กำลังเยี่ยม')}</div>
           <div style={{ fontSize: 22, fontWeight: 800, margin: '4px 0 2px' }}>{active.customer_name || '-'}</div>
+          {active.project_name && <div className="muted" style={{ marginTop: 2 }}>📁 {active.project_name}</div>}
           <div className="muted">{t('เช็คอินเมื่อ')} {fmtDT(active.check_in_at)} · {t('ผ่านไป')} {durTxt(active.check_in_at)}</div>
           {mapUrl(active.check_in_lat, active.check_in_lng) &&
             <div style={{ marginTop: 6 }}><a href={mapUrl(active.check_in_lat, active.check_in_lng)} target="_blank" rel="noreferrer">📍 {t('ดูตำแหน่งเช็คอินบนแผนที่')}</a></div>}
@@ -83,6 +87,11 @@ export default function Checkin() {
             <option value="">{t('- เลือกลูกค้า -')}</option>
             {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
+          <label style={{ marginTop: 10, display: 'block' }}>{t('โครงการที่คุย')} ({t('ถ้ามี')})</label>
+          <select value={pid} onChange={e => setPid(e.target.value)}>
+            <option value="">{t('- ไม่ระบุ -')}</option>
+            {projects.filter(p => !cid || String(p.customer_id) === String(cid)).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
           <label style={{ marginTop: 10, display: 'block' }}>{t('หมายเหตุ')}</label>
           <textarea rows="2" value={note} onChange={e => setNote(e.target.value)} placeholder={t('เช่น นัดคุยเรื่องแพ็กเกจทัวร์')} />
           <button className="btn" style={{ width: '100%', marginTop: 14, padding: 14, fontSize: 16 }} disabled={busy} onClick={checkIn}>{busy ? '...' : '📍 ' + t('เช็คอิน')}</button>
@@ -93,17 +102,18 @@ export default function Checkin() {
       <h3 style={{ margin: '22px 0 10px' }}>{t('ประวัติเช็คอิน')}</h3>
       <div className="panel">
         <table>
-          <thead><tr><th>{t('ลูกค้า')}</th><th>{t('เช็คอิน')}</th><th>{t('เช็คเอาท์')}</th><th>{t('ระยะเวลา')}</th><th>{t('แผนที่')}</th></tr></thead>
+          <thead><tr><th>{t('ลูกค้า')}</th><th>{t('โครงการ')}</th><th>{t('เช็คอิน')}</th><th>{t('เช็คเอาท์')}</th><th>{t('ระยะเวลา')}</th><th>{t('แผนที่')}</th></tr></thead>
           <tbody>
             {history.length ? history.map(h => (
               <tr key={h.id}>
                 <td><b>{h.customer_name || '-'}</b><div className="muted">{h.user_name}</div></td>
+                <td className="muted">{h.project_name || '-'}</td>
                 <td>{fmtDT(h.check_in_at)}</td>
                 <td>{h.check_out_at ? fmtT(h.check_out_at) : <span className="pill orange">{t('ยังไม่ออก')}</span>}</td>
                 <td>{durTxt(h.check_in_at, h.check_out_at)}</td>
                 <td>{mapUrl(h.check_in_lat, h.check_in_lng) ? <a href={mapUrl(h.check_in_lat, h.check_in_lng)} target="_blank" rel="noreferrer">📍</a> : '-'}</td>
               </tr>
-            )) : <tr><td colSpan="5" className="muted">{t('ยังไม่มีประวัติ')}</td></tr>}
+            )) : <tr><td colSpan="6" className="muted">{t('ยังไม่มีประวัติ')}</td></tr>}
           </tbody>
         </table>
       </div>
