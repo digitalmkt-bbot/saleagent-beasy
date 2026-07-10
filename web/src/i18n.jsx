@@ -104,6 +104,21 @@ const EN = {
   'ถ่ายรูป': 'Take photo',
   'เช็คอิน': 'Check-in',
   'เช็คเอาท์': 'Check-out',
+  'เช็คอินลูกค้า': 'Customer check-in',
+  'เช็คอินตอนถึงลูกค้า แล้วเช็คเอาท์ตอนออก — บันทึกเวลาและพิกัดอัตโนมัติ': 'Check in on arrival, check out on leaving — time and location saved automatically',
+  'กำลังเยี่ยม': 'Visiting',
+  'เช็คอินเมื่อ': 'Checked in at',
+  'ผ่านไป': 'Elapsed',
+  'ดูตำแหน่งเช็คอินบนแผนที่': 'View check-in location on map',
+  'เลือกลูกค้าก่อน': 'Select a customer first',
+  'กำลังขอตำแหน่ง...': 'Getting location...',
+  'เช็คอินสำเร็จ (ไม่ได้พิกัด)': 'Checked in (no location)',
+  'หมายเหตุ': 'Note',
+  'เช่น นัดคุยเรื่องแพ็กเกจทัวร์': 'e.g. discuss tour package',
+  'ประวัติเช็คอิน': 'Check-in history',
+  'แผนที่': 'Map',
+  'ยังไม่ออก': 'Still in',
+  'ยังไม่มีประวัติ': 'No history yet',
 };
 
 const Ctx = createContext({ t: (s) => s, lang: 'th', toggle: () => {} });

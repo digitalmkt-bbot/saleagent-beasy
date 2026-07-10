@@ -70,6 +70,22 @@ async function runMigrations() {
     await q("ALTER TABLE activity ADD COLUMN IF NOT EXISTS check_in_at TIMESTAMPTZ");
     await q("ALTER TABLE activity ADD COLUMN IF NOT EXISTS check_out_at TIMESTAMPTZ");
     log('migration: activity check_in_at/check_out_at ensured');
+    await q(`CREATE TABLE IF NOT EXISTS checkin (
+      id BIGSERIAL PRIMARY KEY,
+      company_id BIGINT NOT NULL REFERENCES company(id),
+      customer_id BIGINT REFERENCES customer(id),
+      user_id BIGINT REFERENCES app_user(id),
+      check_in_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      check_in_lat DOUBLE PRECISION,
+      check_in_lng DOUBLE PRECISION,
+      check_out_at TIMESTAMPTZ,
+      check_out_lat DOUBLE PRECISION,
+      check_out_lng DOUBLE PRECISION,
+      note TEXT,
+      created_at TIMESTAMPTZ DEFAULT now()
+    )`);
+    await q("CREATE INDEX IF NOT EXISTS idx_checkin_company ON checkin(company_id)");
+    log('migration: checkin table ensured');
   } catch (e) { log('migration skipped/failed: ' + e.message); }
 }
 
