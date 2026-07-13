@@ -25,7 +25,7 @@ router.get('/active', wrap(async (req, res) => {
   res.json(r.rows[0] || null);
 }));
 
-// เช็คอิน + สร้างรายการ activity เชื่อมกับเอเจ้นท์/โครงการ ให้ขึ้นใน Timeline
+// เช็คอิน + สร้างรายการ activity เชื่อมกับเอเจ้นท์/กลุ่มเป้าหมาย ให้ขึ้นใน Timeline
 router.post('/', wrap(async (req, res) => {
   const b = req.body; const cid = req.user.company_id; const uid = req.user.id;
   const ck = (await q(`INSERT INTO checkin (company_id,customer_id,project_id,user_id,check_in_at,check_in_lat,check_in_lng,note,image_url)

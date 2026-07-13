@@ -5,7 +5,7 @@ import { createContext, useContext, useState, useCallback } from 'react';
 const EN = {
   // nav / chrome
   'เมนูหลัก': 'Main', 'เอกสาร & รายงาน': 'Documents & Reports',
-  'แผงบริหาร': 'Dashboard', 'งานติดตาม': 'Activities', 'เอเจ้นท์': 'Agents', 'โครงการ': 'Projects',
+  'แผงบริหาร': 'Dashboard', 'งานติดตาม': 'Activities', 'เอเจ้นท์': 'Agents', 'กลุ่มเป้าหมาย': 'Target groups',
   'ใบเสนอราคา': 'Quotations', 'ใบสั่งขาย': 'Sale Orders', 'รายงาน': 'Reports', 'ตั้งค่า': 'Settings',
   'บริษัท เลิฟ ไอแลนด์ จำกัด': 'Love Andaman Co., Ltd.', 'ออกจากระบบ': 'Log out',
   'เกินกำหนด': 'Overdue', 'วันนี้': 'Today', 'ไม่มีงานแจ้งเตือน': 'No notifications',
@@ -16,10 +16,10 @@ const EN = {
   // dashboard
   'ภาพรวมการขายแบบเรียลไทม์': 'Real-time sales overview',
   'เอเจ้นท์ทั้งหมด': 'Total agents', 'มูลค่าไปป์ไลน์': 'Pipeline value', 'ปิดการขายแล้ว': 'Closed won',
-  'งานติดตามค้าง': 'Pending activities', 'ยอดตามเดือน': 'Monthly value', 'มูลค่าโครงการ': 'Project value',
+  'งานติดตามค้าง': 'Pending activities', 'ยอดตามเดือน': 'Monthly value', 'มูลค่ากลุ่มเป้าหมาย': 'Target group value',
   'Top ผู้ทำยอด': 'Top performers', 'ไปป์ไลน์การขาย': 'Sales pipeline', 'งานติดตามล่าสุด': 'Recent activities',
   'ดูทั้งหมด →': 'View all →', 'ยังไม่มีข้อมูล': 'No data yet', 'ยังไม่มีข้อมูลยอดขาย': 'No sales data yet',
-  'ยังไม่มีโครงการในไปป์ไลน์': 'No projects in pipeline', 'ยังไม่มีงานติดตาม': 'No activities yet',
+  'ยังไม่มีกลุ่มเป้าหมายในไปป์ไลน์': 'No target groups in pipeline', 'ยังไม่มีงานติดตาม': 'No activities yet',
   'รายละเอียด': 'Detail', 'กำหนด': 'Due', 'ผู้รับผิดชอบ': 'Owner', 'สถานะ': 'Status',
   'ปีนี้': 'This year', 'ไตรมาสนี้': 'This quarter', 'เดือนนี้': 'This month', 'ทั้งหมด': 'All time',
   'ช่วงเวลา': 'Period',
@@ -37,8 +37,8 @@ const EN = {
   'เป้าหมายวันนี้': "Today's targets",
   // toolbar / filters
   'ค้นหา ชื่อ/ผู้ติดต่อ/เลขภาษี': 'Search name / contact / tax id',
-  'ค้นหา รายละเอียด/เอเจ้นท์/โครงการ': 'Search detail / agent / project',
-  'ค้นหา รหัส/ชื่อโครงการ': 'Search code / project name',
+  'ค้นหา รายละเอียด/เอเจ้นท์/กลุ่มเป้าหมาย': 'Search detail / agent / target group',
+  'ค้นหา รหัส/ชื่อกลุ่มเป้าหมาย': 'Search code / target group name',
   'สถานะ: ทั้งหมด': 'Status: all', 'ทีม: ทั้งหมด': 'Team: all', 'ผู้รับผิดชอบ: ทั้งหมด': 'Owner: all',
   'แท็ก: ทั้งหมด': 'Tag: all', 'ความสำคัญ: ทั้งหมด': 'Priority: all', 'ประเภท: ทั้งหมด': 'Type: all',
   'เอเจ้นท์: ทั้งหมด': 'Agent: all',
@@ -57,7 +57,7 @@ const EN = {
   // customer detail
   '← กลับรายการเอเจ้นท์': '← Back to agents', 'ข้อมูลเอเจ้นท์': 'Agent info',
   'โทร / อีเมล': 'Phone / email', 'ที่ตั้ง': 'Location', 'ผู้รับผิดชอบ / ทีม': 'Owner / team', 'แท็ก': 'Tags',
-  'โครงการของเอเจ้นท์': 'Agent projects', 'ยังไม่มีโครงการ': 'No projects yet',
+  'กลุ่มเป้าหมายของเอเจ้นท์': 'Agent target groups', 'ยังไม่มีกลุ่มเป้าหมาย': 'No target groups yet',
   'รหัส': 'Code', 'มูลค่า': 'Value', 'ยังไม่มีกิจกรรม': 'No activities yet',
   // activities
   'ประเภท': 'Type', 'ทิศทาง': 'Direction', 'วิธี': 'Method', 'แท็ก': 'Tags', 'เร็วๆนี้': 'Upcoming',
@@ -65,19 +65,19 @@ const EN = {
   'ลบกิจกรรมนี้?': 'Delete this activity?', 'แก้ไขกิจกรรม': 'Edit activity', 'สร้างบันทึกกิจกรรม': 'New activity',
   '- เลือกเอเจ้นท์ -': '- Select agent -', 'เลือกเอเจ้นท์': 'Select a agent',
   'วันที่ *': 'Date *', 'เวลา *': 'Time *', 'วิธีการติดต่อ *': 'Contact method *',
-  'ประเภทงานติดตาม': 'Activity type', 'โครงการ': 'Project', 'สถานะโครงการ': 'Project stage',
+  'ประเภทงานติดตาม': 'Activity type', 'กลุ่มเป้าหมาย': 'Target group', 'สถานะกลุ่มเป้าหมาย': 'Target group stage',
   'รายละเอียดการติดต่อ': 'Contact detail', '@ แท็กเพื่อนร่วมงาน': '@ Mention teammates',
   'แท็กกิจกรรม': 'Activity tags', 'แนบรูป': 'Attach image', 'สร้างงานติดตาม': 'Create follow-up',
   'กำหนดติดตาม': 'Follow-up date', 'บันทึกและไปต่อ': 'Save and add next',
   // projects
-  'มูลค่ารวม': 'Total value', 'จำนวนโครงการ': 'Projects', 'เปิดอยู่': 'Open',
-  '+ สร้างโครงการ': '+ New project', 'สร้างโครงการใหม่': 'New project', 'ไม่มีโครงการ': 'No projects',
-  'ชื่อโครงการ *': 'Project name *', 'กรอกชื่อโครงการ': 'Enter project name', 'ประเภทโครงการ': 'Project type',
+  'มูลค่ารวม': 'Total value', 'จำนวนกลุ่มเป้าหมาย': 'Target groups', 'เปิดอยู่': 'Open',
+  '+ สร้างกลุ่มเป้าหมาย': '+ New target group', 'สร้างกลุ่มเป้าหมายใหม่': 'New target group', 'ไม่มีกลุ่มเป้าหมาย': 'No target groups',
+  'ชื่อกลุ่มเป้าหมาย *': 'Target group name *', 'กรอกชื่อกลุ่มเป้าหมาย': 'Enter target group name', 'ประเภทกลุ่มเป้าหมาย': 'Target group type',
   'ชื่อสถานที่': 'Place name', 'สถานะเริ่มต้น': 'Initial stage', 'วันเริ่ม': 'Start date', 'วันสิ้นสุด': 'End date',
   'บันทึกเพิ่มเติม': 'Notes', 'กิจกรรม': 'Activities', 'วันเริ่ม-สิ้นสุด': 'Start - end',
   'สถานะ (ไปป์ไลน์)': 'Stage (pipeline)', 'เลื่อน': 'Move',
   // project detail
-  '← กลับรายการโครงการ': '← Back to projects', 'ข้อมูลโครงการ': 'Project info', 'ไปป์ไลน์': 'Pipeline',
+  '← กลับรายการกลุ่มเป้าหมาย': '← Back to target groups', 'ข้อมูลกลุ่มเป้าหมาย': 'Target group info', 'ไปป์ไลน์': 'Pipeline',
   'ถอยขั้น': 'Prev stage', 'เลื่อนขั้น': 'Next stage', 'ปิดการขายแล้ว': 'Closed won', 'ประเภท': 'Type',
   'ระยะเวลา': 'Duration', 'บันทึกย่อ': 'Notes', 'เอเจ้นท์ที่เกี่ยวข้อง': 'Related agents',
   // quotations
@@ -90,7 +90,7 @@ const EN = {
   'อ้างอิงใบเสนอราคา': 'Quotation ref', 'ยังไม่มีใบสั่งขาย — เลือกใบเสนอราคาด้านบนเพื่อแปลง': 'No sale orders yet — pick a quotation above to convert',
   // reports
   'อัตราชนะ (Win rate)': 'Win rate', 'ดีลปิดได้': 'Deals won', 'มูลค่าปิดได้': 'Won value',
-  'โครงการตามขั้นไปป์ไลน์': 'Projects by stage', 'ยอดตามเดือน (วันเริ่มโครงการ)': 'Monthly value (start date)',
+  'กลุ่มเป้าหมายตามขั้นไปป์ไลน์': 'Target groups by stage', 'ยอดตามเดือน (วันเริ่มกลุ่มเป้าหมาย)': 'Monthly value (start date)',
   'ยอดขายตามผู้รับผิดชอบ': 'Sales by owner', 'จำนวนดีล': 'Deals', 'ปิดได้ (มูลค่า)': 'Won (value)',
   'กำลังดำเนินการ': 'In progress', 'ยอดตามทีม': 'By team', 'ดีล': 'Deals',
   'งานติดตามตามพนักงาน': 'Activities by user', 'พนักงาน': 'User', 'รอ': 'Pending',
@@ -99,7 +99,7 @@ const EN = {
   'ทีม & ผู้ใช้งาน': 'Teams & users', 'แท็กเอเจ้นท์': 'Agent tags', '+ เพิ่มแท็ก': '+ Add tag',
   'แท็กกิจกรรม': 'Activity tags', 'ค่าตั้งต้นอื่น ๆ': 'Other defaults', 'ชื่อแท็กใหม่': 'New tag name',
   'แหล่งที่มา': 'Source', 'ประเภทเอเจ้นท์': 'Agent type', 'เกรดเอเจ้นท์': 'Agent grade', 'อื่น ๆ': 'Other',
-  'วิธีการติดต่อ': 'Contact methods', 'ประเภทงานติดตาม': 'Activity types', 'ประเภทโครงการ': 'Project types',
+  'วิธีการติดต่อ': 'Contact methods', 'ประเภทงานติดตาม': 'Activity types', 'ประเภทกลุ่มเป้าหมาย': 'Target group types',
   'เลือกรูป': 'Choose photo',
   'ถ่ายรูป': 'Take photo',
   'เช็คอิน': 'Check-in',
@@ -119,7 +119,7 @@ const EN = {
   'แผนที่': 'Map',
   'ยังไม่ออก': 'Still in',
   'ยังไม่มีประวัติ': 'No history yet',
-  'โครงการที่คุย': 'Project discussed',
+  'กลุ่มเป้าหมายที่คุย': 'Target group discussed',
   'ถ้ามี': 'optional',
   '- ไม่ระบุ -': '- none -',
   'ติดต่อมา': 'Inbound',

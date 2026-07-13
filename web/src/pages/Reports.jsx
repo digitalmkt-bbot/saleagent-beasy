@@ -19,9 +19,9 @@ export default function Reports() {
         <div className="card"><div className="label">{t('มูลค่าไปป์ไลน์')}</div><div className="value" style={{ fontSize: 18 }}>{baht(d.win.open_value)}</div></div>
       </div>
       <div className="grid2">
-        <div className="panel"><h3 style={{ marginTop: 0 }}>{t('โครงการตามขั้นไปป์ไลน์')}</h3>
+        <div className="panel"><h3 style={{ marginTop: 0 }}>{t('กลุ่มเป้าหมายตามขั้นไปป์ไลน์')}</h3>
           {d.funnel.map(f => <div className="stage" key={f.seq}><div style={{ width: 210, fontSize: 13 }}>{f.seq}. {f.name}</div><span className="bartrack" style={{ maxWidth: 200 }}><span className="bar" style={{ width: Math.round(f.cnt / maxF * 100) + '%' }} /></span><div style={{ fontSize: 13 }}>{f.cnt} · {baht(f.value)}</div></div>)}</div>
-        <div className="panel"><h3 style={{ marginTop: 0 }}>{t('ยอดตามเดือน (วันเริ่มโครงการ)')}</h3>
+        <div className="panel"><h3 style={{ marginTop: 0 }}>{t('ยอดตามเดือน (วันเริ่มกลุ่มเป้าหมาย)')}</h3>
           {d.monthly.length ? d.monthly.map(m => <div className="stage" key={m.month}><div style={{ width: 80, fontSize: 13 }}>{m.month}</div><span className="bartrack" style={{ maxWidth: 200 }}><span className="bar" style={{ width: Math.round((+m.value) / maxM * 100) + '%' }} /></span><div style={{ fontSize: 13 }}>{m.deals} · {baht(m.value)}</div></div>) : <div className="muted">-</div>}</div>
       </div>
       <div className="panel"><h3 style={{ marginTop: 0 }}>{t('ยอดขายตามผู้รับผิดชอบ')}</h3>

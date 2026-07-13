@@ -49,7 +49,7 @@ export default function Activities() {
       </div>
       <div className="toolbar">
         <button className="btn green" onClick={() => setModal({})}>{t('+ กิจกรรม')}</button>
-        <input placeholder={t('ค้นหา รายละเอียด/เอเจ้นท์/โครงการ')} value={f.search} onChange={e => set('search', e.target.value)} onKeyDown={e => e.key === 'Enter' && load()} />
+        <input placeholder={t('ค้นหา รายละเอียด/เอเจ้นท์/กลุ่มเป้าหมาย')} value={f.search} onChange={e => set('search', e.target.value)} onKeyDown={e => e.key === 'Enter' && load()} />
         <select value={f.status} onChange={e => set('status', e.target.value)}><option value="">{t('สถานะ: ทั้งหมด')}</option><option value="pending">{t('รอดำเนินการ')}</option><option value="done">{t('เสร็จสิ้น')}</option></select>
         <select value={f.type} onChange={e => set('type', e.target.value)}><option value="">{t('ประเภท: ทั้งหมด')}</option>{meta.types.map((x, i) => <option key={i} value={i}>{x}</option>)}</select>
         <select value={f.sort} onChange={e => set('sort', e.target.value)}><option value="due">{t('เรียง: กำหนดเวลา')}</option><option value="priority">{t('เรียง: ความสำคัญ')}</option></select>
@@ -59,7 +59,7 @@ export default function Activities() {
           <div key={k} className={'tab' + (f.bucket === k ? ' active' : '')} onClick={() => set('bucket', k)}>{t(l)} ({n || 0})</div>))}
       </div>
       <div className="panel">
-        <table><thead><tr><th>{t('กำหนด')}</th><th>{t('เอเจ้นท์')}</th><th>{t('โครงการ')}</th><th>{t('ทิศทาง')}</th><th>{t('ประเภท')}</th><th>{t('วิธี')}</th><th>{t('สำคัญ')}</th><th>{t('รายละเอียด')}</th><th>{t('แท็ก')}</th><th>{t('ผู้รับผิดชอบ')}</th><th>{t('สถานะ')}</th><th></th></tr></thead>
+        <table><thead><tr><th>{t('กำหนด')}</th><th>{t('เอเจ้นท์')}</th><th>{t('กลุ่มเป้าหมาย')}</th><th>{t('ทิศทาง')}</th><th>{t('ประเภท')}</th><th>{t('วิธี')}</th><th>{t('สำคัญ')}</th><th>{t('รายละเอียด')}</th><th>{t('แท็ก')}</th><th>{t('ผู้รับผิดชอบ')}</th><th>{t('สถานะ')}</th><th></th></tr></thead>
           <tbody>{data.rows.map(a => { const d = DIR[a.direction] || ['-', 'gray']; return (
             <tr key={a.id}>
               <td>{(a.due_at || a.activity_at || '').slice(0, 10)}{a.activity_time && <div className="muted">{a.activity_time}</div>}</td>
@@ -146,8 +146,8 @@ function ActivityModal({ meta, t, edit, onClose, onSaved }) {
         <div><label>{t('ผู้รับผิดชอบ')}</label><select value={f.assignee_user_id} onChange={e => set('assignee_user_id', e.target.value)}><option value="">-</option>{meta.users.map(u => <option key={u.id} value={u.id}>{u.display_name}</option>)}</select></div>
       </div>
       <div className="row">
-        <div><label>{t('โครงการ')}</label><select value={f.project_id} onChange={e => set('project_id', e.target.value)}><option value="">-</option>{meta.projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
-        <div><label>{t('สถานะโครงการ')}</label><select value={f.stage_id} onChange={e => set('stage_id', e.target.value)}><option value="">-</option>{meta.stages.map(s => <option key={s.id} value={s.id}>{s.seq}. {s.name}</option>)}</select></div>
+        <div><label>{t('กลุ่มเป้าหมาย')}</label><select value={f.project_id} onChange={e => set('project_id', e.target.value)}><option value="">-</option>{meta.projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
+        <div><label>{t('สถานะกลุ่มเป้าหมาย')}</label><select value={f.stage_id} onChange={e => set('stage_id', e.target.value)}><option value="">-</option>{meta.stages.map(s => <option key={s.id} value={s.id}>{s.seq}. {s.name}</option>)}</select></div>
       </div>
       <label>{t('รายละเอียดการติดต่อ')}</label><textarea rows="3" value={f.detail} onChange={e => set('detail', e.target.value)} />
       <label>{t('@ แท็กเพื่อนร่วมงาน')}</label><div>{meta.users.map(u => <span key={u.id} className={'chip' + (mentions.includes(u.id) ? ' on' : '')} onClick={() => toggle(mentions, setMentions, u.id)}>@{u.display_name}</span>)}</div>

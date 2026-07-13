@@ -32,10 +32,10 @@ export default function CustomerDetail() {
           {c.branches.map(b => <div key={b.id} className="muted" style={{ padding: '4px 0' }}>{b.branch_name}: {b.address} {b.province}</div>)}
         </div>
       </div>
-      <div className="panel"><h3 style={{ marginTop: 0 }}>{t('โครงการของเอเจ้นท์')} ({c.projects.length})</h3>
-        <table><thead><tr><th>{t('รหัส')}</th><th>{t('โครงการ')}</th><th>{t('สถานะ')}</th><th>{t('มูลค่า')}</th></tr></thead>
+      <div className="panel"><h3 style={{ marginTop: 0 }}>{t('กลุ่มเป้าหมายของเอเจ้นท์')} ({c.projects.length})</h3>
+        <table><thead><tr><th>{t('รหัส')}</th><th>{t('กลุ่มเป้าหมาย')}</th><th>{t('สถานะ')}</th><th>{t('มูลค่า')}</th></tr></thead>
           <tbody>{c.projects.map(p => <tr key={p.id}><td>{p.code}</td><td><a onClick={() => nav('/projects/' + p.id)}>{p.name}</a></td><td><span className={'pill ' + (p.is_open ? 'blue' : 'green')}>{p.stage_seq}. {p.stage_name}</span></td><td>{baht(p.estimated_value)}</td></tr>)}
-            {!c.projects.length && <tr><td colSpan="4" className="muted">{t('ยังไม่มีโครงการ')}</td></tr>}</tbody></table></div>
+            {!c.projects.length && <tr><td colSpan="4" className="muted">{t('ยังไม่มีกลุ่มเป้าหมาย')}</td></tr>}</tbody></table></div>
       <div className="panel"><h3 style={{ marginTop: 0 }}>Timeline {t('งานติดตาม')} ({c.activities.length})</h3>
         {c.activities.map(a => <TL key={a.id} a={a} />)}
         {!c.activities.length && <div className="muted">{t('ยังไม่มีกิจกรรม')}</div>}</div>

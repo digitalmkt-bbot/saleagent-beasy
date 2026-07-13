@@ -1,4 +1,4 @@
-// seed สะอาด: สร้างเฉพาะบริษัท + admin 1 คน + ค่าตั้งต้น (ไม่มีเอเจ้นท์/โครงการตัวอย่าง)
+// seed สะอาด: สร้างเฉพาะบริษัท + admin 1 คน + ค่าตั้งต้น (ไม่มีเอเจ้นท์/กลุ่มเป้าหมายตัวอย่าง)
 // ตั้งค่าได้ผ่าน env: COMPANY_NAME, ADMIN_EMAIL, ADMIN_PASSWORD
 require('dotenv').config();
 const bcrypt = require('bcryptjs');
@@ -35,7 +35,7 @@ async function main() {
   for (const name of ['สนใจ','ขอใบเสนอราคา','ขอคิดดูก่อน','ต่อรองราคา','ปิดการขาย','ไม่สนใจ']) await q('INSERT INTO tag (company_id,name,scope) VALUES ($1,$2,\'activity\')', [co, name]);
 
   console.log(`เสร็จ! เข้าระบบด้วย ${adminEmail} / ${adminPass}`);
-  console.log('ค่าตั้งต้นพร้อม (ไปป์ไลน์ 8 ขั้น, แท็ก, วิธีติดต่อ) — ยังไม่มีเอเจ้นท์/โครงการ');
+  console.log('ค่าตั้งต้นพร้อม (ไปป์ไลน์ 8 ขั้น, แท็ก, วิธีติดต่อ) — ยังไม่มีเอเจ้นท์/กลุ่มเป้าหมาย');
   console.log('นำเข้าเอเจ้นท์ได้ด้วย: npm run import:customers -- path/to/customers.csv');
 }
 module.exports = { run: main };

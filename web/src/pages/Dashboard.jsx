@@ -103,7 +103,7 @@ export default function Dashboard() {
       <div className="cards" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))' }}>
         <Stat label={t('ปิดการขายแล้ว')} value={kfmt(d.projects.won_value)} sub={`${win.won} ${t('ดีล')}`} subUp badge="i" icon="trophy" chart={<DotWave />} live />
         <Stat label={t('เอเจ้นท์ทั้งหมด')} value={d.customers.total} sub={`${t('ใหม่')} +${d.customers.new}`} subUp badge="b" icon="users" chart={<DotGrid />} />
-        <Stat label={t('มูลค่าไปป์ไลน์')} value={kfmt(d.projects.pipeline_value)} sub={`${d.projects.open} ${t('โครงการ')}`} subUp badge="a" icon="coins" chart={<AreaMini data={monthly} />} />
+        <Stat label={t('มูลค่าไปป์ไลน์')} value={kfmt(d.projects.pipeline_value)} sub={`${d.projects.open} ${t('กลุ่มเป้าหมาย')}`} subUp badge="a" icon="coins" chart={<AreaMini data={monthly} />} />
         <Stat label="Win rate" value={win.winRate + '%'} sub={`${win.won}/${win.won + (win.open || 0)}`} subUp badge="p" icon="target" chart={<DotLine />} />
         <Stat label={t('งานติดตามค้าง')} value={d.activities.pending} sub={`${d.activities.overdue} ${t('เกินกำหนด')}`} subUp={d.activities.overdue === 0} badge="r" icon="clock" chart={<BarsMini />} />
         <Stat label={t('สุขภาพการขาย')} value={hexAvg} sub={`${onTime}% ${t('งานตรงเวลา')}`} subUp badge="p" icon="gauge" chart={<Gauge value={win.winRate} />} />
@@ -120,7 +120,7 @@ export default function Dashboard() {
         </div>
         <div className="panel">
           <div className="panel-head"><h3>{t('ไปป์ไลน์การขาย')}</h3></div>
-          {funnel.length ? <Funnel stages={funnel} /> : <div className="empty">{t('ยังไม่มีโครงการในไปป์ไลน์')}</div>}
+          {funnel.length ? <Funnel stages={funnel} /> : <div className="empty">{t('ยังไม่มีกลุ่มเป้าหมายในไปป์ไลน์')}</div>}
         </div>
         <div className="panel">
           <div className="panel-head"><h3>{t('สุขภาพการขาย')}</h3></div>

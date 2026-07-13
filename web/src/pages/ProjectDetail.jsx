@@ -16,13 +16,13 @@ export default function ProjectDetail() {
   async function move(dir) { const next = Math.min(8, Math.max(1, (p.stage_seq || 1) + dir)); const st = stages.find(s => s.seq === next); if (st) { await api('/projects/' + id, { method: 'PUT', body: { stage_id: st.id, is_open: next < 8 } }); load(); } }
   return (
     <div>
-      <span className="back" onClick={() => nav('/projects')}>{t('← กลับรายการโครงการ')}</span>
+      <span className="back" onClick={() => nav('/projects')}>{t('← กลับรายการกลุ่มเป้าหมาย')}</span>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
         <h1 className="page" style={{ margin: 0 }}>{p.name}</h1>
         <span>{p.stage_seq > 1 && <button className="btn ghost sm" onClick={() => move(-1)}>◀ {t('ถอยขั้น')}</button>} {p.stage_seq < 8 ? <button className="btn sm" onClick={() => move(1)}>{t('เลื่อนขั้น')} ▶</button> : <span className="pill green">{t('ปิดการขายแล้ว')}</span>}</span>
       </div>
       <div className="grid2">
-        <div className="panel"><h3 style={{ marginTop: 0 }}>{t('ข้อมูลโครงการ')}</h3><table><tbody>
+        <div className="panel"><h3 style={{ marginTop: 0 }}>{t('ข้อมูลกลุ่มเป้าหมาย')}</h3><table><tbody>
           <tr><td className="muted">{t('รหัส')}</td><td>{p.code}</td></tr>
           <tr><td className="muted">{t('เอเจ้นท์')}</td><td><a onClick={() => nav('/customers/' + p.customer_id)}>{p.customer_name}</a></td></tr>
           <tr><td className="muted">{t('ประเภท')}</td><td>{p.type_name || '-'}</td></tr>

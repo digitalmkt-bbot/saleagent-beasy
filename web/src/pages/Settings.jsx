@@ -37,7 +37,7 @@ export default function Settings() {
       <div className="panel"><h3 style={{ marginTop: 0 }}>{t('ค่าตั้งต้นอื่น ๆ')}</h3>
         <div className="muted">{t('วิธีการติดต่อ')}: {(lk.contact_method || []).map(m => m.name).join(', ')}</div>
         <div className="muted">{t('ประเภทงานติดตาม')}: {(lk.activity_types || []).join(', ')}</div>
-        <div className="muted">{t('ประเภทโครงการ')}: {(lk.project_type || []).map(x => x.name).join(', ')}</div></div>
+        <div className="muted">{t('ประเภทกลุ่มเป้าหมาย')}: {(lk.project_type || []).map(x => x.name).join(', ')}</div></div>
     </div>
   );
 }

@@ -109,7 +109,7 @@ export default function Checkin() {
             <option value="">{t('- เลือกเอเจ้นท์ -')}</option>
             {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
-          <label style={{ marginTop: 10, display: 'block' }}>{t('โครงการที่คุย')} ({t('ถ้ามี')})</label>
+          <label style={{ marginTop: 10, display: 'block' }}>{t('กลุ่มเป้าหมายที่คุย')} ({t('ถ้ามี')})</label>
           <select value={pid} onChange={e => setPid(e.target.value)}>
             <option value="">{t('- ไม่ระบุ -')}</option>
             {projects.filter(p => !cid || String(p.customer_id) === String(cid)).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -130,7 +130,7 @@ export default function Checkin() {
       <h3 style={{ margin: '22px 0 10px' }}>{t('ประวัติเช็คอิน')}</h3>
       <div className="panel">
         <table>
-          <thead><tr><th>{t('เอเจ้นท์')}</th><th>{t('โครงการ')}</th><th>{t('เช็คอิน')}</th><th>{t('เช็คเอาท์')}</th><th>{t('ระยะเวลา')}</th><th>{t('รูป')}</th><th>{t('แผนที่')}</th></tr></thead>
+          <thead><tr><th>{t('เอเจ้นท์')}</th><th>{t('กลุ่มเป้าหมาย')}</th><th>{t('เช็คอิน')}</th><th>{t('เช็คเอาท์')}</th><th>{t('ระยะเวลา')}</th><th>{t('รูป')}</th><th>{t('แผนที่')}</th></tr></thead>
           <tbody>
             {history.length ? history.map(h => (
               <tr key={h.id}>
