@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api, baht } from '../api.js';
-import { LIFE, DIR, Stars } from '../lib.jsx';
+import { LIFE, DIR, Stars, Img} from '../lib.jsx';
 import { useI18n } from '../i18n.jsx';
 
 export default function CustomerDetail() {
@@ -46,5 +46,5 @@ export function TL({ a }) {
   const { t } = useI18n();
   const d = DIR[a.direction] || ['-', 'gray'];
   return <div className="tl"><div style={{ fontSize: 13, color: '#556' }}><b>{(a.activity_at || '').slice(0, 10)} {a.activity_time || ''}</b> · <span className={'pill ' + d[1]}>{t(d[0])}</span> · {a.method_name} · <span className={'pill ' + (a.status === 'done' ? 'green' : 'orange')}>{a.status === 'done' ? t('เสร็จสิ้น') : t('รอ')}</span></div>
-    <div style={{ margin: '5px 0' }}>{a.detail}</div>{(a.tags || []).map((x, i) => <span key={i} className="pill orange">{x}</span>)}{a.image_url && <div><img src={a.image_url} style={{ maxHeight: 70, borderRadius: 6, marginTop: 6 }} /></div>}</div>;
+    <div style={{ margin: '5px 0' }}>{a.detail}</div>{(a.tags || []).map((x, i) => <span key={i} className="pill orange">{x}</span>)}{a.image_url && <div style={{ marginTop: 6 }}><Img src={a.image_url} h={90} /></div>}</div>;
 }

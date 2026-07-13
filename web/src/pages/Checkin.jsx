@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import { useI18n } from '../i18n.jsx';
+import { Img } from '../lib.jsx';
 
 function getGeo() {
   return new Promise(resolve => {
@@ -96,7 +97,7 @@ export default function Checkin() {
           <div style={{ fontSize: 22, fontWeight: 800, margin: '4px 0 2px' }}>{active.customer_name || '-'}</div>
           {active.project_name && <div className="muted" style={{ marginTop: 2 }}>📁 {active.project_name}</div>}
           <div className="muted">{t('เช็คอินเมื่อ')} {fmtDT(active.check_in_at)} · {t('ผ่านไป')} {durTxt(active.check_in_at)}</div>
-          {active.image_url && <div style={{ marginTop: 8 }}><img src={active.image_url} style={{ maxHeight: 120, borderRadius: 10 }} /></div>}
+          {active.image_url && <div style={{ marginTop: 8 }}><Img src={active.image_url} h={120} /></div>}
           {mapUrl(active.check_in_lat, active.check_in_lng) &&
             <div style={{ marginTop: 6 }}><a href={mapUrl(active.check_in_lat, active.check_in_lng)} target="_blank" rel="noreferrer">📍 {t('ดูตำแหน่งเช็คอินบนแผนที่')}</a></div>}
           <button className="btn" style={{ width: '100%', marginTop: 14, padding: 14, fontSize: 16, background: 'var(--red)' }} disabled={busy} onClick={checkOut}>{busy ? '...' : t('เช็คเอาท์')}</button>
@@ -138,7 +139,7 @@ export default function Checkin() {
                 <td>{fmtDT(h.check_in_at)}</td>
                 <td>{h.check_out_at ? fmtT(h.check_out_at) : <span className="pill orange">{t('ยังไม่ออก')}</span>}</td>
                 <td>{durTxt(h.check_in_at, h.check_out_at)}</td>
-                <td>{h.image_url ? <img src={h.image_url} style={{ height: 34, borderRadius: 5 }} /> : '-'}</td>
+                <td>{h.image_url ? <Img src={h.image_url} h={38} /> : '-'}</td>
                 <td>{mapUrl(h.check_in_lat, h.check_in_lng) ? <a href={mapUrl(h.check_in_lat, h.check_in_lng)} target="_blank" rel="noreferrer">📍</a> : '-'}</td>
               </tr>
             )) : <tr><td colSpan="7" className="muted">{t('ยังไม่มีประวัติ')}</td></tr>}
