@@ -19,7 +19,7 @@ const I = {
 const Ic = ({ d }) => <span className="ico"><svg viewBox="0 0 24 24"><path d={d} /></svg></span>;
 
 const sections = [
-  ['เมนูหลัก', [['/', 'แผงบริหาร', 'dashboard'], ['/activities', 'งานติดตาม', 'checklist'], ['/checkin', 'เช็คอินลูกค้า', 'pin'], ['/customers', 'ลูกค้า', 'users'], ['/projects', 'โครงการ', 'briefcase']]],
+  ['เมนูหลัก', [['/', 'แผงบริหาร', 'dashboard'], ['/activities', 'งานติดตาม', 'checklist'], ['/checkin', 'เช็คอินเอเจ้นท์', 'pin'], ['/customers', 'เอเจ้นท์', 'users'], ['/projects', 'โครงการ', 'briefcase']]],
   ['เอกสาร & รายงาน', [['/quotations', 'ใบเสนอราคา', 'file'], ['/saleorders', 'ใบสั่งขาย', 'cart'], ['/reports', 'รายงาน', 'chart'], ['/settings', 'ตั้งค่า', 'sliders']]],
 ];
 

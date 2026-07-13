@@ -15,7 +15,7 @@ export default function Quotations() {
       <h1 className="page">{t('ใบเสนอราคา')}</h1>
       <div className="toolbar"><button className="btn green" onClick={() => setShow(true)}>{t('+ สร้างใบเสนอราคา')}</button></div>
       <div className="panel">
-        <table><thead><tr><th>{t('เลขที่')}</th><th>{t('ลูกค้า')}</th><th>{t('โครงการ')}</th><th>{t('ยอดรวม')}</th><th>{t('สถานะ')}</th><th>{t('วันที่')}</th></tr></thead>
+        <table><thead><tr><th>{t('เลขที่')}</th><th>{t('เอเจ้นท์')}</th><th>{t('โครงการ')}</th><th>{t('ยอดรวม')}</th><th>{t('สถานะ')}</th><th>{t('วันที่')}</th></tr></thead>
           <tbody>{rows.map(q => { const s = ST[q.status] || ['-', 'gray']; return <tr key={q.id}><td>{q.code}</td><td>{q.customer_name}</td><td>{q.project_name}</td><td>{baht(q.grand_total)}</td><td><span className={'pill ' + s[1]}>{t(s[0])}</span></td><td>{(q.issue_date || '').slice(0, 10)}</td></tr>; })}
             {!rows.length && <tr><td colSpan="6" className="muted">{t('ยังไม่มีใบเสนอราคา')}</td></tr>}</tbody></table>
       </div>
@@ -37,7 +37,7 @@ function QModal({ meta, t, onClose, onSaved }) {
     <div className="modal-bg" onClick={onClose}><div className="modal" onClick={e => e.stopPropagation()}>
       <h3 style={{ marginTop: 0 }}>{t('สร้างใบเสนอราคา')}</h3>
       <div className="row"><div><label>{t('โครงการ')}</label><select value={f.project_id} onChange={e => { const p = meta.projects.find(x => String(x.id) === e.target.value); set('project_id', e.target.value); if (p) set('customer_id', p.customer_id); }}><option value="">-</option>{meta.projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
-        <div><label>{t('ลูกค้า')}</label><select value={f.customer_id} onChange={e => set('customer_id', e.target.value)}><option value="">-</option>{meta.customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div></div>
+        <div><label>{t('เอเจ้นท์')}</label><select value={f.customer_id} onChange={e => set('customer_id', e.target.value)}><option value="">-</option>{meta.customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div></div>
       <div className="row"><div><label>{t('รายการ')}</label><input value={f.description} onChange={e => set('description', e.target.value)} placeholder={t('เช่น แพ็กเกจ 4 เกาะ')} /></div>
         <div><label>{t('จำนวน')}</label><input type="number" value={f.qty} onChange={e => set('qty', e.target.value)} /></div>
         <div><label>{t('ราคา/หน่วย')}</label><input type="number" value={f.unit_price} onChange={e => set('unit_price', e.target.value)} /></div></div>

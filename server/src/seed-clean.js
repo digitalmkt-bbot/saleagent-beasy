@@ -1,4 +1,4 @@
-// seed สะอาด: สร้างเฉพาะบริษัท + admin 1 คน + ค่าตั้งต้น (ไม่มีลูกค้า/โครงการตัวอย่าง)
+// seed สะอาด: สร้างเฉพาะบริษัท + admin 1 คน + ค่าตั้งต้น (ไม่มีเอเจ้นท์/โครงการตัวอย่าง)
 // ตั้งค่าได้ผ่าน env: COMPANY_NAME, ADMIN_EMAIL, ADMIN_PASSWORD
 require('dotenv').config();
 const bcrypt = require('bcryptjs');
@@ -26,7 +26,7 @@ async function main() {
   await q(`INSERT INTO chat_channel (name) VALUES ('LINE'),('Facebook'),('WhatsApp'),('WeChat')`);
   await q(`INSERT INTO contact_method (company_id,name) VALUES ($1,'โทร'),($1,'อีเมล'),($1,'เข้าพบ'),($1,'LINE'),($1,'ประชุมออนไลน์')`, [co]);
 
-  const stages = ['ลูกค้าติดต่อเข้ามา/ เซลล์ติดต่อหาลูกค้า','ทำนัดนำเสนอบริการ','เข้าพบ/ นำเสนอบริการ','สร้างและส่งใบเสนอราคา','ติดตามการขาย','ลูกค้าตกลงซื้อบริการ','ติดตามการชำระเงิน','ปิดการขาย'];
+  const stages = ['เอเจ้นท์ติดต่อเข้ามา/ เซลล์ติดต่อหาเอเจ้นท์','ทำนัดนำเสนอบริการ','เข้าพบ/ นำเสนอบริการ','สร้างและส่งใบเสนอราคา','ติดตามการขาย','เอเจ้นท์ตกลงซื้อบริการ','ติดตามการชำระเงิน','ปิดการขาย'];
   for (let i = 0; i < stages.length; i++)
     await q('INSERT INTO pipeline_stage (id,company_id,seq,name,is_won) VALUES ($1,$2,$3,$4,$5)', [i + 1, co, i + 1, stages[i], i === 7]);
 
@@ -35,8 +35,8 @@ async function main() {
   for (const name of ['สนใจ','ขอใบเสนอราคา','ขอคิดดูก่อน','ต่อรองราคา','ปิดการขาย','ไม่สนใจ']) await q('INSERT INTO tag (company_id,name,scope) VALUES ($1,$2,\'activity\')', [co, name]);
 
   console.log(`เสร็จ! เข้าระบบด้วย ${adminEmail} / ${adminPass}`);
-  console.log('ค่าตั้งต้นพร้อม (ไปป์ไลน์ 8 ขั้น, แท็ก, วิธีติดต่อ) — ยังไม่มีลูกค้า/โครงการ');
-  console.log('นำเข้าลูกค้าได้ด้วย: npm run import:customers -- path/to/customers.csv');
+  console.log('ค่าตั้งต้นพร้อม (ไปป์ไลน์ 8 ขั้น, แท็ก, วิธีติดต่อ) — ยังไม่มีเอเจ้นท์/โครงการ');
+  console.log('นำเข้าเอเจ้นท์ได้ด้วย: npm run import:customers -- path/to/customers.csv');
 }
 module.exports = { run: main };
 if (require.main === module) {

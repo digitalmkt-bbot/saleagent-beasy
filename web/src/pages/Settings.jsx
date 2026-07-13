@@ -21,7 +21,7 @@ export default function Settings() {
   useEffect(() => { load(); }, []);
   async function addTag(scope) { const name = prompt(t('ชื่อแท็กใหม่')); if (!name) return; await api('/tags', { method: 'POST', body: { name, scope, tag_group: scope === 'customer' ? 'other' : null } }); load(); }
   const groups = ctags.reduce((a, x) => { (a[x.tag_group || 'other'] = a[x.tag_group || 'other'] || []).push(x); return a; }, {});
-  const gLabel = { source: 'แหล่งที่มา', type: 'ประเภทลูกค้า', grade: 'เกรดลูกค้า', other: 'อื่น ๆ' };
+  const gLabel = { source: 'แหล่งที่มา', type: 'ประเภทเอเจ้นท์', grade: 'เกรดเอเจ้นท์', other: 'อื่น ๆ' };
   return (
     <div>
       <h1 className="page">{t('ตั้งค่า')}</h1>
@@ -30,7 +30,7 @@ export default function Settings() {
         <div className="panel"><h3 style={{ marginTop: 0 }}>{t('ทีม & ผู้ใช้งาน')}</h3>
           {teams.map(x => <div key={x.id} style={{ marginBottom: 8 }}><b>{x.name}</b><div className="muted">{users.filter(u => u.team_id === x.id).map(u => u.display_name + ' (' + u.role + ')').join(', ')}</div></div>)}</div>
       </div>
-      <div className="panel"><div style={{ display: 'flex', justifyContent: 'space-between' }}><h3 style={{ marginTop: 0 }}>{t('แท็กลูกค้า')}</h3><button className="btn ghost sm" onClick={() => addTag('customer')}>{t('+ เพิ่มแท็ก')}</button></div>
+      <div className="panel"><div style={{ display: 'flex', justifyContent: 'space-between' }}><h3 style={{ marginTop: 0 }}>{t('แท็กเอเจ้นท์')}</h3><button className="btn ghost sm" onClick={() => addTag('customer')}>{t('+ เพิ่มแท็ก')}</button></div>
         {Object.entries(groups).map(([g, ts]) => <div key={g} style={{ marginBottom: 10 }}><div className="muted">{t(gLabel[g] || g)}</div><div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{ts.map(x => <span key={x.id} className="pill blue">{x.name}</span>)}</div></div>)}</div>
       <div className="panel"><div style={{ display: 'flex', justifyContent: 'space-between' }}><h3 style={{ marginTop: 0 }}>{t('แท็กกิจกรรม')}</h3><button className="btn ghost sm" onClick={() => addTag('activity')}>{t('+ เพิ่มแท็ก')}</button></div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{atags.map(x => <span key={x.id} className="pill orange">{x.name}</span>)}</div></div>

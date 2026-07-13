@@ -13,10 +13,10 @@ export default function CustomerDetail() {
   const l = LIFE[c.lifecycle_stage] || ['-', 'gray'];
   return (
     <div>
-      <span className="back" onClick={() => nav('/customers')}>{t('← กลับรายการลูกค้า')}</span>
+      <span className="back" onClick={() => nav('/customers')}>{t('← กลับรายการเอเจ้นท์')}</span>
       <h1 className="page">{c.name}</h1>
       <div className="grid2">
-        <div className="panel"><h3 style={{ marginTop: 0 }}>{t('ข้อมูลลูกค้า')}</h3><table><tbody>
+        <div className="panel"><h3 style={{ marginTop: 0 }}>{t('ข้อมูลเอเจ้นท์')}</h3><table><tbody>
           <tr><td className="muted">{t('สถานะ')}</td><td><span className={'pill ' + l[1]}>{t(l[0])}</span></td></tr>
           <tr><td className="muted">{t('รหัสอ้างอิง')}</td><td>{c.ref_code || '-'}</td></tr>
           <tr><td className="muted">{t('เลขผู้เสียภาษี')}</td><td>{c.tax_id || '-'}</td></tr>
@@ -32,7 +32,7 @@ export default function CustomerDetail() {
           {c.branches.map(b => <div key={b.id} className="muted" style={{ padding: '4px 0' }}>{b.branch_name}: {b.address} {b.province}</div>)}
         </div>
       </div>
-      <div className="panel"><h3 style={{ marginTop: 0 }}>{t('โครงการของลูกค้า')} ({c.projects.length})</h3>
+      <div className="panel"><h3 style={{ marginTop: 0 }}>{t('โครงการของเอเจ้นท์')} ({c.projects.length})</h3>
         <table><thead><tr><th>{t('รหัส')}</th><th>{t('โครงการ')}</th><th>{t('สถานะ')}</th><th>{t('มูลค่า')}</th></tr></thead>
           <tbody>{c.projects.map(p => <tr key={p.id}><td>{p.code}</td><td><a onClick={() => nav('/projects/' + p.id)}>{p.name}</a></td><td><span className={'pill ' + (p.is_open ? 'blue' : 'green')}>{p.stage_seq}. {p.stage_name}</span></td><td>{baht(p.estimated_value)}</td></tr>)}
             {!c.projects.length && <tr><td colSpan="4" className="muted">{t('ยังไม่มีโครงการ')}</td></tr>}</tbody></table></div>

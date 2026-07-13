@@ -24,7 +24,7 @@ export default function Activities() {
   }, []);
 
   const b = data.buckets || {};
-  const tLabel = { new_customer: 'ลูกค้าใหม่', opportunity: 'โอกาส', sales: 'ยอดขาย', profit: 'กำไร' };
+  const tLabel = { new_customer: 'เอเจ้นท์ใหม่', opportunity: 'โอกาส', sales: 'ยอดขาย', profit: 'กำไร' };
   async function done(id) { await api('/activities/' + id, { method: 'PATCH', body: { status: 'done' } }); load(); }
   async function del(id) { if (confirm(t('ลบกิจกรรมนี้?'))) { await api('/activities/' + id, { method: 'DELETE' }); load(); } }
 
@@ -49,7 +49,7 @@ export default function Activities() {
       </div>
       <div className="toolbar">
         <button className="btn green" onClick={() => setModal({})}>{t('+ กิจกรรม')}</button>
-        <input placeholder={t('ค้นหา รายละเอียด/ลูกค้า/โครงการ')} value={f.search} onChange={e => set('search', e.target.value)} onKeyDown={e => e.key === 'Enter' && load()} />
+        <input placeholder={t('ค้นหา รายละเอียด/เอเจ้นท์/โครงการ')} value={f.search} onChange={e => set('search', e.target.value)} onKeyDown={e => e.key === 'Enter' && load()} />
         <select value={f.status} onChange={e => set('status', e.target.value)}><option value="">{t('สถานะ: ทั้งหมด')}</option><option value="pending">{t('รอดำเนินการ')}</option><option value="done">{t('เสร็จสิ้น')}</option></select>
         <select value={f.type} onChange={e => set('type', e.target.value)}><option value="">{t('ประเภท: ทั้งหมด')}</option>{meta.types.map((x, i) => <option key={i} value={i}>{x}</option>)}</select>
         <select value={f.sort} onChange={e => set('sort', e.target.value)}><option value="due">{t('เรียง: กำหนดเวลา')}</option><option value="priority">{t('เรียง: ความสำคัญ')}</option></select>
@@ -59,7 +59,7 @@ export default function Activities() {
           <div key={k} className={'tab' + (f.bucket === k ? ' active' : '')} onClick={() => set('bucket', k)}>{t(l)} ({n || 0})</div>))}
       </div>
       <div className="panel">
-        <table><thead><tr><th>{t('กำหนด')}</th><th>{t('ลูกค้า')}</th><th>{t('โครงการ')}</th><th>{t('ทิศทาง')}</th><th>{t('ประเภท')}</th><th>{t('วิธี')}</th><th>{t('สำคัญ')}</th><th>{t('รายละเอียด')}</th><th>{t('แท็ก')}</th><th>{t('ผู้รับผิดชอบ')}</th><th>{t('สถานะ')}</th><th></th></tr></thead>
+        <table><thead><tr><th>{t('กำหนด')}</th><th>{t('เอเจ้นท์')}</th><th>{t('โครงการ')}</th><th>{t('ทิศทาง')}</th><th>{t('ประเภท')}</th><th>{t('วิธี')}</th><th>{t('สำคัญ')}</th><th>{t('รายละเอียด')}</th><th>{t('แท็ก')}</th><th>{t('ผู้รับผิดชอบ')}</th><th>{t('สถานะ')}</th><th></th></tr></thead>
           <tbody>{data.rows.map(a => { const d = DIR[a.direction] || ['-', 'gray']; return (
             <tr key={a.id}>
               <td>{(a.due_at || a.activity_at || '').slice(0, 10)}{a.activity_time && <div className="muted">{a.activity_time}</div>}</td>
@@ -120,7 +120,7 @@ function ActivityModal({ meta, t, edit, onClose, onSaved }) {
     e.target.value = '';
   }
   async function save(again) {
-    if (!f.customer_id) return setErr(t('เลือกลูกค้า'));
+    if (!f.customer_id) return setErr(t('เลือกเอเจ้นท์'));
     const body = { ...f, contact_id: f.contact_id || null, project_id: f.project_id || null, stage_id: f.stage_id || null,
       due_at: f.is_follow_up ? f.due_at : null, status: f.is_follow_up ? 'pending' : 'done', tag_ids: tagIds, mentions, image_url: image };
     try { if (edit) await api('/activities/' + edit.id, { method: 'PUT', body }); else await api('/activities', { method: 'POST', body }); onSaved(again); }
@@ -130,7 +130,7 @@ function ActivityModal({ meta, t, edit, onClose, onSaved }) {
     <div className="modal-bg" onClick={onClose}><div className="modal" onClick={e => e.stopPropagation()}>
       <h3 style={{ marginTop: 0 }}>{edit ? t('แก้ไขกิจกรรม') : t('สร้างบันทึกกิจกรรม')}</h3>
       <div className="row">
-        <div><label>{t('ชื่อกิจการ *')}</label><select value={f.customer_id} onChange={e => set('customer_id', e.target.value)}><option value="">{t('- เลือกลูกค้า -')}</option>{meta.customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
+        <div><label>{t('ชื่อกิจการ *')}</label><select value={f.customer_id} onChange={e => set('customer_id', e.target.value)}><option value="">{t('- เลือกเอเจ้นท์ -')}</option>{meta.customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
         <div><label>{t('ผู้ติดต่อ')}</label><select value={f.contact_id} onChange={e => set('contact_id', e.target.value)}><option value="">-</option>{contacts.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
       </div>
       <label>{t('ทิศทาง')}</label>

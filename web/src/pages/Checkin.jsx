@@ -68,7 +68,7 @@ export default function Checkin() {
   }, []);
 
   async function checkIn() {
-    if (!cid) { setMsg(t('เลือกลูกค้าก่อน')); return; }
+    if (!cid) { setMsg(t('เลือกเอเจ้นท์ก่อน')); return; }
     setBusy(true); setMsg(t('กำลังขอตำแหน่ง...'));
     const g = await getGeo();
     try {
@@ -88,8 +88,8 @@ export default function Checkin() {
 
   return (
     <div>
-      <h1 className="page">{t('เช็คอินลูกค้า')} 📍</h1>
-      <div className="page-sub">{t('เช็คอินตอนถึงลูกค้า แล้วเช็คเอาท์ตอนออก — บันทึกเวลาและพิกัดอัตโนมัติ')}</div>
+      <h1 className="page">{t('เช็คอินเอเจ้นท์')} 📍</h1>
+      <div className="page-sub">{t('เช็คอินตอนถึงเอเจ้นท์ แล้วเช็คเอาท์ตอนออก — บันทึกเวลาและพิกัดอัตโนมัติ')}</div>
 
       {active ? (
         <div className="card" style={{ background: 'var(--brand-tint)', border: '1px solid var(--brand)' }}>
@@ -104,9 +104,9 @@ export default function Checkin() {
         </div>
       ) : (
         <div className="card">
-          <label>{t('เลือกลูกค้า')}</label>
+          <label>{t('เลือกเอเจ้นท์')}</label>
           <select value={cid} onChange={e => setCid(e.target.value)}>
-            <option value="">{t('- เลือกลูกค้า -')}</option>
+            <option value="">{t('- เลือกเอเจ้นท์ -')}</option>
             {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
           <label style={{ marginTop: 10, display: 'block' }}>{t('โครงการที่คุย')} ({t('ถ้ามี')})</label>
@@ -130,7 +130,7 @@ export default function Checkin() {
       <h3 style={{ margin: '22px 0 10px' }}>{t('ประวัติเช็คอิน')}</h3>
       <div className="panel">
         <table>
-          <thead><tr><th>{t('ลูกค้า')}</th><th>{t('โครงการ')}</th><th>{t('เช็คอิน')}</th><th>{t('เช็คเอาท์')}</th><th>{t('ระยะเวลา')}</th><th>{t('รูป')}</th><th>{t('แผนที่')}</th></tr></thead>
+          <thead><tr><th>{t('เอเจ้นท์')}</th><th>{t('โครงการ')}</th><th>{t('เช็คอิน')}</th><th>{t('เช็คเอาท์')}</th><th>{t('ระยะเวลา')}</th><th>{t('รูป')}</th><th>{t('แผนที่')}</th></tr></thead>
           <tbody>
             {history.length ? history.map(h => (
               <tr key={h.id}>

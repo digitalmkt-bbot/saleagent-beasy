@@ -76,7 +76,7 @@ export default function Dashboard() {
   const regularPct = d.customers.total ? Math.round(((custs.filter(c => c.lifecycle_stage === 'regular').length) / d.customers.total) * 100) : 0;
   const hexMetrics = [
     { k: 'อัตราปิด', v: Math.min(100, win.winRate) }, { k: 'งานตรงเวลา', v: onTime },
-    { k: 'ไปป์ไลน์', v: Math.min(100, d.projects.open * 12) }, { k: 'ลูกค้าประจำ', v: Math.min(100, regularPct) },
+    { k: 'ไปป์ไลน์', v: Math.min(100, d.projects.open * 12) }, { k: 'เอเจ้นท์ประจำ', v: Math.min(100, regularPct) },
     { k: 'กิจกรรม', v: Math.min(100, (doneSum + pendSum) * 5) }, { k: 'มูลค่า', v: Math.min(100, Math.round(d.projects.won_value / 20000)) },
   ];
   const hexAvg = Math.round(hexMetrics.reduce((a, m) => a + m.v, 0) / hexMetrics.length);
@@ -102,7 +102,7 @@ export default function Dashboard() {
 
       <div className="cards" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))' }}>
         <Stat label={t('ปิดการขายแล้ว')} value={kfmt(d.projects.won_value)} sub={`${win.won} ${t('ดีล')}`} subUp badge="i" icon="trophy" chart={<DotWave />} live />
-        <Stat label={t('ลูกค้าทั้งหมด')} value={d.customers.total} sub={`${t('ใหม่')} +${d.customers.new}`} subUp badge="b" icon="users" chart={<DotGrid />} />
+        <Stat label={t('เอเจ้นท์ทั้งหมด')} value={d.customers.total} sub={`${t('ใหม่')} +${d.customers.new}`} subUp badge="b" icon="users" chart={<DotGrid />} />
         <Stat label={t('มูลค่าไปป์ไลน์')} value={kfmt(d.projects.pipeline_value)} sub={`${d.projects.open} ${t('โครงการ')}`} subUp badge="a" icon="coins" chart={<AreaMini data={monthly} />} />
         <Stat label="Win rate" value={win.winRate + '%'} sub={`${win.won}/${win.won + (win.open || 0)}`} subUp badge="p" icon="target" chart={<DotLine />} />
         <Stat label={t('งานติดตามค้าง')} value={d.activities.pending} sub={`${d.activities.overdue} ${t('เกินกำหนด')}`} subUp={d.activities.overdue === 0} badge="r" icon="clock" chart={<BarsMini />} />
@@ -161,9 +161,9 @@ export default function Dashboard() {
       </div>
 
       <div className="panel">
-        <div className="panel-head"><h3>{t('ลูกค้าที่ต้องดูแล')}</h3><a onClick={() => nav('/customers')} style={{ fontSize: 13 }}>{t('ดูทั้งหมด →')}</a></div>
+        <div className="panel-head"><h3>{t('เอเจ้นท์ที่ต้องดูแล')}</h3><a onClick={() => nav('/customers')} style={{ fontSize: 13 }}>{t('ดูทั้งหมด →')}</a></div>
         <table>
-          <thead><tr><th>{t('ลูกค้า')}</th><th>{t('คะแนนสุขภาพ')}</th><th>{t('สถานะ')}</th><th>{t('กิจกรรมล่าสุด')}</th><th>{t('ความเสี่ยง')}</th></tr></thead>
+          <thead><tr><th>{t('เอเจ้นท์')}</th><th>{t('คะแนนสุขภาพ')}</th><th>{t('สถานะ')}</th><th>{t('กิจกรรมล่าสุด')}</th><th>{t('ความเสี่ยง')}</th></tr></thead>
           <tbody>{risk.length ? risk.map(c => { const rl = riskLabel(c.score); return (<tr key={c.id}>
             <td><b>{c.name}</b></td>
             <td><span style={{ display: 'inline-block', minWidth: 34, textAlign: 'center', padding: '2px 8px', borderRadius: 8, fontWeight: 800, fontSize: 12, background: scoreColor(c.score) + '22', color: scoreColor(c.score) }}>{c.score}</span></td>

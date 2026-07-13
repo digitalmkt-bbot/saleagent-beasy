@@ -25,7 +25,7 @@ router.get('/active', wrap(async (req, res) => {
   res.json(r.rows[0] || null);
 }));
 
-// เช็คอิน + สร้างรายการ activity เชื่อมกับลูกค้า/โครงการ ให้ขึ้นใน Timeline
+// เช็คอิน + สร้างรายการ activity เชื่อมกับเอเจ้นท์/โครงการ ให้ขึ้นใน Timeline
 router.post('/', wrap(async (req, res) => {
   const b = req.body; const cid = req.user.company_id; const uid = req.user.id;
   const ck = (await q(`INSERT INTO checkin (company_id,customer_id,project_id,user_id,check_in_at,check_in_lat,check_in_lng,note,image_url)
@@ -48,7 +48,7 @@ router.put('/:id/checkout', wrap(async (req, res) => {
     [req.params.id, cid, b.lat ?? null, b.lng ?? null])).rows[0];
   if (!ck) return res.status(404).json({ error: 'not found or already checked out' });
   if (ck.activity_id) {
-    const detail = `📍 เยี่ยมลูกค้า (${bkk(ck.check_in_at)}–${bkk(ck.check_out_at)}, ${durTxt(ck.check_in_at, ck.check_out_at)})` + (ck.note ? (' — ' + ck.note) : '');
+    const detail = `📍 เยี่ยมเอเจ้นท์ (${bkk(ck.check_in_at)}–${bkk(ck.check_out_at)}, ${durTxt(ck.check_in_at, ck.check_out_at)})` + (ck.note ? (' — ' + ck.note) : '');
     await q('UPDATE activity SET detail=$1 WHERE id=$2 AND company_id=$3', [detail, ck.activity_id, cid]);
   }
   res.json(ck);

@@ -1,4 +1,4 @@
-// นำเข้าลูกค้าจากไฟล์ CSV -> npm run import:customers -- customers.csv
+// นำเข้าเอเจ้นท์จากไฟล์ CSV -> npm run import:customers -- customers.csv
 // คอลัมน์: name,ref_code,tax_id,phone,email,province,contact_name,contact_phone,contact_email
 require('dotenv').config();
 const fs = require('fs');
@@ -41,7 +41,7 @@ async function main() {
         [c.id, g('contact_name'), g('contact_phone'), g('contact_email')]);
     n++;
   }
-  console.log(`นำเข้าลูกค้า ${n} ราย เรียบร้อย`);
+  console.log(`นำเข้าเอเจ้นท์ ${n} ราย เรียบร้อย`);
   await pool.end();
 }
 main().catch(e => { console.error(e); process.exit(1); });

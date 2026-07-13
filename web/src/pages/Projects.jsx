@@ -29,14 +29,14 @@ export default function Projects() {
       <div className="toolbar">
         <input placeholder={t('ค้นหา รหัส/ชื่อโครงการ')} value={f.search} onChange={e => set('search', e.target.value)} onKeyDown={e => e.key === 'Enter' && load()} />
         <select value={f.stage} onChange={e => set('stage', e.target.value)}><option value="">{t('สถานะ: ทั้งหมด')}</option>{meta.stages.map(s => <option key={s.id} value={s.id}>{s.seq}. {s.name}</option>)}</select>
-        <select value={f.customer_id} onChange={e => set('customer_id', e.target.value)}><option value="">{t('ลูกค้า: ทั้งหมด')}</option>{meta.customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
+        <select value={f.customer_id} onChange={e => set('customer_id', e.target.value)}><option value="">{t('เอเจ้นท์: ทั้งหมด')}</option>{meta.customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
         <select value={f.team} onChange={e => set('team', e.target.value)}><option value="">{t('ทีม: ทั้งหมด')}</option>{meta.teams.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}</select>
         <select value={f.owner} onChange={e => set('owner', e.target.value)}><option value="">{t('ผู้รับผิดชอบ: ทั้งหมด')}</option>{meta.users.map(u => <option key={u.id} value={u.id}>{u.display_name}</option>)}</select>
         <select value={f.priority} onChange={e => set('priority', e.target.value)}><option value="">{t('ความสำคัญ: ทั้งหมด')}</option>{[1, 2, 3, 4, 5].map(p => <option key={p} value={p}>{t(PR[p - 1])}</option>)}</select>
         <button className="btn green" style={{ marginLeft: 'auto' }} onClick={() => setShow(true)}>{t('+ สร้างโครงการ')}</button>
       </div>
       <div className="panel">
-        <table><thead><tr><th>{t('รหัส')}</th><th>{t('โครงการ')}</th><th>{t('ลูกค้า')}</th><th>{t('สำคัญ')}</th><th>{t('กิจกรรม')}</th><th>{t('วันเริ่ม-สิ้นสุด')}</th><th>{t('สถานะ (ไปป์ไลน์)')}</th><th>{t('มูลค่า')}</th><th>{t('ผู้รับผิดชอบ')}</th><th>{t('เลื่อน')}</th></tr></thead>
+        <table><thead><tr><th>{t('รหัส')}</th><th>{t('โครงการ')}</th><th>{t('เอเจ้นท์')}</th><th>{t('สำคัญ')}</th><th>{t('กิจกรรม')}</th><th>{t('วันเริ่ม-สิ้นสุด')}</th><th>{t('สถานะ (ไปป์ไลน์)')}</th><th>{t('มูลค่า')}</th><th>{t('ผู้รับผิดชอบ')}</th><th>{t('เลื่อน')}</th></tr></thead>
           <tbody>{data.rows.map(p => (
             <tr key={p.id}><td>{p.code}</td><td><a onClick={() => nav('/projects/' + p.id)}><b>{p.name}</b></a></td><td>{p.customer_name}</td>
               <td><Stars n={p.priority_id} /></td><td>{p.activity_count}</td><td className="muted">{(p.start_date || '').slice(0, 10)} - {(p.end_date || '').slice(0, 10)}</td>
@@ -63,7 +63,7 @@ function ProjectModal({ meta, t, onClose, onSaved }) {
     <div className="modal-bg" onClick={onClose}><div className="modal" onClick={e => e.stopPropagation()}>
       <h3 style={{ marginTop: 0 }}>{t('สร้างโครงการใหม่')}</h3>
       <label>{t('ชื่อโครงการ *')}</label><input value={f.name} onChange={e => set('name', e.target.value)} />
-      <div className="row"><div><label>{t('ลูกค้า')}</label><select value={f.customer_id} onChange={e => set('customer_id', e.target.value)}><option value="">-</option>{meta.customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
+      <div className="row"><div><label>{t('เอเจ้นท์')}</label><select value={f.customer_id} onChange={e => set('customer_id', e.target.value)}><option value="">-</option>{meta.customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
         <div><label>{t('ประเภทโครงการ')}</label><select value={f.project_type_id} onChange={e => set('project_type_id', e.target.value)}><option value="">-</option>{meta.types.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}</select></div></div>
       <div className="row"><div><label>{t('ชื่อสถานที่')}</label><input value={f.place_name} onChange={e => set('place_name', e.target.value)} /></div><div><label>Reference No.</label><input value={f.reference_no} onChange={e => set('reference_no', e.target.value)} /></div></div>
       <div className="row"><div><label>{t('สถานะเริ่มต้น')}</label><select value={f.stage_id} onChange={e => set('stage_id', e.target.value)}>{meta.stages.map(s => <option key={s.id} value={s.id}>{s.seq}. {s.name}</option>)}</select></div>
