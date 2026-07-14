@@ -127,6 +127,14 @@ const EN = {
   'เตรียมข้อมูล': 'Prep / research',
   'รูปถ่ายหน้างาน': 'On-site photo',
   'รูป': 'Photo',
+  'เช็คอินย้อนหลัง (ระบุเวลาเอง)': 'Backdated check-in (set time)',
+  'ระบุเวลาเช็คเอาท์เอง (ย้อนหลัง)': 'Set check-out time manually',
+  'วันที่เข้า': 'Check-in date',
+  'เวลาเข้า': 'Check-in time',
+  'วันที่ออก': 'Check-out date',
+  'เวลาออก': 'Check-out time',
+  'แก้ไขการเช็คอิน': 'Edit check-in',
+  'มีเวลาเช็คเอาท์': 'Has check-out time',
 };
 
 const Ctx = createContext({ t: (s) => s, lang: 'th', toggle: () => {} });

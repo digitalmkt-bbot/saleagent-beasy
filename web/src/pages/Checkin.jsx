@@ -32,6 +32,10 @@ function readImg(e) {
     r.readAsDataURL(file);
   });
 }
+const p2 = n => String(n).padStart(2, '0');
+const dPart = iso => { const d = new Date(iso); return `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`; };
+const tPart = iso => { const d = new Date(iso); return `${p2(d.getHours())}:${p2(d.getMinutes())}`; };
+const mkISO = (dt, tm) => (dt && tm) ? new Date(`${dt}T${tm}`).toISOString() : null;
 const fmtDT = iso => iso ? new Date(iso).toLocaleString('th-TH', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
 const fmtT = iso => iso ? new Date(iso).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : '';
 const durTxt = (a, b) => {
@@ -54,6 +58,14 @@ export default function Checkin() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
   const [, tick] = useState(0);
+  // เช็คอินย้อนหลัง
+  const [backIn, setBackIn] = useState(false);
+  const [inD, setInD] = useState(dPart(new Date())); const [inT, setInT] = useState(tPart(new Date()));
+  // เช็คเอาท์ย้อนหลัง
+  const [backOut, setBackOut] = useState(false);
+  const [outD, setOutD] = useState(dPart(new Date())); const [outT, setOutT] = useState(tPart(new Date()));
+  // แก้ไขรายการเก่า
+  const [edit, setEdit] = useState(null);
 
   function loadAll() {
     api('/checkins/active').then(setActive).catch(() => {});
@@ -69,20 +81,26 @@ export default function Checkin() {
 
   async function checkIn() {
     if (!cid) { setMsg(t('เลือกเอเจ้นท์ก่อน')); return; }
-    setBusy(true); setMsg(t('กำลังขอตำแหน่ง...'));
-    const g = await getGeo();
+    setBusy(true); setMsg(backIn ? '' : t('กำลังขอตำแหน่ง...'));
+    const g = backIn ? null : await getGeo();
     try {
-      await api('/checkins', { method: 'POST', body: { customer_id: cid, project_id: pid || null, lat: g && g.lat, lng: g && g.lng, note, image_url: image } });
-      setNote(''); setCid(''); setPid(''); setImage(null); setMsg(g ? '' : t('เช็คอินสำเร็จ (ไม่ได้พิกัด)'));
+      await api('/checkins', { method: 'POST', body: {
+        customer_id: cid, project_id: pid || null, note, image_url: image,
+        check_in_at: backIn ? mkISO(inD, inT) : null,
+        lat: g && g.lat, lng: g && g.lng,
+      } });
+      setNote(''); setCid(''); setPid(''); setImage(null); setBackIn(false); setMsg('');
       loadAll();
     } catch (e) { setMsg(e.message); } finally { setBusy(false); }
   }
   async function checkOut() {
-    setBusy(true); setMsg(t('กำลังขอตำแหน่ง...'));
-    const g = await getGeo();
+    setBusy(true); setMsg(backOut ? '' : t('กำลังขอตำแหน่ง...'));
+    const g = backOut ? null : await getGeo();
     try {
-      await api('/checkins/' + active.id + '/checkout', { method: 'PUT', body: { lat: g && g.lat, lng: g && g.lng } });
-      setMsg(''); loadAll();
+      await api('/checkins/' + active.id + '/checkout', { method: 'PUT', body: {
+        check_out_at: backOut ? mkISO(outD, outT) : null, lat: g && g.lat, lng: g && g.lng,
+      } });
+      setBackOut(false); setMsg(''); loadAll();
     } catch (e) { setMsg(e.message); } finally { setBusy(false); }
   }
 
@@ -100,6 +118,15 @@ export default function Checkin() {
           {active.image_url && <div style={{ marginTop: 8 }}><Img src={active.image_url} h={120} /></div>}
           {mapUrl(active.check_in_lat, active.check_in_lng) &&
             <div style={{ marginTop: 6 }}><a href={mapUrl(active.check_in_lat, active.check_in_lng)} target="_blank" rel="noreferrer">📍 {t('ดูตำแหน่งเช็คอินบนแผนที่')}</a></div>}
+
+          <label style={{ display: 'block', marginTop: 12 }}>
+            <input type="checkbox" style={{ width: 'auto', marginRight: 6 }} checked={backOut} onChange={e => setBackOut(e.target.checked)} />
+            {t('ระบุเวลาเช็คเอาท์เอง (ย้อนหลัง)')}
+          </label>
+          {backOut && <div className="row" style={{ marginTop: 6 }}>
+            <div><label>{t('วันที่ออก')}</label><input type="date" value={outD} onChange={e => setOutD(e.target.value)} /></div>
+            <div><label>{t('เวลาออก')}</label><input type="time" value={outT} onChange={e => setOutT(e.target.value)} /></div>
+          </div>}
           <button className="btn" style={{ width: '100%', marginTop: 14, padding: 14, fontSize: 16, background: 'var(--red)' }} disabled={busy} onClick={checkOut}>{busy ? '...' : t('เช็คเอาท์')}</button>
         </div>
       ) : (
@@ -116,12 +143,23 @@ export default function Checkin() {
           </select>
           <label style={{ marginTop: 10, display: 'block' }}>{t('หมายเหตุ')}</label>
           <textarea rows="2" value={note} onChange={e => setNote(e.target.value)} placeholder={t('เช่น นัดคุยเรื่องแพ็กเกจทัวร์')} />
+
           <label style={{ marginTop: 10, display: 'block' }}>{t('รูปถ่ายหน้างาน')} ({t('ถ้ามี')})</label>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <label className="filebtn"><input type="file" accept="image/*" style={{ display: 'none' }} onChange={async e => { setImage(await readImg(e)); e.target.value = ''; }} /><span>🖼 {t('เลือกรูป')}</span></label>
             <label className="filebtn"><input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={async e => { setImage(await readImg(e)); e.target.value = ''; }} /><span>📷 {t('ถ่ายรูป')}</span></label>
           </div>
-          {image && <div style={{ marginTop: 8, position: 'relative', display: 'inline-block' }}><img src={image} style={{ maxHeight: 90, borderRadius: 8 }} /><span onClick={() => setImage(null)} style={{ position: 'absolute', top: -8, right: -8, background: '#F2637E', color: '#fff', width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>×</span></div>}
+          {image && <div style={{ marginTop: 8, position: 'relative', display: 'inline-block' }}><Img src={image} h={90} /><span onClick={() => setImage(null)} style={{ position: 'absolute', top: -8, right: -8, background: '#F2637E', color: '#fff', width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>×</span></div>}
+
+          <label style={{ display: 'block', marginTop: 12 }}>
+            <input type="checkbox" style={{ width: 'auto', marginRight: 6 }} checked={backIn} onChange={e => setBackIn(e.target.checked)} />
+            {t('เช็คอินย้อนหลัง (ระบุเวลาเอง)')}
+          </label>
+          {backIn && <div className="row" style={{ marginTop: 6 }}>
+            <div><label>{t('วันที่เข้า')}</label><input type="date" value={inD} onChange={e => setInD(e.target.value)} /></div>
+            <div><label>{t('เวลาเข้า')}</label><input type="time" value={inT} onChange={e => setInT(e.target.value)} /></div>
+          </div>}
+
           <button className="btn" style={{ width: '100%', marginTop: 14, padding: 14, fontSize: 16 }} disabled={busy} onClick={checkIn}>{busy ? '...' : '📍 ' + t('เช็คอิน')}</button>
         </div>
       )}
@@ -130,7 +168,7 @@ export default function Checkin() {
       <h3 style={{ margin: '22px 0 10px' }}>{t('ประวัติเช็คอิน')}</h3>
       <div className="panel">
         <table>
-          <thead><tr><th>{t('เอเจ้นท์')}</th><th>{t('กลุ่มเป้าหมาย')}</th><th>{t('เช็คอิน')}</th><th>{t('เช็คเอาท์')}</th><th>{t('ระยะเวลา')}</th><th>{t('รูป')}</th><th>{t('แผนที่')}</th></tr></thead>
+          <thead><tr><th>{t('เอเจ้นท์')}</th><th>{t('กลุ่มเป้าหมาย')}</th><th>{t('เช็คอิน')}</th><th>{t('เช็คเอาท์')}</th><th>{t('ระยะเวลา')}</th><th>{t('รูป')}</th><th>{t('แผนที่')}</th><th></th></tr></thead>
           <tbody>
             {history.length ? history.map(h => (
               <tr key={h.id}>
@@ -141,11 +179,80 @@ export default function Checkin() {
                 <td>{durTxt(h.check_in_at, h.check_out_at)}</td>
                 <td>{h.image_url ? <Img src={h.image_url} h={38} /> : '-'}</td>
                 <td>{mapUrl(h.check_in_lat, h.check_in_lng) ? <a href={mapUrl(h.check_in_lat, h.check_in_lng)} target="_blank" rel="noreferrer">📍</a> : '-'}</td>
+                <td><a onClick={() => setEdit(h)}>{t('แก้ไข')}</a></td>
               </tr>
-            )) : <tr><td colSpan="7" className="muted">{t('ยังไม่มีประวัติ')}</td></tr>}
+            )) : <tr><td colSpan="8" className="muted">{t('ยังไม่มีประวัติ')}</td></tr>}
           </tbody>
         </table>
       </div>
+
+      {edit && <EditModal row={edit} projects={projects} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); loadAll(); }} />}
     </div>
+  );
+}
+
+function EditModal({ row, projects, onClose, onSaved }) {
+  const { t } = useI18n();
+  const [inD, setInD] = useState(dPart(row.check_in_at)); const [inT, setInT] = useState(tPart(row.check_in_at));
+  const [hasOut, setHasOut] = useState(!!row.check_out_at);
+  const [outD, setOutD] = useState(dPart(row.check_out_at || row.check_in_at));
+  const [outT, setOutT] = useState(tPart(row.check_out_at || row.check_in_at));
+  const [pid, setPid] = useState(row.project_id || '');
+  const [note, setNote] = useState(row.note || '');
+  const [image, setImage] = useState(row.image_url || null);
+  const [busy, setBusy] = useState(false); const [err, setErr] = useState('');
+
+  async function save() {
+    setBusy(true); setErr('');
+    try {
+      await api('/checkins/' + row.id, { method: 'PUT', body: {
+        check_in_at: mkISO(inD, inT),
+        check_out_at: hasOut ? mkISO(outD, outT) : null,
+        project_id: pid || null, note, image_url: image,
+      } });
+      onSaved();
+    } catch (e) { setErr(e.message); setBusy(false); }
+  }
+
+  return (
+    <div className="modal-bg" onClick={onClose}><div className="modal" onClick={e => e.stopPropagation()}>
+      <h3 style={{ marginTop: 0 }}>{t('แก้ไขการเช็คอิน')} — {row.customer_name}</h3>
+
+      <div className="row">
+        <div><label>{t('วันที่เข้า')}</label><input type="date" value={inD} onChange={e => setInD(e.target.value)} /></div>
+        <div><label>{t('เวลาเข้า')}</label><input type="time" value={inT} onChange={e => setInT(e.target.value)} /></div>
+      </div>
+
+      <label style={{ display: 'block', marginTop: 10 }}>
+        <input type="checkbox" style={{ width: 'auto', marginRight: 6 }} checked={hasOut} onChange={e => setHasOut(e.target.checked)} />
+        {t('มีเวลาเช็คเอาท์')}
+      </label>
+      {hasOut && <div className="row" style={{ marginTop: 6 }}>
+        <div><label>{t('วันที่ออก')}</label><input type="date" value={outD} onChange={e => setOutD(e.target.value)} /></div>
+        <div><label>{t('เวลาออก')}</label><input type="time" value={outT} onChange={e => setOutT(e.target.value)} /></div>
+      </div>}
+
+      <label style={{ marginTop: 10, display: 'block' }}>{t('กลุ่มเป้าหมายที่คุย')}</label>
+      <select value={pid} onChange={e => setPid(e.target.value)}>
+        <option value="">{t('- ไม่ระบุ -')}</option>
+        {projects.filter(p => String(p.customer_id) === String(row.customer_id)).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+      </select>
+
+      <label style={{ marginTop: 10, display: 'block' }}>{t('หมายเหตุ')}</label>
+      <textarea rows="2" value={note} onChange={e => setNote(e.target.value)} />
+
+      <label style={{ marginTop: 10, display: 'block' }}>{t('รูปถ่ายหน้างาน')}</label>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <label className="filebtn"><input type="file" accept="image/*" style={{ display: 'none' }} onChange={async e => { setImage(await readImg(e)); e.target.value = ''; }} /><span>🖼 {t('เลือกรูป')}</span></label>
+        <label className="filebtn"><input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={async e => { setImage(await readImg(e)); e.target.value = ''; }} /><span>📷 {t('ถ่ายรูป')}</span></label>
+      </div>
+      {image && <div style={{ marginTop: 8, position: 'relative', display: 'inline-block' }}><Img src={image} h={100} /><span onClick={() => setImage(null)} style={{ position: 'absolute', top: -8, right: -8, background: '#F2637E', color: '#fff', width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>×</span></div>}
+
+      {err && <div className="err">{err}</div>}
+      <div className="row" style={{ marginTop: 16, justifyContent: 'flex-end' }}>
+        <button className="btn ghost" onClick={onClose}>{t('ยกเลิก')}</button>
+        <button className="btn" disabled={busy} onClick={save}>{busy ? '...' : t('บันทึก')}</button>
+      </div>
+    </div></div>
   );
 }
