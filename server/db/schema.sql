@@ -309,7 +309,8 @@ CREATE TABLE checkin (
     check_out_lat   DOUBLE PRECISION,
     check_out_lng   DOUBLE PRECISION,
     image_url       TEXT,
-    note            TEXT,
+    note            TEXT,              -- หมายเหตุตอนเช็คอิน
+    checkout_note   TEXT,              -- รายละเอียด/สรุป ตอนเช็คเอาท์
     created_at      TIMESTAMPTZ DEFAULT now()
 );
 CREATE INDEX idx_checkin_company ON checkin(company_id);

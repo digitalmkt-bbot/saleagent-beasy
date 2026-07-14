@@ -65,6 +65,7 @@ export default function Checkin() {
   const [inD, setInD] = useState(dPart(new Date())); const [inT, setInT] = useState(tPart(new Date()));
   // เช็คเอาท์ย้อนหลัง
   const [backOut, setBackOut] = useState(false);
+  const [outNote, setOutNote] = useState('');
   const [outD, setOutD] = useState(dPart(new Date())); const [outT, setOutT] = useState(tPart(new Date()));
   // แก้ไขรายการเก่า
   const [edit, setEdit] = useState(null);
@@ -106,8 +107,9 @@ export default function Checkin() {
     try {
       await api('/checkins/' + outId + '/checkout', { method: 'PUT', body: {
         check_out_at: backOut ? mkISO(outD, outT) : null, lat: g && g.lat, lng: g && g.lng,
+        checkout_note: outNote,
       } });
-      setBackOut(false); setMsg(''); loadAll();
+      setBackOut(false); setOutNote(''); setMsg(''); loadAll();
     } catch (e) { setMsg(e.message); } finally { setBusy(false); }
   }
   const sel = openList.find(x => String(x.id) === String(outId)) || null;
@@ -140,6 +142,8 @@ export default function Checkin() {
               {mapUrl(sel.check_in_lat, sel.check_in_lng) &&
                 <div style={{ marginTop: 6 }}><a href={mapUrl(sel.check_in_lat, sel.check_in_lng)} target="_blank" rel="noreferrer">📍 {t('ดูตำแหน่งเช็คอินบนแผนที่')}</a></div>}
             </div>}
+            <label style={{ marginTop: 12, display: 'block' }}>{t('รายละเอียด / สรุปการเข้าพบ')}</label>
+            <textarea rows="3" value={outNote} onChange={e => setOutNote(e.target.value)} placeholder={t('เช่น คุยแพ็กเกจ 4 เกาะ ราคา 120,000 รอเอเจ้นท์ยืนยันสัปดาห์หน้า')} />
             <label style={{ display: 'block', marginTop: 12 }}>
               <input type="checkbox" style={{ width: 'auto', marginRight: 6 }} checked={backOut} onChange={e => setBackOut(e.target.checked)} />
               {t('ระบุเวลาเช็คเอาท์เอง (ย้อนหลัง)')}
@@ -198,7 +202,7 @@ export default function Checkin() {
             {history.length ? history.map(h => (
               <tr key={h.id}>
                 <td><b>{h.customer_name || '-'}</b><div className="muted">{h.user_name}</div></td>
-                <td className="muted">{h.project_name || '-'}</td>
+                <td className="muted">{h.project_name || '-'}{h.checkout_note && <div style={{ fontSize: 12, marginTop: 2 }}>📝 {h.checkout_note}</div>}</td>
                 <td>{fmtDT(h.check_in_at)}</td>
                 <td>{h.check_out_at ? fmtT(h.check_out_at) : <span className="pill orange">{t('ยังไม่ออก')}</span>}</td>
                 <td>{durTxt(h.check_in_at, h.check_out_at)}</td>
@@ -224,6 +228,7 @@ function EditModal({ row, projects, onClose, onSaved }) {
   const [outT, setOutT] = useState(tPart(row.check_out_at || row.check_in_at));
   const [pid, setPid] = useState(row.project_id || '');
   const [note, setNote] = useState(row.note || '');
+  const [outNote, setOutNote] = useState(row.checkout_note || '');
   const [image, setImage] = useState(row.image_url || null);
   const [busy, setBusy] = useState(false); const [err, setErr] = useState('');
   useEffect(() => {
@@ -238,7 +243,7 @@ function EditModal({ row, projects, onClose, onSaved }) {
       await api('/checkins/' + row.id, { method: 'PUT', body: {
         check_in_at: mkISO(inD, inT),
         check_out_at: hasOut ? mkISO(outD, outT) : null,
-        project_id: pid || null, note, image_url: image,
+        project_id: pid || null, note, image_url: image, checkout_note: outNote,
       } });
       onSaved();
     } catch (e) { setErr(e.message); setBusy(false); }
@@ -272,8 +277,11 @@ function EditModal({ row, projects, onClose, onSaved }) {
         {projects.filter(p => String(p.customer_id) === String(row.customer_id)).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
       </select>
 
-      <label style={{ marginTop: 10, display: 'block' }}>{t('หมายเหตุ')}</label>
+      <label style={{ marginTop: 10, display: 'block' }}>{t('หมายเหตุ')} ({t('ตอนเช็คอิน')})</label>
       <textarea rows="2" value={note} onChange={e => setNote(e.target.value)} />
+
+      <label style={{ marginTop: 10, display: 'block' }}>{t('รายละเอียด / สรุปการเข้าพบ')}</label>
+      <textarea rows="3" value={outNote} onChange={e => setOutNote(e.target.value)} />
 
       <label style={{ marginTop: 10, display: 'block' }}>{t('รูปถ่ายหน้างาน')}</label>
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>

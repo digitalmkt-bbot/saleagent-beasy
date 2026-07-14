@@ -140,6 +140,9 @@ const EN = {
   'กรุณาเลือกเอเจ้นท์ (ชื่อกิจการ) ก่อนบันทึก': 'Please select an agent (business name) before saving',
   'เลือกรายการที่จะเช็คเอาท์': 'Select a visit to check out',
   'ไม่มีรายการที่ค้างเช็คเอาท์': 'No open visits to check out',
+  'รายละเอียด / สรุปการเข้าพบ': 'Visit summary / details',
+  'เช่น คุยแพ็กเกจ 4 เกาะ ราคา 120,000 รอเอเจ้นท์ยืนยันสัปดาห์หน้า': 'e.g. discussed 4-island package, THB 120,000, agent to confirm next week',
+  'ตอนเช็คอิน': 'at check-in',
 };
 
 const Ctx = createContext({ t: (s) => s, lang: 'th', toggle: () => {} });

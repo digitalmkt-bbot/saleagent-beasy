@@ -14,9 +14,10 @@ const durTxt = (a, b) => { const m = Math.max(0, Math.floor((new Date(b) - new D
 // อัปเดตรายการ activity ที่ผูกอยู่ ให้ตรงกับสถานะเช็คอินล่าสุด (เวลา/โน้ต/รูป/กลุ่มเป้าหมาย)
 async function syncActivity(cid, ck) {
   if (!ck.activity_id) return;
-  const detail = ck.check_out_at
+  let detail = ck.check_out_at
     ? `📍 เยี่ยมเอเจ้นท์ (${bkk(ck.check_in_at)}–${bkk(ck.check_out_at)}, ${durTxt(ck.check_in_at, ck.check_out_at)})` + (ck.note ? (' — ' + ck.note) : '')
     : '📍 เช็คอิน' + (ck.note ? (' — ' + ck.note) : '');
+  if (ck.checkout_note) detail += ' | สรุป: ' + ck.checkout_note;
   await q(`UPDATE activity SET detail=$1, activity_at=$2, activity_time=$3, image_url=$4, project_id=$5
            WHERE id=$6 AND company_id=$7`,
     [detail, ck.check_in_at, bkk(ck.check_in_at), ck.image_url, ck.project_id, ck.activity_id, cid]);
@@ -62,9 +63,9 @@ router.post('/', wrap(async (req, res) => {
 // เช็คเอาท์ (ระบุ check_out_at เพื่อเช็คเอาท์ย้อนหลังได้)
 router.put('/:id/checkout', wrap(async (req, res) => {
   const b = req.body; const cid = req.user.company_id;
-  const ck = (await q(`UPDATE checkin SET check_out_at=COALESCE($3::timestamptz, now()),check_out_lat=$4,check_out_lng=$5
+  const ck = (await q(`UPDATE checkin SET check_out_at=COALESCE($3::timestamptz, now()),check_out_lat=$4,check_out_lng=$5,checkout_note=$6
     WHERE id=$1 AND company_id=$2 AND check_out_at IS NULL RETURNING *`,
-    [req.params.id, cid, b.check_out_at || null, b.lat ?? null, b.lng ?? null])).rows[0];
+    [req.params.id, cid, b.check_out_at || null, b.lat ?? null, b.lng ?? null, b.checkout_note || null])).rows[0];
   if (!ck) return res.status(404).json({ error: 'not found or already checked out' });
   await syncActivity(cid, ck);
   res.json(ck);
@@ -76,12 +77,13 @@ router.put('/:id', wrap(async (req, res) => {
   const ck = (await q(`UPDATE checkin SET
       check_in_at  = COALESCE($3::timestamptz, check_in_at),
       check_out_at = $4::timestamptz,
-      note         = $5,
-      image_url    = $6,
-      project_id   = $7
+      note          = $5,
+      image_url     = $6,
+      project_id    = $7,
+      checkout_note = $8
     WHERE id=$1 AND company_id=$2 RETURNING *`,
     [req.params.id, cid, b.check_in_at || null, b.check_out_at || null,
-     b.note || null, b.image_url || null, b.project_id || null])).rows[0];
+     b.note || null, b.image_url || null, b.project_id || null, b.checkout_note || null])).rows[0];
   if (!ck) return res.status(404).json({ error: 'not found' });
   await syncActivity(cid, ck);
   res.json(ck);
