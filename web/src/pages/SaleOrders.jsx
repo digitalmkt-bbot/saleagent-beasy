@@ -14,13 +14,13 @@ export default function SaleOrders() {
     <div>
       <h1 className="page">{t('ใบสั่งขาย')}</h1>
       <div className="toolbar">
-        <select id="so-q" defaultValue=""><option value="">{t('แปลงจากใบเสนอราคา...')}</option>{quotes.map(q => <option key={q.id} value={q.id}>{q.code} — {q.customer_name} ({baht(q.grand_total)})</option>)}</select>
+        <select id="so-q" defaultValue=""><option value="">{t('แปลงจากสัญญา...')}</option>{quotes.map(q => <option key={q.id} value={q.id}>{q.code} — {q.customer_name} ({baht(q.grand_total)})</option>)}</select>
         <button className="btn green" onClick={() => convert(document.getElementById('so-q').value)}>{t('+ สร้างใบสั่งขาย')}</button>
       </div>
       <div className="panel">
-        <table><thead><tr><th>{t('เลขที่')}</th><th>{t('อ้างอิงใบเสนอราคา')}</th><th>{t('เอเจ้นท์')}</th><th>{t('กลุ่มเป้าหมาย')}</th><th>{t('ยอดรวม')}</th><th>{t('สถานะ')}</th><th>{t('วันที่')}</th></tr></thead>
+        <table><thead><tr><th>{t('เลขที่')}</th><th>{t('อ้างอิงสัญญา')}</th><th>{t('เอเจ้นท์')}</th><th>{t('กลุ่มเป้าหมาย')}</th><th>{t('ยอดรวม')}</th><th>{t('สถานะ')}</th><th>{t('วันที่')}</th></tr></thead>
           <tbody>{rows.map(o => { const s = ST[o.status] || ['-', 'gray']; return <tr key={o.id}><td>{o.code}</td><td>{o.quotation_id ? 'QT#' + o.quotation_id : '-'}</td><td>{o.customer_name}</td><td>{o.project_name}</td><td>{baht(o.grand_total)}</td><td><span className={'pill ' + s[1]}>{t(s[0])}</span></td><td>{(o.order_date || '').slice(0, 10)}</td></tr>; })}
-            {!rows.length && <tr><td colSpan="7" className="muted">{t('ยังไม่มีใบสั่งขาย — เลือกใบเสนอราคาด้านบนเพื่อแปลง')}</td></tr>}</tbody></table>
+            {!rows.length && <tr><td colSpan="7" className="muted">{t('ยังไม่มีใบสั่งขาย — เลือกสัญญาด้านบนเพื่อแปลง')}</td></tr>}</tbody></table>
       </div>
     </div>
   );

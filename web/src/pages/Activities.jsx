@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import { DIR, Stars, today, nowT } from '../lib.jsx';
@@ -92,6 +92,8 @@ function ActivityModal({ meta, t, edit, onClose, onSaved }) {
     due_at: (init.due_at || today()).slice(0, 10),
   });
   const [contacts, setContacts] = useState([]);
+  const [custProjects, setCustProjects] = useState([]);
+  const skipFill = useRef(!!edit);
   const [tagIds, setTagIds] = useState([]);
   const [mentions, setMentions] = useState([]);
   const [image, setImage] = useState(init.image_url || null);
@@ -99,7 +101,29 @@ function ActivityModal({ meta, t, edit, onClose, onSaved }) {
   const set = (k, v) => setF(p => ({ ...p, [k]: v }));
   const fmtDT = (iso) => iso ? new Date(iso).toLocaleString('th-TH', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
   const PR = ['ต่ำ', 'ปานกลาง', 'สูง', 'สูงมาก', 'ด่วนที่สุด'];
-  useEffect(() => { if (!f.customer_id) { setContacts([]); return; } api('/customers/' + f.customer_id).then(c => setContacts(c.contacts || [])).catch(() => {}); }, [f.customer_id]);
+  useEffect(() => {
+    if (!f.customer_id) { setContacts([]); setCustProjects([]); return; }
+    api('/customers/' + f.customer_id).then(c => {
+      setContacts(c.contacts || []);
+      setCustProjects(c.projects || []);
+      if (skipFill.current) { skipFill.current = false; return; }   // แก้ไขของเดิม: ไม่ทับค่าที่บันทึกไว้
+      const primary = (c.contacts || []).find(x => x.is_primary) || (c.contacts || [])[0];
+      const open = (c.projects || []).filter(x => x.is_open);
+      const only = open.length === 1 ? open[0] : null;
+      setF(prev => ({
+        ...prev,
+        contact_id: primary ? primary.id : '',
+        assignee_user_id: c.owner_user_id || prev.assignee_user_id,
+        priority_id: c.priority_id || prev.priority_id,
+        project_id: only ? only.id : '',
+        stage_id: only && only.stage_id ? only.stage_id : '',
+      }));
+    }).catch(() => {});
+  }, [f.customer_id]);
+  function pickProject(v) {
+    const pr = custProjects.find(x => String(x.id) === String(v));
+    setF(prev => ({ ...prev, project_id: v, stage_id: pr && pr.stage_id ? pr.stage_id : prev.stage_id }));
+  }
   const toggle = (arr, setArr, id) => setArr(arr.includes(id) ? arr.filter(x => x !== id) : [...arr, id]);
   function readImg(e) {
     const file = e.target.files[0]; if (!file) return;
@@ -146,7 +170,7 @@ function ActivityModal({ meta, t, edit, onClose, onSaved }) {
         <div><label>{t('ผู้รับผิดชอบ')}</label><select value={f.assignee_user_id} onChange={e => set('assignee_user_id', e.target.value)}><option value="">-</option>{meta.users.map(u => <option key={u.id} value={u.id}>{u.display_name}</option>)}</select></div>
       </div>
       <div className="row">
-        <div><label>{t('กลุ่มเป้าหมาย')}</label><select value={f.project_id} onChange={e => set('project_id', e.target.value)}><option value="">-</option>{meta.projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
+        <div><label>{t('กลุ่มเป้าหมาย')}</label><select value={f.project_id} onChange={e => pickProject(e.target.value)} disabled={!f.customer_id}><option value="">{f.customer_id ? '-' : t('- เลือกเอเจ้นท์ก่อน -')}</option>{custProjects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
         <div><label>{t('สถานะกลุ่มเป้าหมาย')}</label><select value={f.stage_id} onChange={e => set('stage_id', e.target.value)}><option value="">-</option>{meta.stages.map(s => <option key={s.id} value={s.id}>{s.seq}. {s.name}</option>)}</select></div>
       </div>
       <label>{t('รายละเอียดการติดต่อ')}</label><textarea rows="3" value={f.detail} onChange={e => set('detail', e.target.value)} />

@@ -20,7 +20,7 @@ router.post('/', wrap(async (req, res) => {
   res.status(201).json(r.rows[0]);
 }));
 
-// แปลงใบเสนอราคา -> ใบสั่งขาย
+// แปลงสัญญา -> ใบสั่งขาย
 router.post('/from-quotation/:qid', wrap(async (req, res) => {
   const cid = req.user.company_id;
   const qh = (await q('SELECT * FROM quotation WHERE id=$1 AND company_id=$2', [req.params.qid, cid])).rows[0];

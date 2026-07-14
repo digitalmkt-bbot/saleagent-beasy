@@ -34,7 +34,7 @@ async function main() {
   await q(`INSERT INTO chat_channel (name) VALUES ('LINE'),('Facebook'),('WhatsApp'),('WeChat')`);
   await q(`INSERT INTO contact_method (company_id,name) VALUES ($1,'โทร'),($1,'อีเมล'),($1,'เข้าพบ'),($1,'LINE'),($1,'ประชุมออนไลน์')`, [co]);
 
-  const stages = ['เอเจ้นท์ติดต่อเข้ามา/ เซลล์ติดต่อหาเอเจ้นท์','ทำนัดนำเสนอบริการ','เข้าพบ/ นำเสนอบริการ','สร้างและส่งใบเสนอราคา','ติดตามการขาย','เอเจ้นท์ตกลงซื้อบริการ','ติดตามการชำระเงิน','ปิดการขาย'];
+  const stages = ['เอเจ้นท์ติดต่อเข้ามา/ เซลล์ติดต่อหาเอเจ้นท์','ทำนัดนำเสนอบริการ','เข้าพบ/ นำเสนอบริการ','สร้างและส่งสัญญา','ติดตามการขาย','เอเจ้นท์ตกลงซื้อบริการ','ติดตามการชำระเงิน','ปิดการขาย'];
   for (let i = 0; i < stages.length; i++)
     await q('INSERT INTO pipeline_stage (id,company_id,seq,name,is_won) VALUES ($1,$2,$3,$4,$5)', [i + 1, co, i + 1, stages[i], i === 7]);
 
@@ -42,7 +42,7 @@ async function main() {
   const tagId = {};
   for (const [name, grp] of custTags) tagId[name] = (await q('INSERT INTO tag (company_id,name,tag_group,scope) VALUES ($1,$2,$3,\'customer\') RETURNING id', [co, name, grp])).rows[0].id;
   const actTags = {};
-  for (const name of ['สนใจ','ขอใบเสนอราคา','ขอคิดดูก่อน','ต่อรองราคา','ปิดการขาย','ไม่สนใจ'])
+  for (const name of ['สนใจ','ขอสัญญา','ขอคิดดูก่อน','ต่อรองราคา','ปิดการขาย','ไม่สนใจ'])
     actTags[name] = (await q('INSERT INTO tag (company_id,name,scope) VALUES ($1,$2,\'activity\') RETURNING id', [co, name])).rows[0].id;
 
   const custDefs = [
@@ -82,7 +82,7 @@ async function main() {
   }
 
   const aDefs = [
-    { c:0, p:0, dir:'outbound', m:1, type:0, detail:'โทรติดตามใบเสนอราคา', due:addDays(0), status:'pending', stage:4, pri:4, tags:['ขอใบเสนอราคา'], assignee:u2 },
+    { c:0, p:0, dir:'outbound', m:1, type:0, detail:'โทรติดตามสัญญา', due:addDays(0), status:'pending', stage:4, pri:4, tags:['ขอสัญญา'], assignee:u2 },
     { c:1, p:1, dir:'inbound', m:4, type:1, detail:'เอเจ้นท์สอบถามโปรแกรมทัวร์ทาง LINE', due:addDays(2), status:'pending', stage:2, pri:3, tags:['สนใจ'], assignee:u2 },
     { c:2, p:2, dir:'outbound', m:3, type:2, detail:'เข้าพบนำเสนอแพ็กเกจ MICE', due:addDays(-1), status:'pending', stage:3, pri:5, tags:['ต่อรองราคา'], assignee:u3 },
     { c:3, p:3, dir:'outbound', m:1, type:4, detail:'ปิดการขายเรียบร้อย ส่งสัญญา', due:null, status:'done', stage:8, pri:4, tags:['ปิดการขาย'], assignee:u3 },

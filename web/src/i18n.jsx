@@ -6,7 +6,7 @@ const EN = {
   // nav / chrome
   'เมนูหลัก': 'Main', 'เอกสาร & รายงาน': 'Documents & Reports',
   'แผงบริหาร': 'Dashboard', 'งานติดตาม': 'Activities', 'เอเจ้นท์': 'Agents', 'กลุ่มเป้าหมาย': 'Target groups',
-  'ใบเสนอราคา': 'Quotations', 'ใบสั่งขาย': 'Sale Orders', 'รายงาน': 'Reports', 'ตั้งค่า': 'Settings',
+  'สัญญา': 'Contracts', 'ใบสั่งขาย': 'Sale Orders', 'รายงาน': 'Reports', 'ตั้งค่า': 'Settings',
   'บริษัท เลิฟ ไอแลนด์ จำกัด': 'Love Andaman Co., Ltd.', 'ออกจากระบบ': 'Log out',
   'เกินกำหนด': 'Overdue', 'วันนี้': 'Today', 'ไม่มีงานแจ้งเตือน': 'No notifications',
   'กำลังโหลด...': 'Loading...',
@@ -81,13 +81,13 @@ const EN = {
   'ถอยขั้น': 'Prev stage', 'เลื่อนขั้น': 'Next stage', 'ปิดการขายแล้ว': 'Closed won', 'ประเภท': 'Type',
   'ระยะเวลา': 'Duration', 'บันทึกย่อ': 'Notes', 'เอเจ้นท์ที่เกี่ยวข้อง': 'Related agents',
   // quotations
-  '+ สร้างใบเสนอราคา': '+ New quotation', 'สร้างใบเสนอราคา': 'New quotation', 'เลขที่': 'No.',
-  'ยอดรวม': 'Total', 'วันที่': 'Date', 'ยังไม่มีใบเสนอราคา': 'No quotations yet',
+  '+ สร้างสัญญา': '+ New contract', 'สร้างสัญญา': 'New contract', 'เลขที่': 'No.',
+  'ยอดรวม': 'Total', 'วันที่': 'Date', 'ยังไม่มีสัญญา': 'No contracts yet',
   'รายการ': 'Item', 'จำนวน': 'Qty', 'ราคา/หน่วย': 'Unit price', 'เช่น แพ็กเกจ 4 เกาะ': 'e.g. 4-island package',
   'กรอกรายการและราคา': 'Enter item and price', 'ระบบคำนวณ VAT 7% อัตโนมัติ': 'VAT 7% calculated automatically',
   // sale orders
-  'แปลงจากใบเสนอราคา...': 'Convert from quotation...', '+ สร้างใบสั่งขาย': '+ New sale order',
-  'อ้างอิงใบเสนอราคา': 'Quotation ref', 'ยังไม่มีใบสั่งขาย — เลือกใบเสนอราคาด้านบนเพื่อแปลง': 'No sale orders yet — pick a quotation above to convert',
+  'แปลงจากสัญญา...': 'Convert from contract...', '+ สร้างใบสั่งขาย': '+ New sale order',
+  'อ้างอิงสัญญา': 'Contract ref', 'ยังไม่มีใบสั่งขาย — เลือกสัญญาด้านบนเพื่อแปลง': 'No sale orders yet — pick a contract above to convert',
   // reports
   'อัตราชนะ (Win rate)': 'Win rate', 'ดีลปิดได้': 'Deals won', 'มูลค่าปิดได้': 'Won value',
   'กลุ่มเป้าหมายตามขั้นไปป์ไลน์': 'Target groups by stage', 'ยอดตามเดือน (วันเริ่มกลุ่มเป้าหมาย)': 'Monthly value (start date)',
@@ -135,6 +135,8 @@ const EN = {
   'เวลาออก': 'Check-out time',
   'แก้ไขการเช็คอิน': 'Edit check-in',
   'มีเวลาเช็คเอาท์': 'Has check-out time',
+  '- เลือกเอเจ้นท์ก่อน -': '- select agent first -',
+  'ออกสัญญา': 'Contracts',
 };
 
 const Ctx = createContext({ t: (s) => s, lang: 'th', toggle: () => {} });

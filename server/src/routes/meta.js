@@ -3,7 +3,7 @@ const { q } = require('../db');
 const { wrap } = require('./_util');
 const cid = (req) => req.user.company_id;
 
-const ACTIVITY_TYPES = ['โทรติดตาม','นัดหมาย','เข้าพบ/นำเสนอ','ส่งใบเสนอราคา','ติดตามชำระเงิน','อื่นๆ'];
+const ACTIVITY_TYPES = ['โทรติดตาม','นัดหมาย','เข้าพบ/นำเสนอ','ส่งสัญญา','ติดตามชำระเงิน','อื่นๆ'];
 
 router.get('/pipeline-stages', wrap(async (req, res) =>
   res.json({ rows: (await q('SELECT * FROM pipeline_stage WHERE company_id=$1 ORDER BY seq', [cid(req)])).rows })));

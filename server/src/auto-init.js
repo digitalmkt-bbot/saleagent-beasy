@@ -89,6 +89,9 @@ async function runMigrations() {
     await q("ALTER TABLE checkin ADD COLUMN IF NOT EXISTS image_url TEXT");
     await q("UPDATE pipeline_stage SET name = replace(name, 'ลูกค้า', 'เอเจ้นท์') WHERE name LIKE '%ลูกค้า%'");
     log('migration: rename ลูกค้า -> เอเจ้นท์ in pipeline_stage');
+    await q("UPDATE pipeline_stage SET name = replace(name, 'ใบเสนอราคา', 'สัญญา') WHERE name LIKE '%ใบเสนอราคา%'");
+    await q("UPDATE tag SET name = replace(name, 'ใบเสนอราคา', 'สัญญา') WHERE name LIKE '%ใบเสนอราคา%'");
+    log('migration: rename ใบเสนอราคา -> สัญญา in pipeline_stage/tag');
     await q("CREATE INDEX IF NOT EXISTS idx_checkin_company ON checkin(company_id)");
     log('migration: checkin table ensured');
   } catch (e) { log('migration skipped/failed: ' + e.message); }

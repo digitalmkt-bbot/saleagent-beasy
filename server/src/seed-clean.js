@@ -26,13 +26,13 @@ async function main() {
   await q(`INSERT INTO chat_channel (name) VALUES ('LINE'),('Facebook'),('WhatsApp'),('WeChat')`);
   await q(`INSERT INTO contact_method (company_id,name) VALUES ($1,'โทร'),($1,'อีเมล'),($1,'เข้าพบ'),($1,'LINE'),($1,'ประชุมออนไลน์')`, [co]);
 
-  const stages = ['เอเจ้นท์ติดต่อเข้ามา/ เซลล์ติดต่อหาเอเจ้นท์','ทำนัดนำเสนอบริการ','เข้าพบ/ นำเสนอบริการ','สร้างและส่งใบเสนอราคา','ติดตามการขาย','เอเจ้นท์ตกลงซื้อบริการ','ติดตามการชำระเงิน','ปิดการขาย'];
+  const stages = ['เอเจ้นท์ติดต่อเข้ามา/ เซลล์ติดต่อหาเอเจ้นท์','ทำนัดนำเสนอบริการ','เข้าพบ/ นำเสนอบริการ','สร้างและส่งสัญญา','ติดตามการขาย','เอเจ้นท์ตกลงซื้อบริการ','ติดตามการชำระเงิน','ปิดการขาย'];
   for (let i = 0; i < stages.length; i++)
     await q('INSERT INTO pipeline_stage (id,company_id,seq,name,is_won) VALUES ($1,$2,$3,$4,$5)', [i + 1, co, i + 1, stages[i], i === 7]);
 
   const custTags = [['1.Connection','source'],['1.Facebook','source'],['1.Referral','source'],['1.Website','source'],['1.เซลล์หาเอง','source'],['2.บริษัททัวร์','type'],['2.รีสอร์ต','type'],['2.โรงแรม','type'],['A ส่งประจำ ส่งเยอะ','grade'],['B ส่งประจำแต่ไม่เยอะ','grade'],['C ส่งบ้างไม่ส่งบ้าง','grade'],['D เจ้าใหม่ / ส่งน้อย','grade'],['Tour Desk','other']];
   for (const [name, grp] of custTags) await q('INSERT INTO tag (company_id,name,tag_group,scope) VALUES ($1,$2,$3,\'customer\')', [co, name, grp]);
-  for (const name of ['สนใจ','ขอใบเสนอราคา','ขอคิดดูก่อน','ต่อรองราคา','ปิดการขาย','ไม่สนใจ']) await q('INSERT INTO tag (company_id,name,scope) VALUES ($1,$2,\'activity\')', [co, name]);
+  for (const name of ['สนใจ','ขอสัญญา','ขอคิดดูก่อน','ต่อรองราคา','ปิดการขาย','ไม่สนใจ']) await q('INSERT INTO tag (company_id,name,scope) VALUES ($1,$2,\'activity\')', [co, name]);
 
   console.log(`เสร็จ! เข้าระบบด้วย ${adminEmail} / ${adminPass}`);
   console.log('ค่าตั้งต้นพร้อม (ไปป์ไลน์ 8 ขั้น, แท็ก, วิธีติดต่อ) — ยังไม่มีเอเจ้นท์/กลุ่มเป้าหมาย');
