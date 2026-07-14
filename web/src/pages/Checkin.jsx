@@ -49,7 +49,9 @@ export default function Checkin() {
   const { t } = useI18n();
   const [customers, setCustomers] = useState([]);
   const [projects, setProjects] = useState([]);
-  const [active, setActive] = useState(null);
+  const [mode, setMode] = useState('in');
+  const [openList, setOpenList] = useState([]);
+  const [outId, setOutId] = useState('');
   const [history, setHistory] = useState([]);
   const [cid, setCid] = useState('');
   const [pid, setPid] = useState('');
@@ -68,7 +70,11 @@ export default function Checkin() {
   const [edit, setEdit] = useState(null);
 
   function loadAll() {
-    api('/checkins/active').then(setActive).catch(() => {});
+    api('/checkins/open').then(d => {
+      const rows = d.rows || [];
+      setOpenList(rows);
+      setOutId(prev => (rows.some(r => String(r.id) === String(prev)) ? prev : (rows[0] ? rows[0].id : '')));
+    }).catch(() => {});
     api('/checkins', { params: { mine: 1 } }).then(d => setHistory(d.rows || [])).catch(() => {});
   }
   useEffect(() => {
@@ -94,41 +100,59 @@ export default function Checkin() {
     } catch (e) { setMsg(e.message); } finally { setBusy(false); }
   }
   async function checkOut() {
+    if (!outId) { setMsg(t('เลือกรายการที่จะเช็คเอาท์')); return; }
     setBusy(true); setMsg(backOut ? '' : t('กำลังขอตำแหน่ง...'));
     const g = backOut ? null : await getGeo();
     try {
-      await api('/checkins/' + active.id + '/checkout', { method: 'PUT', body: {
+      await api('/checkins/' + outId + '/checkout', { method: 'PUT', body: {
         check_out_at: backOut ? mkISO(outD, outT) : null, lat: g && g.lat, lng: g && g.lng,
       } });
       setBackOut(false); setMsg(''); loadAll();
     } catch (e) { setMsg(e.message); } finally { setBusy(false); }
   }
+  const sel = openList.find(x => String(x.id) === String(outId)) || null;
 
   return (
     <div>
       <h1 className="page">{t('เช็คอินเอเจ้นท์')} 📍</h1>
       <div className="page-sub">{t('เช็คอินตอนถึงเอเจ้นท์ แล้วเช็คเอาท์ตอนออก — บันทึกเวลาและพิกัดอัตโนมัติ')}</div>
 
-      {active ? (
-        <div className="card" style={{ background: 'var(--brand-tint)', border: '1px solid var(--brand)' }}>
-          <div style={{ fontSize: 13, color: 'var(--brand-text)', fontWeight: 700 }}>🟢 {t('กำลังเยี่ยม')}</div>
-          <div style={{ fontSize: 22, fontWeight: 800, margin: '4px 0 2px' }}>{active.customer_name || '-'}</div>
-          {active.project_name && <div className="muted" style={{ marginTop: 2 }}>📁 {active.project_name}</div>}
-          <div className="muted">{t('เช็คอินเมื่อ')} {fmtDT(active.check_in_at)} · {t('ผ่านไป')} {durTxt(active.check_in_at)}</div>
-          {active.image_url && <div style={{ marginTop: 8 }}><Img src={active.image_url} h={120} /></div>}
-          {mapUrl(active.check_in_lat, active.check_in_lng) &&
-            <div style={{ marginTop: 6 }}><a href={mapUrl(active.check_in_lat, active.check_in_lng)} target="_blank" rel="noreferrer">📍 {t('ดูตำแหน่งเช็คอินบนแผนที่')}</a></div>}
-
-          <label style={{ display: 'block', marginTop: 12 }}>
-            <input type="checkbox" style={{ width: 'auto', marginRight: 6 }} checked={backOut} onChange={e => setBackOut(e.target.checked)} />
-            {t('ระบุเวลาเช็คเอาท์เอง (ย้อนหลัง)')}
-          </label>
-          {backOut && <div className="row" style={{ marginTop: 6 }}>
-            <div><label>{t('วันที่ออก')}</label><input type="date" value={outD} onChange={e => setOutD(e.target.value)} /></div>
-            <div><label>{t('เวลาออก')}</label><input type="time" value={outT} onChange={e => setOutT(e.target.value)} /></div>
-          </div>}
-          <button className="btn" style={{ width: '100%', marginTop: 14, padding: 14, fontSize: 16, background: 'var(--red)' }} disabled={busy} onClick={checkOut}>{busy ? '...' : t('เช็คเอาท์')}</button>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+        <div className={'dirbtn' + (mode === 'in' ? ' on' : '')} onClick={() => { setMode('in'); setMsg(''); }}>📍 {t('เช็คอิน')}</div>
+        <div className={'dirbtn' + (mode === 'out' ? ' on' : '')} onClick={() => { setMode('out'); setMsg(''); }}>
+          🔴 {t('เช็คเอาท์')}{openList.length ? ` (${openList.length})` : ''}
         </div>
+      </div>
+
+      {mode === 'out' ? (
+        openList.length ? (
+          <div className="card">
+            <label>{t('เลือกรายการที่จะเช็คเอาท์')}</label>
+            <select value={outId} onChange={e => setOutId(e.target.value)}>
+              {openList.map(o => <option key={o.id} value={o.id}>{o.customer_name} — {fmtDT(o.check_in_at)}</option>)}
+            </select>
+            {sel && <div style={{ marginTop: 12, padding: 12, borderRadius: 12, background: 'var(--brand-tint)' }}>
+              <div style={{ fontSize: 13, color: 'var(--brand-text)', fontWeight: 700 }}>🟢 {t('กำลังเยี่ยม')}</div>
+              <div style={{ fontSize: 20, fontWeight: 800, margin: '4px 0 2px' }}>{sel.customer_name || '-'}</div>
+              {sel.project_name && <div className="muted">📁 {sel.project_name}</div>}
+              <div className="muted">{t('เช็คอินเมื่อ')} {fmtDT(sel.check_in_at)} · {t('ผ่านไป')} {durTxt(sel.check_in_at)}</div>
+              {sel.image_url && <div style={{ marginTop: 8 }}><Img src={sel.image_url} h={100} /></div>}
+              {mapUrl(sel.check_in_lat, sel.check_in_lng) &&
+                <div style={{ marginTop: 6 }}><a href={mapUrl(sel.check_in_lat, sel.check_in_lng)} target="_blank" rel="noreferrer">📍 {t('ดูตำแหน่งเช็คอินบนแผนที่')}</a></div>}
+            </div>}
+            <label style={{ display: 'block', marginTop: 12 }}>
+              <input type="checkbox" style={{ width: 'auto', marginRight: 6 }} checked={backOut} onChange={e => setBackOut(e.target.checked)} />
+              {t('ระบุเวลาเช็คเอาท์เอง (ย้อนหลัง)')}
+            </label>
+            {backOut && <div className="row" style={{ marginTop: 6 }}>
+              <div><label>{t('วันที่ออก')}</label><input type="date" value={outD} onChange={e => setOutD(e.target.value)} /></div>
+              <div><label>{t('เวลาออก')}</label><input type="time" value={outT} onChange={e => setOutT(e.target.value)} /></div>
+            </div>}
+            <button className="btn" style={{ width: '100%', marginTop: 14, padding: 14, fontSize: 16, background: 'var(--red)' }} disabled={busy} onClick={checkOut}>{busy ? '...' : t('เช็คเอาท์')}</button>
+          </div>
+        ) : (
+          <div className="card"><div className="muted">{t('ไม่มีรายการที่ค้างเช็คเอาท์')}</div></div>
+        )
       ) : (
         <div className="card">
           <label>{t('เลือกเอเจ้นท์')}</label>
@@ -163,6 +187,7 @@ export default function Checkin() {
           <button className="btn" style={{ width: '100%', marginTop: 14, padding: 14, fontSize: 16 }} disabled={busy} onClick={checkIn}>{busy ? '...' : '📍 ' + t('เช็คอิน')}</button>
         </div>
       )}
+
       {msg && <div className="muted" style={{ marginTop: 8 }}>{msg}</div>}
 
       <h3 style={{ margin: '22px 0 10px' }}>{t('ประวัติเช็คอิน')}</h3>

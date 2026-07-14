@@ -30,6 +30,13 @@ router.get('/', wrap(async (req, res) => {
   res.json({ rows });
 }));
 
+// รายการที่ยังไม่เช็คเอาท์ทั้งหมดของผู้ใช้ (ค้างได้หลายรายการ)
+router.get('/open', wrap(async (req, res) => {
+  const rows = (await q(`${SELECT} WHERE ck.company_id=$1 AND ck.user_id=$2 AND ck.check_out_at IS NULL ORDER BY ck.check_in_at DESC`,
+    [req.user.company_id, req.user.id])).rows;
+  res.json({ rows });
+}));
+
 router.get('/active', wrap(async (req, res) => {
   const r = await q(`${SELECT} WHERE ck.company_id=$1 AND ck.user_id=$2 AND ck.check_out_at IS NULL ORDER BY ck.check_in_at DESC LIMIT 1`,
     [req.user.company_id, req.user.id]);

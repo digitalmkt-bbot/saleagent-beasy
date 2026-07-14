@@ -138,6 +138,8 @@ const EN = {
   '- เลือกเอเจ้นท์ก่อน -': '- select agent first -',
   'ออกสัญญา': 'Contracts',
   'กรุณาเลือกเอเจ้นท์ (ชื่อกิจการ) ก่อนบันทึก': 'Please select an agent (business name) before saving',
+  'เลือกรายการที่จะเช็คเอาท์': 'Select a visit to check out',
+  'ไม่มีรายการที่ค้างเช็คเอาท์': 'No open visits to check out',
 };
 
 const Ctx = createContext({ t: (s) => s, lang: 'th', toggle: () => {} });
