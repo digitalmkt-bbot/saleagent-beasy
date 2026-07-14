@@ -10,7 +10,6 @@ import Checkin from './pages/Checkin.jsx';
 import Projects from './pages/Projects.jsx';
 import ProjectDetail from './pages/ProjectDetail.jsx';
 import Quotations from './pages/Quotations.jsx';
-import SaleOrders from './pages/SaleOrders.jsx';
 import Reports from './pages/Reports.jsx';
 import Settings from './pages/Settings.jsx';
 
@@ -29,7 +28,6 @@ export default function App() {
         <Route path="/projects" element={<Projects />} />
         <Route path="/projects/:id" element={<ProjectDetail />} />
         <Route path="/quotations" element={<Quotations />} />
-        <Route path="/saleorders" element={<SaleOrders />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/settings" element={<Settings />} />
       </Route>
