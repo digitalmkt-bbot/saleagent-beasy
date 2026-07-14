@@ -1,13 +1,17 @@
 const router = require('express').Router();
 const { q, tx } = require('../db');
 const { wrap } = require('./_util');
+const { isStaff, OWNED } = require('./_scope');
 
 router.get('/', wrap(async (req, res) => {
+  const staff = isStaff(req.user);
   const rows = await q(
     `SELECT q.*, c.name AS customer_name, p.name AS project_name
      FROM quotation q LEFT JOIN customer c ON c.id=q.customer_id
        LEFT JOIN project p ON p.id=q.project_id
-     WHERE q.company_id=$1 ORDER BY q.created_at DESC LIMIT 100`, [req.user.company_id]);
+     WHERE q.company_id=$1 ${staff ? `AND q.customer_id IN ${OWNED}` : ''}
+     ORDER BY q.created_at DESC LIMIT 100`,
+    staff ? [req.user.company_id, req.user.id] : [req.user.company_id]);
   res.json({ rows: rows.rows });
 }));
 

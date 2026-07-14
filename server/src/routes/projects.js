@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const { q, tx } = require('../db');
 const { wrap, num } = require('./_util');
+const { isStaff } = require('./_scope');
 
 function genCode() {
   const d = new Date(); const yy = String(d.getFullYear()).slice(2);
@@ -11,6 +12,7 @@ function genCode() {
 router.get('/', wrap(async (req, res) => {
   const cid = req.user.company_id;
   const where = ['p.company_id=$1']; const args = [cid]; let i = 2;
+  if (isStaff(req.user)) { where.push(`p.customer_id IN (SELECT id FROM customer WHERE company_id=$1 AND owner_user_id=$${i})`); args.push(req.user.id); i++; }
   if (req.query.search) { where.push(`(p.code ILIKE $${i} OR p.name ILIKE $${i})`); args.push('%' + req.query.search + '%'); i++; }
   if (req.query.stage) { where.push(`p.stage_id=$${i++}`); args.push(+req.query.stage); }
   if (req.query.customer_id) { where.push(`p.customer_id=$${i++}`); args.push(+req.query.customer_id); }

@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const { q } = require('../db');
 const { wrap } = require('./_util');
+const { isStaff } = require('./_scope');
 
 const SELECT = `SELECT ck.*, c.name AS customer_name, u.display_name AS user_name, p.name AS project_name
   FROM checkin ck
@@ -25,7 +26,7 @@ async function syncActivity(cid, ck) {
 
 router.get('/', wrap(async (req, res) => {
   const where = ['ck.company_id=$1']; const args = [req.user.company_id]; let i = 2;
-  if (req.query.mine === '1') { where.push(`ck.user_id=$${i++}`); args.push(req.user.id); }
+  if (isStaff(req.user) || req.query.mine === '1') { where.push(`ck.user_id=$${i++}`); args.push(req.user.id); }
   if (req.query.customer_id) { where.push(`ck.customer_id=$${i++}`); args.push(+req.query.customer_id); }
   const rows = (await q(`${SELECT} WHERE ${where.join(' AND ')} ORDER BY ck.check_in_at DESC LIMIT 200`, args)).rows;
   res.json({ rows });

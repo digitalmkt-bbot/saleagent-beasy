@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const { q } = require('../db');
 const { wrap, num } = require('./_util');
+const { isStaff } = require('./_scope');
 
 const SELECT = `SELECT a.*, c.name AS customer_name, ct.name AS contact_name, p.name AS project_name,
   cm.name AS method_name, u.display_name AS assignee_name, pr.label AS priority_label,
@@ -16,6 +17,7 @@ const SELECT = `SELECT a.*, c.name AS customer_name, ct.name AS contact_name, p.
 router.get('/', wrap(async (req, res) => {
   const cid = req.user.company_id;
   const where = ['a.company_id=$1']; const args = [cid]; let i = 2;
+  if (isStaff(req.user)) { where.push(`(a.assignee_user_id=$${i} OR a.customer_id IN (SELECT id FROM customer WHERE company_id=$1 AND owner_user_id=$${i}))`); args.push(req.user.id); i++; }
   if (req.query.status && req.query.status !== 'all') { where.push(`a.status=$${i++}`); args.push(req.query.status); }
   if (req.query.customer_id) { where.push(`a.customer_id=$${i++}`); args.push(+req.query.customer_id); }
   if (req.query.project_id) { where.push(`a.project_id=$${i++}`); args.push(+req.query.project_id); }
