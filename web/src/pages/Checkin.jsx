@@ -201,6 +201,11 @@ function EditModal({ row, projects, onClose, onSaved }) {
   const [note, setNote] = useState(row.note || '');
   const [image, setImage] = useState(row.image_url || null);
   const [busy, setBusy] = useState(false); const [err, setErr] = useState('');
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
 
   async function save() {
     setBusy(true); setErr('');
@@ -216,7 +221,11 @@ function EditModal({ row, projects, onClose, onSaved }) {
 
   return (
     <div className="modal-bg" onClick={onClose}><div className="modal" onClick={e => e.stopPropagation()}>
-      <h3 style={{ marginTop: 0 }}>{t('แก้ไขการเช็คอิน')} — {row.customer_name}</h3>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+        <h3 style={{ margin: 0 }}>{t('แก้ไขการเช็คอิน')} — {row.customer_name}</h3>
+        <button type="button" aria-label="close" onClick={onClose}
+          style={{ background: 'none', border: 'none', fontSize: 30, lineHeight: 1, cursor: 'pointer', color: 'var(--muted)', padding: '0 4px' }}>×</button>
+      </div>
 
       <div className="row">
         <div><label>{t('วันที่เข้า')}</label><input type="date" value={inD} onChange={e => setInD(e.target.value)} /></div>

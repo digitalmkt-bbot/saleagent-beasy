@@ -137,6 +137,7 @@ const EN = {
   'มีเวลาเช็คเอาท์': 'Has check-out time',
   '- เลือกเอเจ้นท์ก่อน -': '- select agent first -',
   'ออกสัญญา': 'Contracts',
+  'กรุณาเลือกเอเจ้นท์ (ชื่อกิจการ) ก่อนบันทึก': 'Please select an agent (business name) before saving',
 };
 
 const Ctx = createContext({ t: (s) => s, lang: 'th', toggle: () => {} });

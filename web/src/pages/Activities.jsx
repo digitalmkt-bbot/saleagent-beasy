@@ -98,6 +98,13 @@ function ActivityModal({ meta, t, edit, onClose, onSaved }) {
   const [mentions, setMentions] = useState([]);
   const [image, setImage] = useState(init.image_url || null);
   const [err, setErr] = useState('');
+  const errRef = useRef(null);
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  const fail = (m) => { setErr(m); setTimeout(() => errRef.current && errRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' }), 0); };
   const set = (k, v) => setF(p => ({ ...p, [k]: v }));
   const fmtDT = (iso) => iso ? new Date(iso).toLocaleString('th-TH', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
   const PR = ['ต่ำ', 'ปานกลาง', 'สูง', 'สูงมาก', 'ด่วนที่สุด'];
@@ -144,15 +151,19 @@ function ActivityModal({ meta, t, edit, onClose, onSaved }) {
     e.target.value = '';
   }
   async function save(again) {
-    if (!f.customer_id) return setErr(t('เลือกเอเจ้นท์'));
+    if (!f.customer_id) return fail(t('กรุณาเลือกเอเจ้นท์ (ชื่อกิจการ) ก่อนบันทึก'));
     const body = { ...f, contact_id: f.contact_id || null, project_id: f.project_id || null, stage_id: f.stage_id || null,
       due_at: f.is_follow_up ? f.due_at : null, status: f.is_follow_up ? 'pending' : 'done', tag_ids: tagIds, mentions, image_url: image };
     try { if (edit) await api('/activities/' + edit.id, { method: 'PUT', body }); else await api('/activities', { method: 'POST', body }); onSaved(again); }
-    catch (e) { setErr(e.message); }
+    catch (e) { fail(e.message); }
   }
   return (
     <div className="modal-bg" onClick={onClose}><div className="modal" onClick={e => e.stopPropagation()}>
-      <h3 style={{ marginTop: 0 }}>{edit ? t('แก้ไขกิจกรรม') : t('สร้างบันทึกกิจกรรม')}</h3>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+        <h3 style={{ margin: 0 }}>{edit ? t('แก้ไขกิจกรรม') : t('สร้างบันทึกกิจกรรม')}</h3>
+        <button type="button" aria-label="close" onClick={onClose}
+          style={{ background: 'none', border: 'none', fontSize: 30, lineHeight: 1, cursor: 'pointer', color: 'var(--muted)', padding: '0 4px' }}>×</button>
+      </div>
       <div className="row">
         <div><label>{t('ชื่อกิจการ *')}</label><select value={f.customer_id} onChange={e => set('customer_id', e.target.value)}><option value="">{t('- เลือกเอเจ้นท์ -')}</option>{meta.customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
         <div><label>{t('ผู้ติดต่อ')}</label><select value={f.contact_id} onChange={e => set('contact_id', e.target.value)}><option value="">-</option>{contacts.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
@@ -180,7 +191,7 @@ function ActivityModal({ meta, t, edit, onClose, onSaved }) {
         <div style={{ flex: '0 0 auto' }}><label style={{ display: 'inline' }}><input type="checkbox" style={{ width: 'auto', marginRight: 6 }} checked={f.is_follow_up} onChange={e => set('is_follow_up', e.target.checked)} />{t('สร้างงานติดตาม')}</label></div>
         {f.is_follow_up && <div><label>{t('กำหนดติดตาม')}</label><input type="date" value={f.due_at} onChange={e => set('due_at', e.target.value)} /></div>}
       </div>
-      {err && <div className="err">{err}</div>}
+      <div ref={errRef}>{err && <div className="err">{err}</div>}</div>
       <div style={{ marginTop: 18, display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
         <button className="btn ghost" onClick={onClose}>{t('ยกเลิก')}</button>
         <button className="btn" onClick={() => save(false)}>{t('บันทึก')}</button>
