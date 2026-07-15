@@ -26,8 +26,9 @@ export default function Users() {
     try { await api('/users/' + u.id + '/password', { method: 'PUT', body: { password: pw } }); alert(t('เปลี่ยนรหัสผ่านแล้ว')); }
     catch (e) { alert(e.message); }
   }
-  async function toggleActive(u) {
-    try { await api('/users/' + u.id, { method: 'PUT', body: { ...u, is_active: !u.is_active } }); load(); }
+  async function del(u) {
+    if (!confirm(t('ลบผู้ใช้') + ' ' + u.display_name + ' ?')) return;
+    try { await api('/users/' + u.id, { method: 'DELETE' }); load(); }
     catch (e) { alert(e.message); }
   }
 
@@ -51,7 +52,7 @@ export default function Users() {
                 <td>{u.is_active ? <span className="pill green">{t('ใช้งาน')}</span> : <span className="pill">{t('ปิด')}</span>}</td>
                 <td style={{ whiteSpace: 'nowrap' }}>
                   <a onClick={() => setModal(u)}>{t('แก้ไข')}</a>{' · '}
-                  <a onClick={() => resetPw(u)}>{t('รีเซ็ตรหัส')}</a>{u.id !== user.id && <>{' · '}<a onClick={() => toggleActive(u)}>{u.is_active ? t('ปิด') : t('เปิด')}</a></>}
+                  <a onClick={() => resetPw(u)}>{t('รีเซ็ตรหัส')}</a>{u.id !== user.id && <>{' · '}<a onClick={() => del(u)} style={{ color: 'var(--red-text)' }}>{t('ลบ')}</a></>}
                 </td>
               </tr>
             ))}

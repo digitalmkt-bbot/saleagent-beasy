@@ -51,4 +51,19 @@ router.put('/:id/password', wrap(async (req, res) => {
   res.json({ ok: true });
 }));
 
+router.delete('/:id', wrap(async (req, res) => {
+  const id = +req.params.id;
+  if (id === req.user.id) return res.status(400).json({ error: 'ลบบัญชีตัวเองไม่ได้' });
+  const u = (await q('SELECT id FROM app_user WHERE id=$1 AND company_id=$2', [id, req.user.company_id])).rows[0];
+  if (!u) return res.status(404).json({ error: 'ไม่พบผู้ใช้' });
+  await q('DELETE FROM team_member WHERE user_id=$1', [id]);
+  try {
+    await q('DELETE FROM app_user WHERE id=$1 AND company_id=$2', [id, req.user.company_id]);
+    res.json({ ok: true });
+  } catch (e) {
+    if (e.code === '23503') return res.status(409).json({ error: 'ผู้ใช้นี้มีข้อมูลผูกอยู่ (เอเจ้นท์/งาน/เช็คอิน) ลบไม่ได้ — ให้ปิดใช้งานแทน' });
+    throw e;
+  }
+}));
+
 module.exports = router;

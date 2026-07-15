@@ -174,6 +174,7 @@ const EN = {
   'ยังไม่มีผู้ใช้': 'No users yet',
   'เฉพาะผู้ดูแลระบบ (admin) เท่านั้น': 'Admins only',
   'ผู้ดูแลระบบ': 'Administration',
+  'ลบผู้ใช้': 'Delete user',
 };
 
 const Ctx = createContext({ t: (s) => s, lang: 'th', toggle: () => {} });
