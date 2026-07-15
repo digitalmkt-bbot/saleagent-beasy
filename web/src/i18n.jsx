@@ -143,6 +143,20 @@ const EN = {
   'รายละเอียด / สรุปการเข้าพบ': 'Visit summary / details',
   'เช่น คุยแพ็กเกจ 4 เกาะ ราคา 120,000 รอเอเจ้นท์ยืนยันสัปดาห์หน้า': 'e.g. discussed 4-island package, THB 120,000, agent to confirm next week',
   'ตอนเช็คอิน': 'at check-in',
+  'เรตราคา': 'Rates',
+  'ดูแพ็กเกจราคาของเอเจ้นท์ และคำนวณราคาตามจำนวนผู้โดยสาร (อ่านจากระบบ rate โดยตรง)': 'View agent rate packages and calculate prices by passenger count (read live from the rate system)',
+  'ยังไม่ได้เชื่อมต่อระบบ rate': 'Rate system not connected yet',
+  'ตั้งค่าใน Railway': 'Set up in Railway',
+  'แล้ว deploy ใหม่ หน้านี้จะทำงานทันที': 'then redeploy — this page works immediately',
+  'แพ็กเกจ': 'Package',
+  'ใช้ได้': 'Valid',
+  'ตารางราคาที่นั่ง': 'Seat rate table',
+  'เส้นทาง': 'Route',
+  'เครื่องคิดราคา': 'Price calculator',
+  'โซนรับส่ง': 'Transfer zone',
+  'แสดงเฉพาะเอเจ้นท์ที่คุณดูแล': 'Showing only agents you manage',
+  'ไม่พบเซลส์ที่ตรงกับอีเมลของคุณในระบบ rate': 'No sales rep in the rate system matches your email',
+  'ให้แอดมินตั้งอีเมลให้ตรงกัน': 'ask an admin to align the emails',
 };
 
 const Ctx = createContext({ t: (s) => s, lang: 'th', toggle: () => {} });

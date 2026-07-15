@@ -14,13 +14,14 @@ const I = {
   chart: 'M3 20h18 M7 20v-5 M12 20V8 M17 20v-9',
   sliders: 'M4 21v-7 M4 10V3 M12 21v-9 M12 8V3 M20 21v-5 M20 12V3 M1 14h6 M9 8h6 M17 16h6',
   bell: 'M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9 M13.7 21a2 2 0 0 1-3.4 0',
+  price: 'M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z M7 7h.01',
   pin: 'M12 21s-7-6.5-7-11a7 7 0 0 1 14 0c0 4.5-7 11-7 11z M12 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4z',
 };
 const Ic = ({ d }) => <span className="ico"><svg viewBox="0 0 24 24"><path d={d} /></svg></span>;
 
 const sections = [
   ['เมนูหลัก', [['/', 'แผงบริหาร', 'dashboard'], ['/activities', 'งานติดตาม', 'checklist'], ['/checkin', 'เช็คอินเอเจ้นท์', 'pin'], ['/customers', 'เอเจ้นท์', 'users'], ['/projects', 'กลุ่มเป้าหมาย', 'briefcase']]],
-  ['เอกสาร & รายงาน', [['/quotations', 'ออกสัญญา', 'file'], ['/reports', 'รายงาน', 'chart'], ['/settings', 'ตั้งค่า', 'sliders']]],
+  ['เอกสาร & รายงาน', [['/quotations', 'ออกสัญญา', 'file'], ['/rates', 'เรตราคา', 'price'], ['/reports', 'รายงาน', 'chart'], ['/settings', 'ตั้งค่า', 'sliders']]],
 ];
 
 export default function Layout() {
