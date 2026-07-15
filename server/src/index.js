@@ -16,6 +16,7 @@ app.use('/api', authMiddleware);
 app.use('/api/customers', require('./routes/customers'));
 app.use('/api/activities', require('./routes/activities'));
 app.use('/api/rates', require('./routes/rates'));
+app.use('/api/users', require('./routes/users'));
 app.use('/api/checkins', require('./routes/checkins'));
 app.use('/api/projects', require('./routes/projects'));
 app.use('/api/quotations', require('./routes/quotations'));

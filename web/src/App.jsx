@@ -8,6 +8,7 @@ import CustomerDetail from './pages/CustomerDetail.jsx';
 import Activities from './pages/Activities.jsx';
 import Checkin from './pages/Checkin.jsx';
 import Rates from './pages/Rates.jsx';
+import Users from './pages/Users.jsx';
 import Projects from './pages/Projects.jsx';
 import ProjectDetail from './pages/ProjectDetail.jsx';
 import Quotations from './pages/Quotations.jsx';
@@ -27,6 +28,7 @@ export default function App() {
         <Route path="/activities" element={<Activities />} />
         <Route path="/checkin" element={<Checkin />} />
         <Route path="/rates" element={<Rates />} />
+        <Route path="/users" element={<Users />} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/projects/:id" element={<ProjectDetail />} />
         <Route path="/quotations" element={<Quotations />} />

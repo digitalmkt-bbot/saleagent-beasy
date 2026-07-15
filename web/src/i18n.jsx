@@ -157,6 +157,23 @@ const EN = {
   'แสดงเฉพาะเอเจ้นท์ที่คุณดูแล': 'Showing only agents you manage',
   'ไม่พบเซลส์ที่ตรงกับอีเมลของคุณในระบบ rate': 'No sales rep in the rate system matches your email',
   'ให้แอดมินตั้งอีเมลให้ตรงกัน': 'ask an admin to align the emails',
+  'จัดการผู้ใช้': 'Manage users',
+  'เพิ่ม/แก้ไข/รีเซ็ตรหัสผ่าน/ปิดใช้งาน ผู้ใช้ในระบบ': 'Add / edit / reset password / deactivate system users',
+  'เพิ่มผู้ใช้': 'Add user',
+  'แก้ไขผู้ใช้': 'Edit user',
+  'โทร': 'Phone',
+  'บทบาท': 'Role',
+  'ใช้งาน': 'Active',
+  'ปิด': 'Off',
+  'รีเซ็ตรหัส': 'Reset password',
+  'รหัสผ่านตั้งต้น': 'Default password',
+  'เปิดใช้งาน': 'Active',
+  'ต้องมีชื่อและอีเมล': 'Name and email are required',
+  'ตั้งรหัสผ่านใหม่ให้': 'Set a new password for',
+  'เปลี่ยนรหัสผ่านแล้ว': 'Password changed',
+  'ยังไม่มีผู้ใช้': 'No users yet',
+  'เฉพาะผู้ดูแลระบบ (admin) เท่านั้น': 'Admins only',
+  'ผู้ดูแลระบบ': 'Administration',
 };
 
 const Ctx = createContext({ t: (s) => s, lang: 'th', toggle: () => {} });

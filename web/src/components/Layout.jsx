@@ -14,6 +14,7 @@ const I = {
   chart: 'M3 20h18 M7 20v-5 M12 20V8 M17 20v-9',
   sliders: 'M4 21v-7 M4 10V3 M12 21v-9 M12 8V3 M20 21v-5 M20 12V3 M1 14h6 M9 8h6 M17 16h6',
   bell: 'M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9 M13.7 21a2 2 0 0 1-3.4 0',
+  shield: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z M9 12l2 2 4-4',
   price: 'M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z M7 7h.01',
   pin: 'M12 21s-7-6.5-7-11a7 7 0 0 1 14 0c0 4.5-7 11-7 11z M12 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4z',
 };
@@ -36,7 +37,7 @@ export default function Layout() {
     <div className="app">
       <aside className={'sidebar' + (menu ? ' open' : '')}>
         <div className="brand"><span className="logo"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#fff" strokeWidth="2" strokeLinejoin="round"><path d="M12 2l9 6-9 14L3 8z" /></svg></span>SaleAgent<span>.</span>Beasy</div>
-        {sections.map(([title, items]) => (
+        {[...sections, ...(String((user && user.role) || '').toLowerCase() === 'admin' ? [['ผู้ดูแลระบบ', [['/users', 'จัดการผู้ใช้', 'shield']]]] : [])].map(([title, items]) => (
           <div key={title}>
             <div className="nav-section">{t(title)}</div>
             <nav className="nav">{items.map(([to, label, icon]) =>
