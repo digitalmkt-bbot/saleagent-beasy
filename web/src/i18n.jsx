@@ -176,6 +176,7 @@ const EN = {
   'ผู้ดูแลระบบ': 'Administration',
   'ลบผู้ใช้': 'Delete user',
   'ID': 'ID',
+  'รหัสผู้ใช้ (ID)': 'User ID (code)',
 };
 
 const Ctx = createContext({ t: (s) => s, lang: 'th', toggle: () => {} });

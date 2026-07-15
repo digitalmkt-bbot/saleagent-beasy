@@ -45,7 +45,7 @@ export default function Users() {
           <tbody>
             {rows.map(u => (
               <tr key={u.id} style={{ opacity: u.is_active ? 1 : 0.5 }}>
-                <td className="muted">#{u.id}</td>
+                <td><b>{u.user_code || ''}</b>{!u.user_code && <span className="muted">#{u.id}</span>}</td>
                 <td><b>{u.display_name}</b></td>
                 <td>{u.email}</td>
                 <td>{u.phone || '-'}</td>
@@ -69,7 +69,7 @@ export default function Users() {
 function UserModal({ init, onClose, onSaved }) {
   const { t } = useI18n();
   const edit = !!init.id;
-  const [f, setF] = useState({ display_name: init.display_name || '', email: init.email || '', phone: init.phone || '', role: init.role || 'sales', password: '', is_active: init.is_active !== false });
+  const [f, setF] = useState({ user_code: init.user_code || '', display_name: init.display_name || '', email: init.email || '', phone: init.phone || '', role: init.role || 'sales', password: '', is_active: init.is_active !== false });
   const [err, setErr] = useState(''); const [busy, setBusy] = useState(false);
   const set = (k, v) => setF(p => ({ ...p, [k]: v }));
   useEffect(() => { const on = e => { if (e.key === 'Escape') onClose(); }; document.addEventListener('keydown', on); return () => document.removeEventListener('keydown', on); }, [onClose]);
@@ -90,7 +90,8 @@ function UserModal({ init, onClose, onSaved }) {
         <h3 style={{ margin: 0 }}>{edit ? t('แก้ไขผู้ใช้') : t('เพิ่มผู้ใช้')}</h3>
         <button type="button" aria-label="close" onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 28, cursor: 'pointer', color: 'var(--muted)' }}>×</button>
       </div>
-      <label>{t('ชื่อ')} *</label><input value={f.display_name} onChange={e => set('display_name', e.target.value)} />
+      <label>{t('รหัสผู้ใช้ (ID)')}</label><input value={f.user_code} onChange={e => set('user_code', e.target.value)} placeholder="เช่น IRIS, s01 (ถ้าเว้นว่างจะใช้เลขระบบ)" />
+      <label style={{ marginTop: 8, display: 'block' }}>{t('ชื่อ')} *</label><input value={f.display_name} onChange={e => set('display_name', e.target.value)} />
       <label style={{ marginTop: 8, display: 'block' }}>{t('อีเมล')} *</label><input type="email" value={f.email} onChange={e => set('email', e.target.value)} placeholder="name@loveandaman.com" />
       <div className="row" style={{ marginTop: 8 }}>
         <div><label>{t('โทร')}</label><input value={f.phone} onChange={e => set('phone', e.target.value)} /></div>

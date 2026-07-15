@@ -95,6 +95,9 @@ async function runMigrations() {
     log('migration: rename ใบเสนอราคา -> สัญญา in pipeline_stage/tag');
     await q("CREATE INDEX IF NOT EXISTS idx_checkin_company ON checkin(company_id)");
     log('migration: checkin table ensured');
+    await q("ALTER TABLE app_user ADD COLUMN IF NOT EXISTS user_code VARCHAR(50)");
+    await q("CREATE UNIQUE INDEX IF NOT EXISTS ux_app_user_code ON app_user(company_id, user_code) WHERE user_code IS NOT NULL");
+    log('migration: app_user.user_code ensured');
   } catch (e) { log('migration skipped/failed: ' + e.message); }
 }
 
