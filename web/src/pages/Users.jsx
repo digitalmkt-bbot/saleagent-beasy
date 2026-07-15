@@ -41,10 +41,11 @@ export default function Users() {
       {err && <div className="err">{err}</div>}
       <div className="panel">
         <table>
-          <thead><tr><th>{t('ชื่อ')}</th><th>{t('อีเมล')}</th><th>{t('โทร')}</th><th>{t('บทบาท')}</th><th>{t('สถานะ')}</th><th></th></tr></thead>
+          <thead><tr><th>{t('ID')}</th><th>{t('ชื่อ')}</th><th>{t('อีเมล')}</th><th>{t('โทร')}</th><th>{t('บทบาท')}</th><th>{t('สถานะ')}</th><th></th></tr></thead>
           <tbody>
             {rows.map(u => (
               <tr key={u.id} style={{ opacity: u.is_active ? 1 : 0.5 }}>
+                <td className="muted">#{u.id}</td>
                 <td><b>{u.display_name}</b></td>
                 <td>{u.email}</td>
                 <td>{u.phone || '-'}</td>
@@ -56,7 +57,7 @@ export default function Users() {
                 </td>
               </tr>
             ))}
-            {!rows.length && <tr><td colSpan="6" className="muted">{t('ยังไม่มีผู้ใช้')}</td></tr>}
+            {!rows.length && <tr><td colSpan="7" className="muted">{t('ยังไม่มีผู้ใช้')}</td></tr>}
           </tbody>
         </table>
       </div>

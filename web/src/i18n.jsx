@@ -175,6 +175,7 @@ const EN = {
   'เฉพาะผู้ดูแลระบบ (admin) เท่านั้น': 'Admins only',
   'ผู้ดูแลระบบ': 'Administration',
   'ลบผู้ใช้': 'Delete user',
+  'ID': 'ID',
 };
 
 const Ctx = createContext({ t: (s) => s, lang: 'th', toggle: () => {} });
