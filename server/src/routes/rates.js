@@ -239,4 +239,19 @@ router.get('/report/winrate', wrap(async (req, res) => {
   res.json(r);
 }));
 
+router.get('/report/monthly', wrap(async (req, res) => {
+  const { from, to } = req.query;
+  const sc = await scopeFor(req);
+  if (!sc.all && !sc.code) return res.json({ rows: [] });
+  const where = ["b.status='confirmed'"]; const args = []; let i = 1;
+  if (from) { where.push(`COALESCE(NULLIF(b.bookingdate,''),b.createdat) >= $${i++}`); args.push(from); }
+  if (to) { where.push(`COALESCE(NULLIF(b.bookingdate,''),b.createdat) <= $${i++}`); args.push(to); }
+  if (!sc.all) { where.push(`a.sales = $${i++}`); args.push(sc.code); }
+  const rows = (await rq(`SELECT LEFT(COALESCE(NULLIF(b.bookingdate,''), b.createdat::text), 7) AS month,
+      count(*)::int deals, COALESCE(sum(b.total),0)::bigint value
+    FROM operation_schemas.sb_bookings b LEFT JOIN operation_schemas.sb_agents a ON a.id=b.agentid
+    WHERE ${where.join(' AND ')} GROUP BY 1 ORDER BY 1`, args)).rows;
+  res.json({ rows });
+}));
+
 module.exports = router;

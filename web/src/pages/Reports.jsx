@@ -121,6 +121,7 @@ export default function Reports() {
   const [rateErr, setRateErr] = useState('');
   const [modal, setModal] = useState(null);
   const [wr, setWr] = useState(null);
+  const [monthly, setMonthly] = useState(null);
 
   useEffect(() => { api('/reports/summary').then(setD).catch(() => {}); }, []);
   function loadReports() {
@@ -130,6 +131,7 @@ export default function Reports() {
     api('/rates/report/product-volume', { params }).then(r => setProducts(r.rows || [])).catch(() => setProducts([]));
     api('/rates/report/sales-volume', { params }).then(r => setSalesVol(r.rows || [])).catch(() => setSalesVol([]));
     api('/rates/report/winrate', { params }).then(setWr).catch(() => setWr(null));
+    api('/rates/report/monthly', { params }).then(r => setMonthly(r.rows || [])).catch(() => setMonthly(null));
     setOpenUser(null); setDrill([]);
   }
   useEffect(() => { loadReports(); }, []); // eslint-disable-line
@@ -144,8 +146,9 @@ export default function Reports() {
   const av = agentVol || [], pv = products || [], sv = salesVol || [];
   const revTotal = av.reduce((a, x) => a + (+x.revenue || 0), 0);
   const bkTotal = av.reduce((a, x) => a + (+x.bookings || 0), 0);
-  const mSeries = (d.monthly || []).map(m => +m.value);
-  const mDeals = (d.monthly || []).map(m => +m.deals);
+  const mrows = (!rateErr && monthly && monthly.length) ? monthly : (d.monthly || []);
+  const mSeries = mrows.map(m => +m.value);
+  const mDeals = mrows.map(m => +m.deals);
   const mValTotal = mSeries.reduce((a, b) => a + b, 0);
   const win = (!rateErr && wr && wr.total != null && wr.total > 0)
     ? { winRate: Math.round(wr.won / wr.total * 100), won: wr.won, open: Math.max(0, (wr.total || 0) - (wr.won || 0)), won_value: +wr.won_value || 0 }
@@ -193,10 +196,10 @@ export default function Reports() {
       <div className="r3 rowm">
         <Card>
           <Head title={t('ยอดรายเดือน')} right={<Pill dir="up">YTD</Pill>} />
-          <PLBars months={d.monthly} />
+          <PLBars months={mrows} />
           <div style={{ display: 'flex', gap: 18, marginTop: 12, paddingTop: 12, borderTop: '1px solid #F1EFFA' }}>
-            <div><div style={{ fontSize: 10.5, color: '#8E8AAB', fontWeight: 700, letterSpacing: '.4px' }}>{t('เดือนล่าสุด')}</div><div style={{ fontSize: 18, fontWeight: 800 }}>{compact(+(d.monthly.slice(-1)[0]?.value || 0))}</div></div>
-            <div><div style={{ fontSize: 10.5, color: '#8E8AAB', fontWeight: 700, letterSpacing: '.4px' }}>{t('รวมทั้งปี')}</div><div style={{ fontSize: 18, fontWeight: 800 }}>{compact(d.monthly.reduce((a, m) => a + (+m.value || 0), 0))}</div></div>
+            <div><div style={{ fontSize: 10.5, color: '#8E8AAB', fontWeight: 700, letterSpacing: '.4px' }}>{t('เดือนล่าสุด')}</div><div style={{ fontSize: 18, fontWeight: 800 }}>{compact(+(mrows.slice(-1)[0]?.value || 0))}</div></div>
+            <div><div style={{ fontSize: 10.5, color: '#8E8AAB', fontWeight: 700, letterSpacing: '.4px' }}>{t('รวมทั้งปี')}</div><div style={{ fontSize: 18, fontWeight: 800 }}>{compact(mrows.reduce((a, m) => a + (+m.value || 0), 0))}</div></div>
           </div>
         </Card>
         <Card>
