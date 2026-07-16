@@ -202,6 +202,8 @@ const EN = {
   'Top 10 Product (เส้นทาง) ตามยอด': 'Top 10 products (routes) by revenue',
   'Product / เส้นทาง': 'Product / route',
   'ภาพรวม CRM': 'CRM overview',
+  'ดูทั้งหมด': 'View all',
+  'นับทุกช่องทาง · คลิกแท่งเพื่อดูว่าไปเอเจ้นท์ไหนบ้าง': 'All channels · click a bar to see which agents',
 };
 
 const Ctx = createContext({ t: (s) => s, lang: 'th', toggle: () => {} });
