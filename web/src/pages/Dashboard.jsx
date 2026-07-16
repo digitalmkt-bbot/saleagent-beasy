@@ -95,10 +95,15 @@ export default function Dashboard() {
   const abu = rep?.activityByUser || []; const doneSum = abu.reduce((a, x) => a + x.done, 0), pendSum = abu.reduce((a, x) => a + x.pending, 0), overSum = abu.reduce((a, x) => a + x.overdue, 0);
   const onTime = doneSum + overSum ? Math.round(doneSum / (doneSum + overSum) * 100) : 0;
   const regularPct = d.customers.total ? Math.round(((custs.filter(c => c.lifecycle_stage === 'regular').length) / d.customers.total) * 100) : 0;
+  const avgPerBk = win.won ? win.won_value / win.won : 0;
+  const monthsActive = (rmon || []).filter(m => +m.value > 0).length;
   const hexMetrics = [
-    { k: 'อัตราปิด', v: Math.min(100, win.winRate) }, { k: 'งานตรงเวลา', v: onTime },
-    { k: 'ไปป์ไลน์', v: Math.min(100, d.projects.open * 12) }, { k: 'เอเจ้นท์ประจำ', v: Math.min(100, regularPct) },
-    { k: 'กิจกรรม', v: Math.min(100, (doneSum + pendSum) * 5) }, { k: 'มูลค่า', v: Math.min(100, Math.round(d.projects.won_value / 20000)) },
+    { k: 'อัตรายืนยัน', v: Math.min(100, win.winRate) },
+    { k: 'มูลค่าเฉลี่ย', v: Math.min(100, Math.round(avgPerBk / 80)) },
+    { k: 'ยอดรวม', v: Math.min(100, Math.round((win.total_value || 0) / 100000)) },
+    { k: 'จำนวนบุ๊กกิ้ง', v: Math.min(100, Math.round((win.won || 0) / 15)) },
+    { k: 'เซลส์มียอด', v: Math.min(100, ownersRaw.length * 10) },
+    { k: 'เดือนมียอด', v: Math.round(monthsActive / 12 * 100) },
   ];
   const hexAvg = Math.round(hexMetrics.reduce((a, m) => a + m.v, 0) / hexMetrics.length);
   const typeCounts = ATYPES.map((n, i) => ({ n, c: acts.filter(a => a.activity_type === i).length })).filter(x => x.c > 0).sort((a, b) => b.c - a.c).slice(0, 4);
@@ -125,9 +130,9 @@ export default function Dashboard() {
         <Stat label={t('ปิดการขายแล้ว')} value={kfmt(win.won_value)} sub={`${win.won} ${t('ดีล')}`} subUp badge="i" icon="trophy" chart={<DotWave data={chartSeries} />} live />
         <Stat label={t('เอเจ้นท์ทั้งหมด')} value={d.customers.total} sub={`${t('ใหม่')} +${d.customers.new}`} subUp badge="b" icon="users" chart={<DotGrid data={monthly} />} />
         <Stat label={t('มูลค่ารวม (Booking)')} value={kfmt(win.total_value)} sub={`${win.total} ${t('บุ๊กกิ้ง')}`} subUp badge="a" icon="coins" chart={<AreaMini data={chartSeries} />} />
-        <Stat label="Win rate" value={win.winRate + '%'} sub={`${win.won}/${win.total}`} subUp badge="p" icon="target" chart={<DotLine data={chartSeries} />} />
+        <Stat label={t('ยอดเฉลี่ย/บุ๊กกิ้ง')} value={kfmt(win.won ? win.won_value / win.won : 0)} sub={`${win.won} ${t('บุ๊กกิ้ง')}`} subUp badge="p" icon="target" chart={<DotLine data={chartSeries} />} />
         <Stat label={t('งานติดตามค้าง')} value={d.activities.pending} sub={`${d.activities.overdue} ${t('เกินกำหนด')}`} subUp={d.activities.overdue === 0} badge="r" icon="clock" chart={<BarsMini data={monthly} />} />
-        <Stat label={t('สุขภาพการขาย')} value={hexAvg} sub={`${onTime}% ${t('งานตรงเวลา')}`} subUp badge="p" icon="gauge" chart={<Gauge value={win.winRate} />} />
+        <Stat label={t('สุขภาพการขาย')} value={hexAvg} sub={`${win.winRate}% ${t('ยืนยัน')}`} subUp badge="p" icon="gauge" chart={<Gauge value={hexAvg} />} />
       </div>
 
       <div className="grid-glass-3">

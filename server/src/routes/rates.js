@@ -255,13 +255,4 @@ router.get('/report/monthly', wrap(async (req, res) => {
   res.json({ rows });
 }));
 
-router.get('/report/_diag', wrap(async (req, res) => {
-  if (String(req.user.role || '').toLowerCase() !== 'admin') return res.status(403).json({ error: 'admin only' });
-  const cols = (await rq("SELECT column_name FROM information_schema.columns WHERE table_schema='operation_schemas' AND table_name='sb_bookings' ORDER BY ordinal_position")).rows.map(r => r.column_name);
-  const tot = (await rq('SELECT count(*)::int c, count(distinct id)::int d FROM operation_schemas.sb_bookings')).rows[0];
-  const byStatus = (await rq("SELECT COALESCE(status,'(null)') status, count(*)::int c, COALESCE(sum(total),0)::bigint v FROM operation_schemas.sb_bookings GROUP BY status ORDER BY c DESC")).rows;
-  const byYear = (await rq("SELECT LEFT(COALESCE(NULLIF(bookingdate,''),createdat::text),4) yr, count(*)::int c, COALESCE(sum(total) FILTER (WHERE status='confirmed'),0)::bigint conf_v FROM operation_schemas.sb_bookings GROUP BY 1 ORDER BY 1")).rows;
-  res.json({ cols, tot, byStatus, byYear });
-}));
-
 module.exports = router;
