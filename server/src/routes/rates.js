@@ -170,4 +170,40 @@ router.get('/contract/:code', wrap(async (req, res) => {
   res.json({ agent, rateType, routes, sales });
 }));
 
+// รายงาน 3: ลำดับเอเจ้นท์ตามยอดที่ส่งให้บริษัท (จากบุ๊กกิ้งที่ confirmed)
+router.get('/report/agent-volume', wrap(async (req, res) => {
+  const { from, to } = req.query;
+  const sc = await scopeFor(req);
+  if (!sc.all && !sc.code) return res.json({ rows: [] });
+  const where = ["b.status='confirmed'"]; const args = []; let i = 1;
+  if (from) { where.push(`COALESCE(NULLIF(b.bookingdate,''),b.createdat) >= $${i++}`); args.push(from); }
+  if (to) { where.push(`COALESCE(NULLIF(b.bookingdate,''),b.createdat) <= $${i++}`); args.push(to); }
+  if (!sc.all) { where.push(`a.sales = $${i++}`); args.push(sc.code); }
+  const rows = (await rq(`SELECT b.agentid, a.name, a.code, count(*)::int bookings, COALESCE(sum(b.total),0)::bigint revenue
+    FROM operation_schemas.sb_bookings b
+    LEFT JOIN operation_schemas.sb_agents a ON a.id=b.agentid
+    WHERE ${where.join(' AND ')}
+    GROUP BY b.agentid,a.name,a.code ORDER BY revenue DESC NULLS LAST LIMIT 100`, args)).rows;
+  res.json({ rows });
+}));
+
+// รายงาน 4: Top 10 Product (เส้นทาง) ตามยอด
+router.get('/report/product-volume', wrap(async (req, res) => {
+  const { from, to } = req.query;
+  const sc = await scopeFor(req);
+  if (!sc.all && !sc.code) return res.json({ rows: [] });
+  const where = ["b.status='confirmed'"]; const args = []; let i = 1;
+  if (from) { where.push(`COALESCE(NULLIF(b.bookingdate,''),b.createdat) >= $${i++}`); args.push(from); }
+  if (to) { where.push(`COALESCE(NULLIF(b.bookingdate,''),b.createdat) <= $${i++}`); args.push(to); }
+  if (!sc.all) { where.push(`b.agentid IN (SELECT id FROM operation_schemas.sb_agents WHERE sales=$${i++})`); args.push(sc.code); }
+  const rows = (await rq(`SELECT t.routeid, r.name, count(DISTINCT t.sb_bookings_id)::int bookings,
+      COALESCE(sum(t.subtotal),0)::bigint revenue
+    FROM operation_schemas.sb_bookings__trips t
+    JOIN operation_schemas.sb_bookings b ON b.id=t.sb_bookings_id
+    LEFT JOIN operation_schemas.routes r ON r.id=t.routeid
+    WHERE ${where.join(' AND ')}
+    GROUP BY t.routeid,r.name ORDER BY revenue DESC NULLS LAST LIMIT 10`, args)).rows;
+  res.json({ rows });
+}));
+
 module.exports = router;

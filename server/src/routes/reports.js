@@ -40,4 +40,37 @@ router.get('/summary', wrap(async (req, res) => {
   res.json({ funnel: funnel.rows, byOwner: byOwner.rows, byTeam: byTeam.rows, activityByUser: actByUser.rows, win: { ...w, winRate }, monthly: monthly.rows });
 }));
 
+// รายงาน 1: ลำดับเซลส์ที่เข้าพบ/ติดต่อเอเจ้นท์เยอะสุด (ทุกช่องทาง) + แยกช่องทาง
+router.get('/sales-activity', wrap(async (req, res) => {
+  const c = cid(req); const staff = isStaff(req.user);
+  const { from, to } = req.query;
+  const where = ['a.company_id=$1']; const args = [c]; let i = 2;
+  if (from) { where.push(`a.activity_at::date >= $${i++}`); args.push(from); }
+  if (to) { where.push(`a.activity_at::date <= $${i++}`); args.push(to); }
+  if (staff) { where.push(`a.assignee_user_id=$${i++}`); args.push(req.user.id); }
+  const W = where.join(' AND ');
+  const totals = (await q(`SELECT a.assignee_user_id AS uid, u.display_name AS name, count(*)::int total
+    FROM activity a LEFT JOIN app_user u ON u.id=a.assignee_user_id
+    WHERE ${W} GROUP BY a.assignee_user_id,u.display_name ORDER BY total DESC`, args)).rows;
+  const methods = (await q(`SELECT a.assignee_user_id AS uid, COALESCE(cm.name,'-') AS method, count(*)::int n
+    FROM activity a LEFT JOIN contact_method cm ON cm.id=a.contact_method_id
+    WHERE ${W} GROUP BY a.assignee_user_id,cm.name`, args)).rows;
+  const byU = {}; methods.forEach(m => { (byU[m.uid] = byU[m.uid] || {})[m.method] = m.n; });
+  res.json({ rows: totals.map(r => ({ ...r, methods: byU[r.uid] || {} })) });
+}));
+
+// รายงาน 2: เซลส์คนนี้ไปเอเจ้นท์ไหนมาบ้าง
+router.get('/sales-activity/:userId', wrap(async (req, res) => {
+  const c = cid(req); const uid = +req.params.userId;
+  if (isStaff(req.user) && uid !== req.user.id) return res.status(403).json({ error: 'ดูได้เฉพาะของตัวเอง' });
+  const { from, to } = req.query;
+  const where = ['a.company_id=$1', 'a.assignee_user_id=$2']; const args = [c, uid]; let i = 3;
+  if (from) { where.push(`a.activity_at::date >= $${i++}`); args.push(from); }
+  if (to) { where.push(`a.activity_at::date <= $${i++}`); args.push(to); }
+  const rows = (await q(`SELECT a.customer_id, c2.name, count(*)::int n, max(a.activity_at) AS last_at
+    FROM activity a LEFT JOIN customer c2 ON c2.id=a.customer_id
+    WHERE ${where.join(' AND ')} GROUP BY a.customer_id,c2.name ORDER BY n DESC`, args)).rows;
+  res.json({ rows });
+}));
+
 module.exports = router;
