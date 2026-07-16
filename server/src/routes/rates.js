@@ -68,4 +68,32 @@ router.get('/agent/:id', wrap(async (req, res) => {
   });
 }));
 
+// นำเข้าเอเจ้นท์จากระบบ rate (sb_agents) มาเป็นเอเจ้นท์ใน CRM + map เจ้าของตามเซลส์ (อีเมล)  [admin]
+router.post('/import-agents', wrap(async (req, res) => {
+  if (String(req.user.role || '').toLowerCase() !== 'admin') return res.status(403).json({ error: 'เฉพาะผู้ดูแลระบบ (admin)' });
+  const cid = req.user.company_id;
+  const agents = (await rq(`SELECT id, code, name, sales, email, phone, ratetypeid FROM operation_schemas.sb_agents WHERE name IS NOT NULL AND name <> '' ORDER BY name`)).rows;
+  const sales = (await rq(`SELECT id, email FROM operation_schemas.sb_sales`)).rows;
+  const salesEmail = {}; sales.forEach(x => { if (x.email) salesEmail[x.id] = String(x.email).toLowerCase().trim(); });
+  const users = (await q('SELECT id, lower(email) AS email FROM app_user WHERE company_id=$1', [cid])).rows;
+  const userByEmail = {}; users.forEach(u => { userByEmail[u.email] = u.id; });
+  let created = 0, updated = 0;
+  for (const a of agents) {
+    const code = (a.code || a.id || '').toString().trim() || null;
+    const owner = userByEmail[salesEmail[a.sales]] || null;
+    const existing = code ? (await q('SELECT id FROM customer WHERE company_id=$1 AND ref_code=$2 LIMIT 1', [cid, code])).rows[0] : null;
+    if (existing) {
+      await q(`UPDATE customer SET name=$2, phone=COALESCE($3,phone), email=COALESCE($4,email), owner_user_id=COALESCE($5,owner_user_id), updated_at=now() WHERE id=$1`,
+        [existing.id, a.name, a.phone || null, a.email || null, owner]);
+      updated++;
+    } else {
+      await q(`INSERT INTO customer (company_id,name,ref_code,phone,email,priority_id,owner_user_id,lifecycle_stage,is_followed,created_by)
+        VALUES ($1,$2,$3,$4,$5,3,$6,'regular',true,$7)`,
+        [cid, a.name, code, a.phone || null, a.email || null, owner, req.user.id]);
+      created++;
+    }
+  }
+  res.json({ created, updated, total: agents.length });
+}));
+
 module.exports = router;

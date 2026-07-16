@@ -3,10 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import { LIFE, Stars } from '../lib.jsx';
 import { useI18n } from '../i18n.jsx';
+import { useAuth } from '../auth.jsx';
 
 export default function Customers() {
   const nav = useNavigate();
   const { t } = useI18n();
+  const { user } = useAuth();
+  const [importing, setImporting] = useState(false);
   const [data, setData] = useState({ rows: [], stats: {} });
   const [tab, setTab] = useState('list');
   const [f, setF] = useState({ search: '', lifecycle: '', team: '', owner: '', tag: '', priority: '' });
@@ -14,6 +17,12 @@ export default function Customers() {
   const [show, setShow] = useState(false);
   const set = (k, v) => setF(p => ({ ...p, [k]: v }));
   function load() { api('/customers', { params: { ...f, sort: tab === 'rank' ? 'rank' : '', limit: 100 } }).then(setData).catch(() => {}); }
+  async function importFromRate() {
+    if (!confirm(t('ดึงเอเจ้นท์จากระบบ Rate มาสร้างใน CRM? (map เจ้าของตามเซลส์อัตโนมัติ)'))) return;
+    setImporting(true);
+    try { const r = await api('/rates/import-agents', { method: 'POST' }); alert(t('นำเข้าเสร็จ') + ` — ${t('สร้างใหม่')} ${r.created}, ${t('อัปเดต')} ${r.updated}`); load(); }
+    catch (e) { alert(e.message); } finally { setImporting(false); }
+  }
   useEffect(() => { load(); }, [f.lifecycle, f.team, f.owner, f.tag, f.priority, tab]);
   useEffect(() => { Promise.all([api('/meta/users'), api('/meta/teams'), api('/tags', { params: { scope: 'customer' } })]).then(([u, t, tg]) => setMeta({ users: u.rows, teams: t.rows, tags: tg.rows })).catch(() => {}); }, []);
   const s = data.stats || {};
@@ -36,7 +45,8 @@ export default function Customers() {
         <select value={f.owner} onChange={e => set('owner', e.target.value)}><option value="">{t('ผู้รับผิดชอบ: ทั้งหมด')}</option>{meta.users.map(u => <option key={u.id} value={u.id}>{u.display_name}</option>)}</select>
         <select value={f.tag} onChange={e => set('tag', e.target.value)}><option value="">{t('แท็ก: ทั้งหมด')}</option>{meta.tags.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}</select>
         <select value={f.priority} onChange={e => set('priority', e.target.value)}><option value="">{t('ความสำคัญ: ทั้งหมด')}</option>{[1, 2, 3, 4, 5].map(p => <option key={p} value={p}>{t(PR[p - 1])}</option>)}</select>
-        <button className="btn green" style={{ marginLeft: 'auto' }} onClick={() => setShow(true)}>{t('+ สร้างเอเจ้นท์')}</button>
+        {String((user && user.role) || '').toLowerCase() === 'admin' && <button className="btn ghost" style={{ marginLeft: 'auto' }} disabled={importing} onClick={importFromRate}>{importing ? '...' : '⤓ ' + t('ดึงจากระบบ Rate')}</button>}
+        <button className="btn green" style={{ marginLeft: String((user && user.role) || '').toLowerCase() === 'admin' ? '8px' : 'auto' }} onClick={() => setShow(true)}>{t('+ สร้างเอเจ้นท์')}</button>
       </div>
       <div className="panel">
         <table><thead><tr><th>{t('สถานะ')}</th><th>{t('ชื่อเอเจ้นท์')}</th><th>{t('รหัสอ้างอิง')}</th><th>{t('ผู้ติดต่อ')}</th><th>{t('สำคัญ')}</th><th>{t('ผู้รับผิดชอบ')}</th><th>{t('กิจกรรมล่าสุด')}</th><th>{t('แท็กกิจกรรม')}</th></tr></thead>

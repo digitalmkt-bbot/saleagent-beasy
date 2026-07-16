@@ -177,6 +177,11 @@ const EN = {
   'ลบผู้ใช้': 'Delete user',
   'ID': 'ID',
   'รหัสผู้ใช้ (ID)': 'User ID (code)',
+  'ดึงจากระบบ Rate': 'Import from Rate system',
+  'ดึงเอเจ้นท์จากระบบ Rate มาสร้างใน CRM? (map เจ้าของตามเซลส์อัตโนมัติ)': 'Import agents from the Rate system into CRM? (owner auto-mapped by sales rep)',
+  'นำเข้าเสร็จ': 'Import done',
+  'สร้างใหม่': 'Created',
+  'อัปเดต': 'Updated',
 };
 
 const Ctx = createContext({ t: (s) => s, lang: 'th', toggle: () => {} });
