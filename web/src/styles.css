@@ -27,8 +27,8 @@ h1,h2,h3,h4{font-weight:700;}
 /* ---------- Sidebar (frosted glass) ---------- */
 .sidebar{width:224px;position:fixed;top:12px;bottom:12px;left:12px;overflow-y:auto;padding:14px 0;transition:transform .25s ease;z-index:100;
   background:var(--glass);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:1px solid var(--glass-border);border-radius:var(--radius-lg);box-shadow:var(--shadow);}
-.brand{display:flex;align-items:center;gap:9px;font-size:17px;font-weight:800;color:var(--ink);padding:6px 18px 16px;}
-.brand .logo{width:28px;height:28px;border-radius:9px;background:linear-gradient(135deg,#6366F1,#818CF8);color:#fff;display:flex;align-items:center;justify-content:center;}
+.brand{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:800;letter-spacing:-.3px;white-space:nowrap;color:var(--ink);padding:6px 14px 16px;}
+.brand .logo{width:26px;height:26px;flex-shrink:0;border-radius:9px;background:linear-gradient(135deg,#6366F1,#818CF8);color:#fff;display:flex;align-items:center;justify-content:center;}
 .brand span{color:var(--brand);}
 .nav-section{padding:14px 20px 6px;font-size:11px;letter-spacing:.04em;color:var(--muted);}
 .nav a{display:flex;align-items:center;gap:11px;color:var(--ink-2);margin:2px 12px;padding:9px 12px;border-radius:12px;font-size:14px;transition:background .15s,color .15s;}
