@@ -10,6 +10,7 @@ export default function Customers() {
   const { t } = useI18n();
   const { user } = useAuth();
   const [importing, setImporting] = useState(false);
+  const [autoTried, setAutoTried] = useState(false);
   const [data, setData] = useState({ rows: [], stats: {} });
   const [tab, setTab] = useState('list');
   const [f, setF] = useState({ search: '', lifecycle: '', team: '', owner: '', tag: '', priority: '' });
@@ -17,12 +18,21 @@ export default function Customers() {
   const [show, setShow] = useState(false);
   const set = (k, v) => setF(p => ({ ...p, [k]: v }));
   function load() { api('/customers', { params: { ...f, sort: tab === 'rank' ? 'rank' : '', limit: 100 } }).then(setData).catch(() => {}); }
-  async function importFromRate() {
-    if (!confirm(t('ดึงเอเจ้นท์จากระบบ Rate มาสร้างใน CRM? (map เจ้าของตามเซลส์อัตโนมัติ)'))) return;
+  async function importFromRate(silent) {
+    if (!silent && !confirm(t('ดึงเอเจ้นท์จากระบบ Rate มาสร้างใน CRM? (map เจ้าของตามเซลส์อัตโนมัติ)'))) return;
     setImporting(true);
-    try { const r = await api('/rates/import-agents', { method: 'POST' }); alert(t('นำเข้าเสร็จ') + ` — ${t('สร้างใหม่')} ${r.created}, ${t('อัปเดต')} ${r.updated}`); load(); }
-    catch (e) { alert(e.message); } finally { setImporting(false); }
+    try { const r = await api('/rates/import-agents', { method: 'POST' }); if (!silent) alert(t('นำเข้าเสร็จ') + ` — ${t('สร้างใหม่')} ${r.created}, ${t('อัปเดต')} ${r.updated}`); load(); }
+    catch (e) { if (!silent) alert(e.message); } finally { setImporting(false); }
   }
+  // ดึงจากระบบ Rate อัตโนมัติครั้งแรกถ้ายังไม่มีเอเจ้นท์ (เฉพาะ admin) — ไม่ต้องกดเอง
+  useEffect(() => {
+    if (autoTried || importing) return;
+    if (String((user && user.role) || '').toLowerCase() !== 'admin') return;
+    if (data.rows && data.rows.length === 0 && !f.search && !f.lifecycle && !f.owner && !f.team && !f.tag && !f.priority) {
+      setAutoTried(true);
+      importFromRate(true);
+    }
+  }, [data, user]);
   useEffect(() => { load(); }, [f.lifecycle, f.team, f.owner, f.tag, f.priority, tab]);
   useEffect(() => { Promise.all([api('/meta/users'), api('/meta/teams'), api('/tags', { params: { scope: 'customer' } })]).then(([u, t, tg]) => setMeta({ users: u.rows, teams: t.rows, tags: tg.rows })).catch(() => {}); }, []);
   const s = data.stats || {};
