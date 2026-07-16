@@ -255,4 +255,20 @@ router.get('/report/monthly', wrap(async (req, res) => {
   res.json({ rows });
 }));
 
+router.get('/report/_diag2', wrap(async (req, res) => {
+  if (String(req.user.role || '').toLowerCase() !== 'admin') return res.status(403).json({ error: 'admin only' });
+  const W = "b.status='confirmed'";
+  const byAgentSales = (await rq(`SELECT COALESCE(s.name,s.fullname,'(no sales)') nm, count(*)::int c, COALESCE(sum(b.total),0)::bigint v
+     FROM operation_schemas.sb_bookings b JOIN operation_schemas.sb_agents a ON a.id=b.agentid LEFT JOIN operation_schemas.sb_sales s ON s.id=a.sales
+     WHERE ${W} GROUP BY 1 ORDER BY 3 DESC LIMIT 12`)).rows;
+  const bySoldby = (await rq(`SELECT COALESCE(s.name,s.fullname, b.soldby::text, '(null)') nm, count(*)::int c, COALESCE(sum(b.total),0)::bigint v
+     FROM operation_schemas.sb_bookings b LEFT JOIN operation_schemas.sb_sales s ON s.id=b.soldby
+     WHERE ${W} GROUP BY 1 ORDER BY 3 DESC LIMIT 12`)).rows;
+  const byStaff = (await rq(`SELECT COALESCE(b.staffid::text,'(null)') nm, count(*)::int c, COALESCE(sum(b.total),0)::bigint v
+     FROM operation_schemas.sb_bookings b WHERE ${W} GROUP BY 1 ORDER BY 3 DESC LIMIT 12`)).rows;
+  const nulls = (await rq(`SELECT count(*) FILTER (WHERE a.sales IS NULL)::int no_agentsales, count(*) FILTER (WHERE b.soldby IS NULL)::int no_soldby, count(*) FILTER (WHERE b.staffid IS NULL)::int no_staff
+     FROM operation_schemas.sb_bookings b LEFT JOIN operation_schemas.sb_agents a ON a.id=b.agentid WHERE ${W}`)).rows[0];
+  res.json({ byAgentSales, bySoldby, byStaff, nulls });
+}));
+
 module.exports = router;
