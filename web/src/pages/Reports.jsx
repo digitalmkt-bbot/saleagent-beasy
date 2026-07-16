@@ -67,19 +67,20 @@ function Ring({ items, fmt }) {
   </div>;
 }
 
-// ── budget-style: total + legend + segmented bar ──
-function Budget({ items, total }) {
+// ── budget-style: total + legend + segmented bar (hover = ยอดจริง) ──
+function Budget({ items, total, fmt }) {
   const top = items.slice(0, 4);
   const tot = items.reduce((a, s) => a + s.v, 0) || 1;
   return <div>
     <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-.5px', margin: '2px 0 10px' }}>{compact(total)}</div>
-    <div style={{ display: 'flex', height: 10, borderRadius: 6, overflow: 'hidden', gap: 3, marginBottom: 12 }}>
-      {top.map((s, i) => <span key={i} style={{ width: (s.v / tot * 100) + '%', background: PAL[i] }} />)}
+    <div style={{ display: 'flex', height: 10, borderRadius: 6, overflow: 'hidden', gap: 3, marginBottom: 10 }}>
+      {top.map((s, i) => <span key={i} title={`${s.name} · ${fmt(s.v)} (${Math.round(s.v / tot * 100)}%)`} style={{ width: (s.v / tot * 100) + '%', background: PAL[i] }} />)}
     </div>
-    {top.map((s, i) => <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, padding: '4px 0' }}>
+    {top.map((s, i) => <div key={i} className="lgrow" title={`${s.name} · ${fmt(s.v)}`}>
       <b style={{ width: 38, fontVariantNumeric: 'tabular-nums' }}>{Math.round(s.v / tot * 100)}%</b>
-      <span style={{ width: 8, height: 8, borderRadius: '50%', background: PAL[i] }} />
+      <span style={{ width: 8, height: 8, borderRadius: '50%', background: PAL[i], flexShrink: 0 }} />
       <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</span>
+      <span className="lgval">{fmt(s.v)}</span>
     </div>)}
   </div>;
 }
@@ -153,7 +154,7 @@ export default function Reports() {
 
   return (
     <div className="rpt">
-      <style>{`.rpt{--gap:14px}.rpt input[type=date]{border:none;background:transparent;font:inherit;font-weight:700;color:#211C43;cursor:pointer}.rpt .r4{display:grid;gap:14px;grid-template-columns:repeat(4,1fr)}.rpt .r3{display:grid;gap:14px;grid-template-columns:1.15fr 1fr 1fr}.rpt .r2{display:grid;gap:14px;grid-template-columns:1.35fr 1fr}.rpt .rowm{margin-bottom:14px}.rpt a.lnk{color:#6C5CE7;font-weight:700;font-size:12px;cursor:pointer}.rpt .kl{font-size:12px;color:#8E8AAB;font-weight:600;display:flex;align-items:center;gap:7px}.rpt .ki{width:26px;height:26px;border-radius:9px;display:flex;align-items:center;justify-content:center}.rpt .kv{font-size:23px;font-weight:800;margin:8px 0 3px;letter-spacing:-.5px}.rpt .ks{font-size:11.5px;color:#8E8AAB}@media(max-width:820px){.rpt .r4,.rpt .r3,.rpt .r2{grid-template-columns:1fr 1fr}}`}</style>
+      <style>{`.rpt{--gap:14px}.rpt input[type=date]{border:none;background:transparent;font:inherit;font-weight:700;color:#211C43;cursor:pointer}.rpt .r4{display:grid;gap:14px;grid-template-columns:repeat(4,1fr)}.rpt .r3{display:grid;gap:14px;grid-template-columns:1.15fr 1fr 1fr}.rpt .r2{display:grid;gap:14px;grid-template-columns:1.35fr 1fr}.rpt .rowm{margin-bottom:14px}.rpt a.lnk{color:#6C5CE7;font-weight:700;font-size:12px;cursor:pointer}.rpt .lgrow{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:5px 6px;border-radius:8px;cursor:default;transition:background .15s}.rpt .lgrow:hover{background:#F5F4FC}.rpt .lgval{font-weight:800;font-variant-numeric:tabular-nums;color:#5b5680;opacity:0;transition:opacity .15s}.rpt .lgrow:hover .lgval{opacity:1}.rpt .kl{font-size:12px;color:#8E8AAB;font-weight:600;display:flex;align-items:center;gap:7px}.rpt .ki{width:26px;height:26px;border-radius:9px;display:flex;align-items:center;justify-content:center}.rpt .kv{font-size:23px;font-weight:800;margin:8px 0 3px;letter-spacing:-.5px}.rpt .ks{font-size:11.5px;color:#8E8AAB}@media(max-width:820px){.rpt .r4,.rpt .r3,.rpt .r2{grid-template-columns:1fr 1fr}}`}</style>
 
       <h1 className="page" style={{ fontWeight: 800 }}>{t('รายงาน')}</h1>
 
@@ -199,9 +200,11 @@ export default function Reports() {
           </div>
         </Card>
         <Card>
-          <Head title={t('ยอดขายตามผู้รับผิดชอบ')} right={<span style={{ color: '#8E8AAB', fontSize: 12 }}>%</span>} />
+          <Head title={t('ยอดขายตามผู้รับผิดชอบ')} right={sv.length > 4
+            ? <a className="lnk" onClick={() => setModal({ title: t('ยอดขายตามผู้รับผิดชอบ'), cols: [t('เซลส์'), t('จำนวนบุ๊กกิ้ง'), t('ยอดรวม')], rows: sv.map((x, i) => [(i + 1) + '. ' + (x.name || x.fullname || t('ไม่ระบุเซลส์')), x.bookings, baht(x.revenue)]) })}>{t('ดูทั้งหมด')} ({sv.length}) →</a>
+            : <span style={{ color: '#8E8AAB', fontSize: 12 }}>%</span>} />
           {rateErr ? <div style={{ color: '#9A96B6', fontSize: 12.5, marginTop: 8 }}>{t('ยังไม่ได้เชื่อมระบบ rate (ตั้ง RATE_DATABASE_URL)')}</div> :
-            <Budget items={sv.map(x => ({ name: x.name || x.fullname || t('ไม่ระบุเซลส์'), v: +x.revenue }))} total={sv.reduce((a, x) => a + (+x.revenue || 0), 0)} />}
+            <Budget items={sv.map(x => ({ name: x.name || x.fullname || t('ไม่ระบุเซลส์'), v: +x.revenue }))} total={sv.reduce((a, x) => a + (+x.revenue || 0), 0)} fmt={v => baht(v)} />}
         </Card>
         <Card style={{ background: 'linear-gradient(140deg,#7B6BF0,#A88DF7)', color: '#fff', boxShadow: '0 14px 32px rgba(108,92,231,.3)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#fff' }}>{t('อัตราชนะ (Win rate)')}</h3><span style={{ background: 'rgba(255,255,255,.22)', borderRadius: 999, padding: '2px 10px', fontSize: 12, fontWeight: 700 }}>{win.winRate}%</span></div>
