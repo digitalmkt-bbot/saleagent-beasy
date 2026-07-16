@@ -20,6 +20,7 @@ export default function Settings() {
   }
   useEffect(() => { load(); }, []);
   async function addTag(scope) { const name = prompt(t('ชื่อแท็กใหม่')); if (!name) return; await api('/tags', { method: 'POST', body: { name, scope, tag_group: scope === 'customer' ? 'other' : null } }); load(); }
+  async function delTag(x) { if (!confirm(t('ลบแท็ก') + ' "' + x.name + '" ?')) return; try { await api('/tags/' + x.id, { method: 'DELETE' }); load(); } catch (e) { alert(e.message); } }
   const groups = ctags.reduce((a, x) => { (a[x.tag_group || 'other'] = a[x.tag_group || 'other'] || []).push(x); return a; }, {});
   const gLabel = { source: 'แหล่งที่มา', type: 'ประเภทเอเจ้นท์', grade: 'เกรดเอเจ้นท์', other: 'อื่น ๆ' };
   return (
@@ -31,9 +32,9 @@ export default function Settings() {
           {teams.map(x => <div key={x.id} style={{ marginBottom: 8 }}><b>{x.name}</b><div className="muted">{users.filter(u => u.team_id === x.id).map(u => u.display_name + ' (' + u.role + ')').join(', ')}</div></div>)}</div>
       </div>
       <div className="panel"><div style={{ display: 'flex', justifyContent: 'space-between' }}><h3 style={{ marginTop: 0 }}>{t('แท็กเอเจ้นท์')}</h3><button className="btn ghost sm" onClick={() => addTag('customer')}>{t('+ เพิ่มแท็ก')}</button></div>
-        {Object.entries(groups).map(([g, ts]) => <div key={g} style={{ marginBottom: 10 }}><div className="muted">{t(gLabel[g] || g)}</div><div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{ts.map(x => <span key={x.id} className="pill blue">{x.name}</span>)}</div></div>)}</div>
+        {Object.entries(groups).map(([g, ts]) => <div key={g} style={{ marginBottom: 10 }}><div className="muted">{t(gLabel[g] || g)}</div><div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{ts.map(x => <span key={x.id} className="pill blue">{x.name}<b onClick={() => delTag(x)} style={{ cursor: 'pointer', marginLeft: 5, opacity: .6 }}>×</b></span>)}</div></div>)}</div>
       <div className="panel"><div style={{ display: 'flex', justifyContent: 'space-between' }}><h3 style={{ marginTop: 0 }}>{t('แท็กกิจกรรม')}</h3><button className="btn ghost sm" onClick={() => addTag('activity')}>{t('+ เพิ่มแท็ก')}</button></div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{atags.map(x => <span key={x.id} className="pill orange">{x.name}</span>)}</div></div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{atags.map(x => <span key={x.id} className="pill orange">{x.name}<b onClick={() => delTag(x)} style={{ cursor: 'pointer', marginLeft: 5, opacity: .6 }}>×</b></span>)}</div></div>
       <div className="panel"><h3 style={{ marginTop: 0 }}>{t('ค่าตั้งต้นอื่น ๆ')}</h3>
         <div className="muted">{t('วิธีการติดต่อ')}: {(lk.contact_method || []).map(m => m.name).join(', ')}</div>
         <div className="muted">{t('ประเภทงานติดตาม')}: {(lk.activity_types || []).join(', ')}</div>

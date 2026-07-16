@@ -16,4 +16,14 @@ router.post('/', wrap(async (req, res) => {
   res.status(201).json(r.rows[0]);
 }));
 
+router.delete('/:id', wrap(async (req, res) => {
+  const id = +req.params.id;
+  const tg = (await q('SELECT id FROM tag WHERE id=$1 AND company_id=$2', [id, req.user.company_id])).rows[0];
+  if (!tg) return res.status(404).json({ error: 'ไม่พบแท็ก' });
+  await q('DELETE FROM customer_tag WHERE tag_id=$1', [id]);
+  await q('DELETE FROM activity_tag WHERE tag_id=$1', [id]);
+  await q('DELETE FROM tag WHERE id=$1 AND company_id=$2', [id, req.user.company_id]);
+  res.json({ ok: true });
+}));
+
 module.exports = router;

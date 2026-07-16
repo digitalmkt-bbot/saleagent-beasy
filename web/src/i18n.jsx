@@ -182,6 +182,7 @@ const EN = {
   'นำเข้าเสร็จ': 'Import done',
   'สร้างใหม่': 'Created',
   'อัปเดต': 'Updated',
+  'ลบแท็ก': 'Delete tag',
 };
 
 const Ctx = createContext({ t: (s) => s, lang: 'th', toggle: () => {} });
