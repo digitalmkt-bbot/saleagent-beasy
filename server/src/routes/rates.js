@@ -255,24 +255,4 @@ router.get('/report/monthly', wrap(async (req, res) => {
   res.json({ rows });
 }));
 
-router.get('/report/_diag2', wrap(async (req, res) => {
-  if (String(req.user.role || '').toLowerCase() !== 'admin') return res.status(403).json({ error: 'admin only' });
-  const W = "b.status='confirmed'";
-  // how filled is each candidate "seller" column?
-  const filled = (await rq(`SELECT
-      count(*) FILTER (WHERE createdby IS NOT NULL AND createdby::text<>'')::int createdby,
-      count(*) FILTER (WHERE soldby IS NOT NULL AND soldby::text<>'')::int soldby,
-      count(*) FILTER (WHERE staffid IS NOT NULL AND staffid::text<>'')::int staffid,
-      count(*) FILTER (WHERE createdby IS NOT NULL)::int || '/' || count(distinct createdby)::text createdby_distinct,
-      count(*)::int total
-    FROM operation_schemas.sb_bookings b WHERE ${W}`)).rows[0];
-  // revenue grouped by createdby joined to sb_sales
-  const byCreatedbySales = (await rq(`SELECT COALESCE(s.name,s.fullname,'#'||b.createdby::text) nm, count(*)::int c, COALESCE(sum(b.total),0)::bigint v
-     FROM operation_schemas.sb_bookings b LEFT JOIN operation_schemas.sb_sales s ON s.id=b.createdby
-     WHERE ${W} GROUP BY 1 ORDER BY 3 DESC LIMIT 15`)).rows;
-  // raw createdby top values (in case it maps to staff not sales)
-  const createdbyRaw = (await rq(`SELECT COALESCE(createdby::text,'(null)') cb, count(*)::int c FROM operation_schemas.sb_bookings b WHERE ${W} GROUP BY 1 ORDER BY 2 DESC LIMIT 15`)).rows;
-  res.json({ filled, byCreatedbySales, createdbyRaw });
-}));
-
 module.exports = router;module.exports = router;
