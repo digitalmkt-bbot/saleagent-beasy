@@ -224,4 +224,19 @@ router.get('/report/sales-volume', wrap(async (req, res) => {
   res.json({ rows });
 }));
 
+router.get('/report/winrate', wrap(async (req, res) => {
+  const { from, to } = req.query;
+  const sc = await scopeFor(req);
+  if (!sc.all && !sc.code) return res.json({ won: 0, total: 0, won_value: 0 });
+  const where = []; const args = []; let i = 1;
+  if (from) { where.push(`COALESCE(NULLIF(b.bookingdate,''),b.createdat) >= $${i++}`); args.push(from); }
+  if (to) { where.push(`COALESCE(NULLIF(b.bookingdate,''),b.createdat) <= $${i++}`); args.push(to); }
+  if (!sc.all) { where.push(`a.sales = $${i++}`); args.push(sc.code); }
+  const w = where.length ? 'WHERE ' + where.join(' AND ') : '';
+  const r = (await rq(`SELECT count(*) FILTER (WHERE b.status='confirmed')::int won, count(*)::int total,
+      COALESCE(sum(b.total) FILTER (WHERE b.status='confirmed'),0)::bigint won_value
+    FROM operation_schemas.sb_bookings b LEFT JOIN operation_schemas.sb_agents a ON a.id=b.agentid ${w}`, args)).rows[0];
+  res.json(r);
+}));
+
 module.exports = router;

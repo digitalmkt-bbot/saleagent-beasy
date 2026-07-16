@@ -119,6 +119,7 @@ export default function Reports() {
   const [drill, setDrill] = useState([]);
   const [rateErr, setRateErr] = useState('');
   const [modal, setModal] = useState(null);
+  const [wr, setWr] = useState(null);
 
   useEffect(() => { api('/reports/summary').then(setD).catch(() => {}); }, []);
   function loadReports() {
@@ -127,6 +128,7 @@ export default function Reports() {
     api('/rates/report/agent-volume', { params }).then(r => { setAgentVol(r.rows || []); setRateErr(''); }).catch(e => { setAgentVol([]); setRateErr(e.message); });
     api('/rates/report/product-volume', { params }).then(r => setProducts(r.rows || [])).catch(() => setProducts([]));
     api('/rates/report/sales-volume', { params }).then(r => setSalesVol(r.rows || [])).catch(() => setSalesVol([]));
+    api('/rates/report/winrate', { params }).then(setWr).catch(() => setWr(null));
     setOpenUser(null); setDrill([]);
   }
   useEffect(() => { loadReports(); }, []); // eslint-disable-line
@@ -142,11 +144,16 @@ export default function Reports() {
   const revTotal = av.reduce((a, x) => a + (+x.revenue || 0), 0);
   const bkTotal = av.reduce((a, x) => a + (+x.bookings || 0), 0);
   const mSeries = (d.monthly || []).map(m => +m.value);
+  const mDeals = (d.monthly || []).map(m => +m.deals);
+  const mValTotal = mSeries.reduce((a, b) => a + b, 0);
+  const win = (!rateErr && wr && wr.total != null && wr.total > 0)
+    ? { winRate: Math.round(wr.won / wr.total * 100), won: wr.won, open: Math.max(0, (wr.total || 0) - (wr.won || 0)), won_value: +wr.won_value || 0 }
+    : d.win;
   const seg = { background: '#F4F2FC', borderRadius: 12, padding: '8px 14px', fontSize: 12.5, fontWeight: 600, color: '#5b5680', display: 'flex', alignItems: 'center', gap: 8 };
 
   return (
     <div className="rpt">
-      <style>{`.rpt{--gap:14px}.rpt input[type=date]{border:none;background:transparent;font:inherit;font-weight:700;color:#211C43;cursor:pointer}.rpt .r4{display:grid;gap:14px;grid-template-columns:repeat(4,1fr)}.rpt .r3{display:grid;gap:14px;grid-template-columns:1.15fr 1fr 1fr}.rpt .r2{display:grid;gap:14px;grid-template-columns:1.35fr 1fr}.rpt .rowm{margin-bottom:14px}.rpt a.lnk{color:#6C5CE7;font-weight:700;font-size:12px;cursor:pointer}@media(max-width:820px){.rpt .r4,.rpt .r3,.rpt .r2{grid-template-columns:1fr 1fr}}`}</style>
+      <style>{`.rpt{--gap:14px}.rpt input[type=date]{border:none;background:transparent;font:inherit;font-weight:700;color:#211C43;cursor:pointer}.rpt .r4{display:grid;gap:14px;grid-template-columns:repeat(4,1fr)}.rpt .r3{display:grid;gap:14px;grid-template-columns:1.15fr 1fr 1fr}.rpt .r2{display:grid;gap:14px;grid-template-columns:1.35fr 1fr}.rpt .rowm{margin-bottom:14px}.rpt a.lnk{color:#6C5CE7;font-weight:700;font-size:12px;cursor:pointer}.rpt .kl{font-size:12px;color:#8E8AAB;font-weight:600;display:flex;align-items:center;gap:7px}.rpt .ki{width:26px;height:26px;border-radius:9px;display:flex;align-items:center;justify-content:center}.rpt .kv{font-size:23px;font-weight:800;margin:8px 0 3px;letter-spacing:-.5px}.rpt .ks{font-size:11.5px;color:#8E8AAB}@media(max-width:820px){.rpt .r4,.rpt .r3,.rpt .r2{grid-template-columns:1fr 1fr}}`}</style>
 
       <h1 className="page" style={{ fontWeight: 800 }}>{t('รายงาน')}</h1>
 
@@ -157,30 +164,27 @@ export default function Reports() {
         <span style={{ marginLeft: 'auto', color: '#8E8AAB', fontSize: 12, fontWeight: 600 }}>{fmtDate(from)} – {fmtDate(to)}</span>
       </Card>
 
-      {/* KPI row */}
+      {/* KPI row (real data) */}
       <div className="r4 rowm">
         <Card>
-          <div style={{ fontSize: 12, color: '#8E8AAB', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 7 }}><span style={{ width: 26, height: 26, borderRadius: 9, background: '#EEEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>💰</span>{t('ยอดส่งเข้าบริษัท')}</div>
-          <div style={{ fontSize: 23, fontWeight: 800, margin: '8px 0 3px', letterSpacing: '-.5px' }}>{compact(revTotal)}</div>
-          <Spark vals={mSeries} color="#6C5CE7" />
+          <div className="kl"><span className="ki" style={{ background: '#EEEAFE' }}>💰</span>{t('ยอดส่งเข้าบริษัท (Rate)')}</div>
+          <div className="kv">{compact(revTotal)}</div>
+          <div className="ks">{av.length} {t('เอเจ้นท์')} · {bkTotal.toLocaleString()} {t('บุ๊กกิ้ง')}</div>
         </Card>
         <Card>
-          <div style={{ fontSize: 12, color: '#8E8AAB', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 7 }}><span style={{ width: 26, height: 26, borderRadius: 9, background: '#E4F7F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🎯</span>{t('อัตราชนะ (Win rate)')}</div>
-          <div style={{ fontSize: 23, fontWeight: 800, margin: '8px 0 3px' }}>{d.win.winRate}%</div>
-          <div style={{ fontSize: 11.5, color: '#8E8AAB' }}>{d.win.won} {t('ดีลปิดได้')} · {compact(d.win.won_value)}</div>
-          <Spark vals={mSeries.map(v => v * 0.8 + 1)} color="#43C6AC" />
+          <div className="kl"><span className="ki" style={{ background: '#E4F7F0' }}>🎯</span>{t('อัตราชนะ (Win rate)')}</div>
+          <div className="kv">{win.winRate}%</div>
+          <div className="ks">{win.won} {t('ปิดได้')} · {win.open} {t('เปิดอยู่')}</div>
         </Card>
         <Card>
-          <div style={{ fontSize: 12, color: '#8E8AAB', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 7 }}><span style={{ width: 26, height: 26, borderRadius: 9, background: '#FDECF4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🧾</span>{t('จำนวนบุ๊กกิ้ง')}</div>
-          <div style={{ fontSize: 23, fontWeight: 800, margin: '8px 0 3px' }}>{bkTotal.toLocaleString()}</div>
-          <div style={{ fontSize: 11.5, color: '#8E8AAB' }}>{t('ยืนยันแล้ว · ช่วงที่เลือก')}</div>
-          <Spark vals={mSeries.map(v => v * 1.1 + 2)} color="#F178B6" />
+          <div className="kl"><span className="ki" style={{ background: '#FDECF4' }}>🧾</span>{t('มูลค่าดีล (รายเดือน)')}</div>
+          <div className="kv">{compact(mValTotal)}</div>
+          {mSeries.length ? <Spark vals={mSeries} color="#F178B6" /> : <div className="ks">—</div>}
         </Card>
         <Card>
-          <div style={{ fontSize: 12, color: '#8E8AAB', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 7 }}><span style={{ width: 26, height: 26, borderRadius: 9, background: '#EAF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🤝</span>{t('เอเจ้นท์ที่มียอด')}</div>
-          <div style={{ fontSize: 23, fontWeight: 800, margin: '8px 0 3px' }}>{av.length}</div>
-          <div style={{ fontSize: 11.5, color: '#8E8AAB' }}>{t('ในระบบ Rate')}</div>
-          <Spark vals={mSeries.map(v => v * 0.6 + 3)} color="#5B9DF9" />
+          <div className="kl"><span className="ki" style={{ background: '#EAF2FF' }}>📈</span>{t('จำนวนดีล')}</div>
+          <div className="kv">{mDeals.reduce((a, b) => a + b, 0).toLocaleString()}</div>
+          {mDeals.length ? <Spark vals={mDeals} color="#5B9DF9" /> : <div className="ks">—</div>}
         </Card>
       </div>
 
@@ -200,13 +204,15 @@ export default function Reports() {
             <Budget items={sv.map(x => ({ name: x.name || x.fullname || t('ไม่ระบุเซลส์'), v: +x.revenue }))} total={sv.reduce((a, x) => a + (+x.revenue || 0), 0)} />}
         </Card>
         <Card style={{ background: 'linear-gradient(140deg,#7B6BF0,#A88DF7)', color: '#fff', boxShadow: '0 14px 32px rgba(108,92,231,.3)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#fff' }}>{t('อัตราชนะ (Win rate)')}</h3><span style={{ background: 'rgba(255,255,255,.22)', borderRadius: 999, padding: '2px 10px', fontSize: 12, fontWeight: 700 }}>{d.win.winRate}%</span></div>
-          <div style={{ fontSize: 40, fontWeight: 800, margin: '16px 0 2px' }}>{d.win.winRate}<span style={{ fontSize: 20 }}>%</span></div>
-          <div style={{ opacity: .85, fontSize: 12 }}>{d.win.won} {t('ดีลปิดได้')} · {compact(d.win.won_value)}</div>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 48, marginTop: 16 }}>
-            {[42, 66, 100, 55, 78].map((h, i) => <div key={i} style={{ flex: 1, height: h + '%', borderRadius: 6, background: h === 100 ? '#fff' : 'rgba(255,255,255,.35)' }} />)}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#fff' }}>{t('อัตราชนะ (Win rate)')}</h3><span style={{ background: 'rgba(255,255,255,.22)', borderRadius: 999, padding: '2px 10px', fontSize: 12, fontWeight: 700 }}>{win.winRate}%</span></div>
+          <div style={{ fontSize: 40, fontWeight: 800, margin: '16px 0 2px' }}>{win.winRate}<span style={{ fontSize: 20 }}>%</span></div>
+          <div style={{ opacity: .85, fontSize: 12 }}>{win.won} {t('ดีลปิดได้')} · {compact(win.won_value)}</div>
+          <div style={{ marginTop: 18 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, opacity: .9, marginBottom: 6 }}><span>{t('ปิดได้')} {win.won}</span><span>{t('เปิดอยู่')} {win.open}</span></div>
+            <div style={{ display: 'flex', height: 12, borderRadius: 6, overflow: 'hidden', background: 'rgba(255,255,255,.22)' }}>
+              <div style={{ width: (win.won / ((win.won + win.open) || 1) * 100) + '%', background: '#fff', borderRadius: 6 }} />
+            </div>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, opacity: .8, marginTop: 6 }}>{['จ', 'อ', 'พ', 'พฤ', 'ศ'].map((x, i) => <span key={i}>{x}</span>)}</div>
         </Card>
       </div>
 
