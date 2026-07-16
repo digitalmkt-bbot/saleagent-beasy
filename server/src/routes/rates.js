@@ -234,7 +234,8 @@ router.get('/report/winrate', wrap(async (req, res) => {
   if (!sc.all) { where.push(`a.sales = $${i++}`); args.push(sc.code); }
   const w = where.length ? 'WHERE ' + where.join(' AND ') : '';
   const r = (await rq(`SELECT count(*) FILTER (WHERE b.status='confirmed')::int won, count(*)::int total,
-      COALESCE(sum(b.total) FILTER (WHERE b.status='confirmed'),0)::bigint won_value
+      COALESCE(sum(b.total) FILTER (WHERE b.status='confirmed'),0)::bigint won_value,
+      COALESCE(sum(b.total),0)::bigint total_value
     FROM operation_schemas.sb_bookings b LEFT JOIN operation_schemas.sb_agents a ON a.id=b.agentid ${w}`, args)).rows[0];
   res.json(r);
 }));

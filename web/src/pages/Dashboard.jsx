@@ -49,12 +49,25 @@ export default function Dashboard() {
   const [acts, setActs] = useState([]);
   const [custs, setCusts] = useState([]);
   const [period, setPeriod] = useState('year');
+  const [rwin, setRwin] = useState(null);
+  const [rmon, setRmon] = useState(null);
+  const [rown, setRown] = useState(null);
   useEffect(() => {
     api('/meta/dashboard').then(setD).catch(() => {});
     api('/reports/summary').then(setRep).catch(() => {});
     api('/activities', { params: { limit: 80, sort: 'due' } }).then(r => setActs(r.rows)).catch(() => {});
     api('/customers', { params: { limit: 100 } }).then(r => setCusts(r.rows)).catch(() => {});
   }, []);
+  useEffect(() => {
+    const now = new Date(), y = now.getFullYear(), pad = n => String(n).padStart(2, '0'), to = now.toISOString().slice(0, 10);
+    let params = { from: `${y}-01-01`, to };
+    if (period === 'month') params = { from: `${y}-${pad(now.getMonth() + 1)}-01`, to };
+    else if (period === 'quarter') params = { from: `${y}-${pad(Math.floor(now.getMonth() / 3) * 3 + 1)}-01`, to };
+    else if (period === 'all') params = {};
+    api('/rates/report/winrate', { params }).then(setRwin).catch(() => setRwin(null));
+    api('/rates/report/monthly', { params }).then(r => setRmon(r.rows || [])).catch(() => setRmon(null));
+    api('/rates/report/sales-volume', { params }).then(r => setRown(r.rows || [])).catch(() => setRown(null));
+  }, [period]);
   const monthly = useMemo(() => {
     const all = rep?.monthly || []; const now = new Date(); const y = String(now.getFullYear()); const m = now.getMonth();
     if (period === 'all') return all; if (period === 'year') return all.filter(x => (x.month || '').startsWith(y));
@@ -63,8 +76,13 @@ export default function Dashboard() {
   }, [rep, period]);
   if (!d) return <div className="empty">{t('กำลังโหลด...')}</div>;
 
-  const win = rep?.win || { winRate: 0, won: 0, open: 0 };
-  const ownersRaw = (rep?.byOwner || []).map(o => ({ name: o.name, v: (+o.won_value + +o.open_value) })).filter(o => o.v > 0).sort((a, b) => b.v - a.v);
+  const win = (rwin && rwin.total != null)
+    ? { winRate: rwin.total > 0 ? Math.round(rwin.won / rwin.total * 100) : 0, won: rwin.won, open: Math.max(0, (rwin.total || 0) - (rwin.won || 0)), won_value: +rwin.won_value || 0, total: rwin.total || 0, total_value: +rwin.total_value || 0 }
+    : { ...(rep?.win || { winRate: 0, won: 0, open: 0 }), won_value: 0, total: 0, total_value: 0 };
+  const chartSeries = (rmon && rmon.length) ? rmon : monthly;
+  const ownersRaw = ((rown && rown.length)
+    ? rown.map(o => ({ name: o.name || o.fullname || t('ไม่ระบุเซลส์'), v: +o.revenue }))
+    : (rep?.byOwner || []).map(o => ({ name: o.name, v: (+o.won_value + +o.open_value) }))).filter(o => o.v > 0).sort((a, b) => b.v - a.v);
   const dc = [IND, BLU, VIO, TEAL, SKY];
   const donutSeg = ownersRaw.slice(0, 4).map((o, i) => ({ ...o, c: dc[i] }));
   if (ownersRaw.length > 4) donutSeg.push({ name: 'อื่นๆ', v: ownersRaw.slice(4).reduce((a, o) => a + o.v, 0), c: dc[4] });
@@ -104,10 +122,10 @@ export default function Dashboard() {
       </div>
 
       <div className="cards" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))' }}>
-        <Stat label={t('ปิดการขายแล้ว')} value={kfmt(d.projects.won_value)} sub={`${win.won} ${t('ดีล')}`} subUp badge="i" icon="trophy" chart={<DotWave data={monthly} />} live />
+        <Stat label={t('ปิดการขายแล้ว')} value={kfmt(win.won_value)} sub={`${win.won} ${t('ดีล')}`} subUp badge="i" icon="trophy" chart={<DotWave data={chartSeries} />} live />
         <Stat label={t('เอเจ้นท์ทั้งหมด')} value={d.customers.total} sub={`${t('ใหม่')} +${d.customers.new}`} subUp badge="b" icon="users" chart={<DotGrid data={monthly} />} />
-        <Stat label={t('มูลค่าไปป์ไลน์')} value={kfmt(d.projects.pipeline_value)} sub={`${d.projects.open} ${t('กลุ่มเป้าหมาย')}`} subUp badge="a" icon="coins" chart={<AreaMini data={monthly} />} />
-        <Stat label="Win rate" value={win.winRate + '%'} sub={`${win.won}/${win.won + (win.open || 0)}`} subUp badge="p" icon="target" chart={<DotLine data={monthly} />} />
+        <Stat label={t('มูลค่ารวม (Booking)')} value={kfmt(win.total_value)} sub={`${win.total} ${t('บุ๊กกิ้ง')}`} subUp badge="a" icon="coins" chart={<AreaMini data={chartSeries} />} />
+        <Stat label="Win rate" value={win.winRate + '%'} sub={`${win.won}/${win.total}`} subUp badge="p" icon="target" chart={<DotLine data={chartSeries} />} />
         <Stat label={t('งานติดตามค้าง')} value={d.activities.pending} sub={`${d.activities.overdue} ${t('เกินกำหนด')}`} subUp={d.activities.overdue === 0} badge="r" icon="clock" chart={<BarsMini data={monthly} />} />
         <Stat label={t('สุขภาพการขาย')} value={hexAvg} sub={`${onTime}% ${t('งานตรงเวลา')}`} subUp badge="p" icon="gauge" chart={<Gauge value={win.winRate} />} />
       </div>
