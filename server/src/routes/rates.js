@@ -12,10 +12,16 @@ router.get('/status', (req, res) => res.json({ ready: rateReady() }));
 // admin/manager -> {all:true}. staff -> match CRM email กับ sb_sales.email ได้ code เซลส์ (หรือ unmatched)
 async function scopeFor(req) {
   if (!isStaff(req.user)) return { all: true };
-  const u = (await q('SELECT email, display_name FROM app_user WHERE id=$1', [req.user.id])).rows[0];
-  if (!u || !u.email) return { all: false, code: null, name: u ? u.display_name : '' };
-  const s = (await rq('SELECT id, name, fullname FROM operation_schemas.sb_sales WHERE lower(email)=lower($1) LIMIT 1', [u.email])).rows[0];
-  return s ? { all: false, code: s.id, name: s.name || s.fullname } : { all: false, code: null, name: null, email: u.email };
+  const u = (await q('SELECT email, display_name, user_code FROM app_user WHERE id=$1', [req.user.id])).rows[0];
+  if (!u) return { all: false, code: null, name: '' };
+  const email = String(u.email || '').toLowerCase().trim();
+  const uc = String(u.user_code || '').trim();
+  // จับคู่กับเซลส์ในระบบ rate ด้วย "อีเมล" หรือ "user_code" (= id / code / name ของ sb_sales)
+  const s = (await rq(`SELECT id, name, fullname FROM operation_schemas.sb_sales
+    WHERE ($1 <> '' AND lower(email) = $1)
+       OR ($2 <> '' AND (id = $2 OR lower(code) = lower($2) OR lower(name) = lower($2)))
+    LIMIT 1`, [email, uc])).rows[0];
+  return s ? { all: false, code: s.id, name: s.name || s.fullname } : { all: false, code: null, name: null, email: u.email, user_code: uc };
 }
 
 router.get('/routes', wrap(async (req, res) => {
@@ -126,6 +132,8 @@ router.get('/contract/:code', wrap(async (req, res) => {
   const code = req.params.code;
   const a = (await rq(`SELECT * FROM operation_schemas.sb_agents WHERE code=$1 OR id=$1 LIMIT 1`, [code])).rows[0];
   if (!a) return res.status(404).json({ error: 'ไม่พบเอเจ้นท์นี้ในระบบ rate (รหัสอ้างอิงไม่ตรง)' });
+  const sc = await scopeFor(req);
+  if (!sc.all && a.sales !== sc.code) return res.status(403).json({ error: 'ไม่มีสิทธิ์สร้างสัญญาของเอเจ้นท์รายนี้' });
   const agent = {
     id: a.id, name: a.name, code: a.code, email: a.email, sales: a.sales,
     payType: a.paytype, creditDays: a.creditdays, creditLimit: a.creditlimit,
