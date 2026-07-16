@@ -40,29 +40,26 @@ function HBars({ data, label, value, fmt, c1, c2, onBar, active }) {
   })}</div>;
 }
 
-// ── concentric ring chart (My assets style) ──
+// ── concentric ring chart (My assets style) — ยอดบาทครบทุกตัว ──
 function Ring({ items, fmt }) {
-  const top = items.slice(0, 4).filter(x => x.v > 0);
+  const arcs = items.slice(0, 4).filter(x => x.v > 0);
+  const legend = items.slice(0, 8);
   const tot = items.reduce((a, s) => a + s.v, 0) || 1;
   const cx = 84, cy = 84, radii = [66, 52, 38, 24], sw = 10, C = 2 * Math.PI;
-  const chipPos = [{ top: 4, left: 0 }, { top: 40, right: 0 }, { bottom: 30, left: 6 }, { bottom: 2, right: 10 }];
-  return <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
-    <div style={{ position: 'relative', width: 168, height: 168, flexShrink: 0 }}>
+  return <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+    <div style={{ width: 168, height: 168, flexShrink: 0 }}>
       <svg viewBox="0 0 168 168" style={{ width: 168, height: 168 }}>
-        {top.map((s, i) => { const r = radii[i], len = C * r, arc = Math.max(.06, s.v / tot) * len;
+        {arcs.map((s, i) => { const r = radii[i], len = C * r, arc = Math.max(.04, s.v / tot) * len;
           return <g key={i}><circle cx={cx} cy={cy} r={r} fill="none" stroke="#F1EFFA" strokeWidth={sw} />
             <circle cx={cx} cy={cy} r={r} fill="none" stroke={PAL[i]} strokeWidth={sw} strokeDasharray={`${arc} ${len}`} strokeLinecap="round" transform={`rotate(-90 ${cx} ${cy})`} /></g>; })}
-        <circle cx={cx} cy={cy} r="15" fill="#F7F6FD" /><text x={cx} y={cy + 4} textAnchor="middle" fontSize="13">↻</text>
+        <circle cx={cx} cy={cy} r="17" fill="#F7F6FD" /><text x={cx} y={cy + 1} textAnchor="middle" fontSize="13" fontWeight="800" fill="#211C43">{arcs.length}</text><text x={cx} y={cy + 13} textAnchor="middle" fontSize="8" fill="#8E8AAB">รายการ</text>
       </svg>
-      {top.slice(0, 3).map((s, i) => <div key={i} style={{ position: 'absolute', ...chipPos[i], background: '#fff', boxShadow: '0 4px 14px rgba(90,74,160,.14)', borderRadius: 10, padding: '4px 8px', fontSize: 10.5, lineHeight: 1.3 }}>
-        <div style={{ color: '#8E8AAB', fontWeight: 600, maxWidth: 92, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}><span style={{ color: PAL[i] }}>●</span> {s.name}</div>
-        <div style={{ fontWeight: 800 }}>{fmt(s.v)}</div>
-      </div>)}
     </div>
-    <div style={{ flex: 1, minWidth: 150 }}>{top.map((s, i) => <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, padding: '4px 0' }}>
-      <span style={{ width: 10, height: 10, borderRadius: 3, background: PAL[i], flexShrink: 0 }} />
+    <div style={{ flex: 1, minWidth: 200 }}>{legend.map((s, i) => <div key={i} className="lgrow" title={`${s.name} · ${fmt(s.v)}`}>
+      <span style={{ width: 10, height: 10, borderRadius: 3, background: PAL[i % PAL.length], flexShrink: 0 }} />
       <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</span>
-      <b style={{ fontVariantNumeric: 'tabular-nums' }}>{Math.round(s.v / tot * 100)}%</b>
+      <b style={{ fontVariantNumeric: 'tabular-nums' }}>{fmt(s.v)}</b>
+      <span style={{ width: 46, textAlign: 'right', color: '#8E8AAB', fontSize: 11.5 }}>{(s.v / tot * 100).toFixed(s.v / tot < 0.1 ? 1 : 0)}%</span>
     </div>)}</div>
   </div>;
 }
@@ -230,7 +227,7 @@ export default function Reports() {
             <HBars data={av.slice(0, 10)} label={x => x.name || x.agentid} value={x => +x.revenue} fmt={x => baht(x.revenue)} c1="#6C5CE7" c2="#A99BF5" />}
         </Card>
         <Card>
-          <Head title={t('Top 10 Product (เส้นทาง) ตามยอด')} right={pv.length > 4 && <a className="lnk" onClick={() => setModal({ title: t('Top 10 Product (เส้นทาง) ตามยอด'), cols: [t('Product / เส้นทาง'), t('จำนวนบุ๊กกิ้ง'), t('ยอดรวม')], rows: pv.map((x, i) => [(i + 1) + '. ' + (x.name || x.routeid), x.bookings, baht(x.revenue)]) })}>{t('ดูทั้งหมด')} →</a>} />
+          <Head title={t('Top 10 Product (เส้นทาง) ตามยอด')} right={pv.length > 0 && <a className="lnk" onClick={() => setModal({ title: t('Top 10 Product (เส้นทาง) ตามยอด'), cols: [t('Product / เส้นทาง'), t('จำนวนบุ๊กกิ้ง'), t('ยอดรวม')], rows: pv.map((x, i) => [(i + 1) + '. ' + (x.name || x.routeid), x.bookings, baht(x.revenue)]) })}>{t('ดูทั้งหมด')} →</a>} />
           {rateErr ? <div style={{ color: '#9A96B6', fontSize: 12.5, marginTop: 8 }}>{t('ยังไม่ได้เชื่อมระบบ rate (ตั้ง RATE_DATABASE_URL)')}</div> :
             <Ring items={pv.map(x => ({ name: x.name || x.routeid, v: +x.revenue }))} fmt={compact} />}
         </Card>
