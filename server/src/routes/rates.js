@@ -96,4 +96,70 @@ router.post('/import-agents', wrap(async (req, res) => {
   res.json({ created, updated, total: agents.length });
 }));
 
+// ===== ข้อมูลสำหรับสร้างสัญญา (ContractWizard) — รวมจากระบบ rate =====
+function nestSeatContract(rows) {
+  const ZM = { PK: 'pk', KL: 'kl', NoTransfer: 'notransfer' };
+  const PX = [['adult-thai', 'adult_thai'], ['child-thai', 'child_thai'], ['adult-fr', 'adult_fr'], ['child-fr', 'child_fr'], ['infant-thai', 'infant_thai'], ['infant-fr', 'infant_fr']];
+  const out = {};
+  for (const r of rows) {
+    out[r.key] = {};
+    for (const [Z, z] of Object.entries(ZM)) {
+      const cell = {}; let any = false;
+      for (const [hk, col] of PX) { const v = Number(r[`${z}_${col}`] || 0); cell[hk] = v; if (v) any = true; }
+      if (any) out[r.key][Z] = cell;
+    }
+  }
+  return out;
+}
+function nestCharter(rows) {
+  const out = {};
+  for (const r of rows) {
+    const o = {};
+    if (Number(r.speedboat_starterprice)) o.speedboat = { starterPrice: Number(r.speedboat_starterprice), starterIncludes: Number(r.speedboat_starterincludes || 4), extraPerPax: Number(r.speedboat_extraperpax || 0) };
+    if (Number(r.catamaran_starterprice)) o.catamaran = { starterPrice: Number(r.catamaran_starterprice), starterIncludes: Number(r.catamaran_starterincludes || 4), extraPerPax: Number(r.catamaran_extraperpax || 0) };
+    if (Object.keys(o).length) out[r.key] = o;
+  }
+  return out;
+}
+
+router.get('/contract/:code', wrap(async (req, res) => {
+  const code = req.params.code;
+  const a = (await rq(`SELECT * FROM operation_schemas.sb_agents WHERE code=$1 OR id=$1 LIMIT 1`, [code])).rows[0];
+  if (!a) return res.status(404).json({ error: 'ไม่พบเอเจ้นท์นี้ในระบบ rate (รหัสอ้างอิงไม่ตรง)' });
+  const agent = {
+    id: a.id, name: a.name, code: a.code, email: a.email, sales: a.sales,
+    payType: a.paytype, creditDays: a.creditdays, creditLimit: a.creditlimit,
+    contractStart: a.contractstart, contractEnd: a.contractend, contractVersion: a.contractversion,
+    companyInfo: { legalName: a.companyinfo_legalname, tatLicense: a.companyinfo_tatlicense, address: a.companyinfo_address, tel: a.companyinfo_tel, hotline: a.companyinfo_hotline, fax: a.companyinfo_fax, website: a.companyinfo_website, taxId: a.companyinfo_taxid },
+    agentSignatory: { name: a.agentsignatory_name, designation: a.agentsignatory_designation, tel: a.agentsignatory_tel, signedDate: a.agentsignatory_signeddate },
+    bookingChannel: { method: a.bookingchannel_method, cutoff: a.bookingchannel_cutoff, cancelPolicy: a.bookingchannel_cancelpolicy, email: a.bookingchannel_email, phone: a.bookingchannel_phone },
+    programPeriods: [],
+  };
+  const pp = (await rq(`SELECT routeid, bookfrom, bookto, travelfrom, travelto, note FROM operation_schemas.sb_agents__programperiods WHERE sb_agents_id=$1 ORDER BY idx`, [a.id])).rows;
+  agent.programPeriods = pp.map(p => ({ routeId: p.routeid, bookFrom: p.bookfrom, bookTo: p.bookto, travelFrom: p.travelfrom, travelTo: p.travelto, note: p.note }));
+
+  let rateType = null;
+  if (a.ratetypeid) {
+    const rt = (await rq(`SELECT id,code,name,note,validfrom,validto FROM operation_schemas.sb_rate_types WHERE id=$1`, [a.ratetypeid])).rows[0];
+    if (rt) {
+      const sr = (await rq(`SELECT * FROM operation_schemas.sb_rate_types__seatrates WHERE sb_rate_types_id=$1`, [rt.id])).rows;
+      const routesArr = (await rq(`SELECT value FROM operation_schemas.sb_rate_types__routes WHERE sb_rate_types_id=$1 ORDER BY idx`, [rt.id])).rows.map(r => r.value);
+      const rvRows = (await rq(`SELECT key, "from", "to" FROM operation_schemas.sb_rate_types__routevalidity WHERE sb_rate_types_id=$1`, [rt.id])).rows;
+      const chRows = (await rq(`SELECT * FROM operation_schemas.sb_rate_types__charterrates WHERE sb_rate_types_id=$1`, [rt.id])).rows;
+      const routeValidity = {}; rvRows.forEach(x => { routeValidity[x.key] = { from: x.from, to: x.to }; });
+      rateType = {
+        id: rt.id, code: rt.code, name: rt.name, note: rt.note, validFrom: rt.validfrom, validTo: rt.validto,
+        routes: routesArr.length ? routesArr : Object.keys(nestSeatContract(sr)),
+        seatRates: nestSeatContract(sr), routeValidity, charterRates: nestCharter(chRows), addOns: {},
+      };
+    }
+  }
+  if (!agent.programPeriods.length && rateType) agent.programPeriods = rateType.routes.map(rid => ({ routeId: rid }));
+
+  const routes = (await rq(`SELECT id, name, pier FROM operation_schemas.routes ORDER BY sort NULLS LAST, id`)).rows;
+  const salesRows = (await rq(`SELECT id, code, name, fullname, designation, tel, email, signature FROM operation_schemas.sb_sales`)).rows;
+  const sales = {}; salesRows.forEach(x => { sales[x.id] = { code: x.code, name: x.name, fullName: x.fullname, designation: x.designation, tel: x.tel, email: x.email, signature: x.signature }; });
+  res.json({ agent, rateType, routes, sales });
+}));
+
 module.exports = router;

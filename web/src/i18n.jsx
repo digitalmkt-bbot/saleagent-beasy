@@ -183,6 +183,7 @@ const EN = {
   'สร้างใหม่': 'Created',
   'อัปเดต': 'Updated',
   'ลบแท็ก': 'Delete tag',
+  'เอเจ้นท์นี้ไม่มีรหัสอ้างอิงที่ตรงกับระบบ rate': 'This agent has no ref code matching the rate system',
 };
 
 const Ctx = createContext({ t: (s) => s, lang: 'th', toggle: () => {} });

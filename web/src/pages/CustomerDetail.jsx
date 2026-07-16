@@ -3,18 +3,30 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { api, baht } from '../api.js';
 import { LIFE, DIR, Stars, Img} from '../lib.jsx';
 import { useI18n } from '../i18n.jsx';
+import ContractWizard from '../contract-wizard';
 
 export default function CustomerDetail() {
   const { id } = useParams(); const nav = useNavigate();
   const { t } = useI18n();
   const [c, setC] = useState(null);
+  const [contract, setContract] = useState(null);
+  const [ctLoading, setCtLoading] = useState(false);
   useEffect(() => { api('/customers/' + id).then(setC).catch(() => {}); }, [id]);
+  async function openContract() {
+    if (!c.ref_code) { alert(t('เอเจ้นท์นี้ไม่มีรหัสอ้างอิงที่ตรงกับระบบ rate')); return; }
+    setCtLoading(true);
+    try { const d = await api('/rates/contract/' + encodeURIComponent(c.ref_code)); setContract(d); }
+    catch (e) { alert(e.message); } finally { setCtLoading(false); }
+  }
   if (!c) return <div>{t('กำลังโหลด...')}</div>;
   const l = LIFE[c.lifecycle_stage] || ['-', 'gray'];
   return (
     <div>
       <span className="back" onClick={() => nav('/customers')}>{t('← กลับรายการเอเจ้นท์')}</span>
-      <h1 className="page">{c.name}</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+        <h1 className="page" style={{ margin: 0 }}>{c.name}</h1>
+        <button className="btn" onClick={openContract} disabled={ctLoading}>{ctLoading ? '...' : '📄 ' + t('สร้างสัญญา')}</button>
+      </div>
       <div className="grid2">
         <div className="panel"><h3 style={{ marginTop: 0 }}>{t('ข้อมูลเอเจ้นท์')}</h3><table><tbody>
           <tr><td className="muted">{t('สถานะ')}</td><td><span className={'pill ' + l[1]}>{t(l[0])}</span></td></tr>
@@ -39,6 +51,13 @@ export default function CustomerDetail() {
       <div className="panel"><h3 style={{ marginTop: 0 }}>Timeline {t('งานติดตาม')} ({c.activities.length})</h3>
         {c.activities.map(a => <TL key={a.id} a={a} />)}
         {!c.activities.length && <div className="muted">{t('ยังไม่มีกิจกรรม')}</div>}</div>
+      {contract && <ContractWizard
+        agent={contract.agent}
+        rateType={contract.rateType}
+        routes={contract.routes || []}
+        getSales={(sid) => (contract.sales || {})[sid] || null}
+        onClose={() => setContract(null)}
+      />}
     </div>
   );
 }
