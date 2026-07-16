@@ -32,6 +32,7 @@ export default function Reports() {
   const [sales, setSales] = useState([]);
   const [agentVol, setAgentVol] = useState(null);
   const [products, setProducts] = useState(null);
+  const [salesVol, setSalesVol] = useState(null);
   const [openUser, setOpenUser] = useState(null);
   const [drill, setDrill] = useState([]);
   const [rateErr, setRateErr] = useState('');
@@ -43,6 +44,7 @@ export default function Reports() {
     api('/reports/sales-activity', { params }).then(r => setSales(r.rows || [])).catch(() => setSales([]));
     api('/rates/report/agent-volume', { params }).then(r => { setAgentVol(r.rows || []); setRateErr(''); }).catch(e => { setAgentVol([]); setRateErr(e.message); });
     api('/rates/report/product-volume', { params }).then(r => setProducts(r.rows || [])).catch(() => setProducts([]));
+    api('/rates/report/sales-volume', { params }).then(r => setSalesVol(r.rows || [])).catch(() => setSalesVol([]));
     setOpenUser(null); setDrill([]);
   }
   useEffect(() => { loadReports(); }, []); // eslint-disable-line
@@ -112,8 +114,15 @@ export default function Reports() {
       <div className="grid2">
         <div className="panel"><h3 style={{ marginTop: 0 }}>{t('กลุ่มเป้าหมายตามขั้นไปป์ไลน์')}</h3>
           <Bars data={d.funnel} label={f => f.seq + '. ' + f.name} value={f => f.cnt} fmt={f => f.cnt + ' · ' + baht(f.value)} color="#3B82C4" /></div>
-        <div className="panel"><h3 style={{ marginTop: 0 }}>{t('ยอดขายตามผู้รับผิดชอบ')}</h3>
-          <Bars data={d.byOwner} label={o => o.name} value={o => +o.won_value} fmt={o => baht(o.won_value)} color="#6E6FCB" /></div>
+        <div className="panel">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ margin: 0 }}>{t('ยอดขายตามผู้รับผิดชอบ')}</h3>
+            {(salesVol || []).length > 10 && <a onClick={() => setModal({ title: t('ยอดขายตามผู้รับผิดชอบ'), cols: [t('เซลส์'), t('จำนวนบุ๊กกิ้ง'), t('ยอดรวม')], rows: salesVol.map((x, i) => [(i + 1) + '. ' + (x.name || x.fullname || t('ไม่ระบุเซลส์')), x.bookings, baht(x.revenue)]) })}>{t('ดูทั้งหมด')} →</a>}
+          </div>
+          <div className="muted" style={{ margin: '4px 0 8px' }}>{t('จากยอดบุ๊กกิ้งจริงของเอเจ้นท์ที่แต่ละคนดูแล')}</div>
+          {rateErr ? <div className="muted">{t('ยังไม่ได้เชื่อมระบบ rate (ตั้ง RATE_DATABASE_URL)')}</div> :
+            <Bars data={(salesVol || []).slice(0, 10)} label={o => o.name || o.fullname || t('ไม่ระบุเซลส์')} value={o => +o.revenue} fmt={o => baht(o.revenue)} color="#6E6FCB" />}
+        </div>
       </div>
       <div className="grid2">
         <div className="panel"><h3 style={{ marginTop: 0 }}>{t('ยอดตามเดือน (วันเริ่มกลุ่มเป้าหมาย)')}</h3>

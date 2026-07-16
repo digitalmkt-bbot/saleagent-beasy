@@ -204,6 +204,8 @@ const EN = {
   'ภาพรวม CRM': 'CRM overview',
   'ดูทั้งหมด': 'View all',
   'นับทุกช่องทาง · คลิกแท่งเพื่อดูว่าไปเอเจ้นท์ไหนบ้าง': 'All channels · click a bar to see which agents',
+  'จากยอดบุ๊กกิ้งจริงของเอเจ้นท์ที่แต่ละคนดูแล': 'From actual bookings of the agents each rep manages',
+  'ไม่ระบุเซลส์': 'No sales rep',
 };
 
 const Ctx = createContext({ t: (s) => s, lang: 'th', toggle: () => {} });

@@ -206,4 +206,22 @@ router.get('/report/product-volume', wrap(async (req, res) => {
   res.json({ rows });
 }));
 
+// ยอดขายตามผู้รับผิดชอบ (เซลส์) — จากยอดบุ๊กกิ้งจริงของเอเจ้นท์ที่แต่ละคนดูแล
+router.get('/report/sales-volume', wrap(async (req, res) => {
+  const { from, to } = req.query;
+  const sc = await scopeFor(req);
+  if (!sc.all && !sc.code) return res.json({ rows: [] });
+  const where = ["b.status='confirmed'"]; const args = []; let i = 1;
+  if (from) { where.push(`COALESCE(NULLIF(b.bookingdate,''),b.createdat) >= $${i++}`); args.push(from); }
+  if (to) { where.push(`COALESCE(NULLIF(b.bookingdate,''),b.createdat) <= $${i++}`); args.push(to); }
+  if (!sc.all) { where.push(`a.sales = $${i++}`); args.push(sc.code); }
+  const rows = (await rq(`SELECT a.sales AS sales_id, s.name, s.fullname, count(*)::int bookings, COALESCE(sum(b.total),0)::bigint revenue
+    FROM operation_schemas.sb_bookings b
+    JOIN operation_schemas.sb_agents a ON a.id=b.agentid
+    LEFT JOIN operation_schemas.sb_sales s ON s.id=a.sales
+    WHERE ${where.join(' AND ')}
+    GROUP BY a.sales,s.name,s.fullname ORDER BY revenue DESC NULLS LAST`, args)).rows;
+  res.json({ rows });
+}));
+
 module.exports = router;
