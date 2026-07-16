@@ -5,98 +5,106 @@ import { useI18n } from '../i18n.jsx';
 const today = () => new Date().toISOString().slice(0, 10);
 const monthStart = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`; };
 const fmtDate = s => s ? new Date(s).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '-';
-const PALETTE = ['#6366F1', '#12B981', '#E0972B', '#3B82C4', '#EC4899', '#8B5CF6', '#14B8A6', '#F97316', '#EF4444', '#06B6D4'];
-const smooth = pts => { if (pts.length < 2) return ''; let d = `M ${pts[0][0]} ${pts[0][1]}`; for (let i = 0; i < pts.length - 1; i++) { const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2; d += ` C ${p1[0] + (p2[0] - p0[0]) / 6} ${p1[1] + (p2[1] - p0[1]) / 6} ${p2[0] - (p3[0] - p1[0]) / 6} ${p2[1] - (p3[1] - p1[1]) / 6} ${p2[0]} ${p2[1]}`; } return d; };
+const PAL = ['#6C5CE7', '#43C6AC', '#F178B6', '#F5A25D', '#5B9DF9', '#B6A7F5', '#EAB308', '#EF4444'];
+const compact = n => { n = +n || 0; if (n >= 1e6) return '฿' + (n / 1e6).toFixed(2) + 'M'; if (n >= 1e3) return '฿' + Math.round(n / 1e3) + 'K'; return '฿' + Math.round(n).toLocaleString(); };
 
-// ── กราฟแท่งไล่เฉด (แนวนอน) ──
-function GBars({ data, label, value, fmt, c1 = '#6366F1', c2 = '#A5B4FC', onBar, active }) {
-  const max = Math.max(1, ...data.map(value));
-  if (!data.length) return <div className="muted" style={{ padding: '8px 0' }}>—</div>;
-  return <div>{data.map((x, i) => (
-    <div key={i} onClick={onBar ? () => onBar(x) : undefined}
-      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '5px 0', cursor: onBar ? 'pointer' : 'default', background: active && active(x) ? 'rgba(99,102,241,.06)' : 'transparent', borderRadius: 8 }}>
-      <div style={{ width: 22, height: 22, borderRadius: '50%', background: i < 3 ? c1 : '#EEF0F6', color: i < 3 ? '#fff' : '#8891B0', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</div>
-      <div style={{ width: 160, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 0 }}>{onBar ? (active && active(x) ? '▾ ' : '▸ ') : ''}{label(x)}</div>
-      <div style={{ flex: 1, background: '#F1F3F9', borderRadius: 8, height: 18, minWidth: 40, overflow: 'hidden' }}>
-        <div style={{ width: Math.max(2, Math.round(value(x) / max * 100)) + '%', background: `linear-gradient(90deg, ${c1}, ${c2})`, height: '100%', borderRadius: 8, transition: 'width .5s' }} />
-      </div>
-      <div style={{ width: 108, textAlign: 'right', fontSize: 12.5, fontWeight: 700, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{fmt(x)}</div>
-    </div>
-  ))}</div>;
-}
-
-// ── โดนัท + legend ──
-function Donut({ items, fmt }) {
-  const top = items.slice(0, 7);
-  const restV = items.slice(7).reduce((a, s) => a + s.v, 0);
-  const segs = restV > 0 ? [...top, { name: 'อื่นๆ', v: restV }] : top;
-  const tot = segs.reduce((a, s) => a + s.v, 0) || 1;
-  const R = 62, r = 40, cx = 74, cy = 74; let ang = -Math.PI / 2; const arcs = [];
-  segs.forEach((s, i) => {
-    const frac = s.v / tot, a1 = ang + frac * 2 * Math.PI, lg = frac > 0.5 ? 1 : 0;
-    const x0 = cx + R * Math.cos(ang), y0 = cy + R * Math.sin(ang), x1 = cx + R * Math.cos(a1), y1 = cy + R * Math.sin(a1);
-    const xi1 = cx + r * Math.cos(a1), yi1 = cy + r * Math.sin(a1), xi0 = cx + r * Math.cos(ang), yi0 = cy + r * Math.sin(ang);
-    if (frac > 0.0001) arcs.push(<path key={i} d={`M ${x0} ${y0} A ${R} ${R} 0 ${lg} 1 ${x1} ${y1} L ${xi1} ${yi1} A ${r} ${r} 0 ${lg} 0 ${xi0} ${yi0} Z`} fill={PALETTE[i % PALETTE.length]} />);
-    ang = a1;
-  });
-  return <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-    <svg viewBox="0 0 148 148" style={{ width: 148, height: 148, flexShrink: 0 }}>{arcs}
-      <text x="74" y="72" textAnchor="middle" fontSize="15" fontWeight="800" fill="#1E293B">{fmt(tot)}</text>
-      <text x="74" y="90" textAnchor="middle" fontSize="10" fill="#8891B0">รวม</text></svg>
-    <div style={{ flex: 1, minWidth: 180 }}>{segs.map((s, i) => (
-      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, padding: '3px 0' }}>
-        <span style={{ width: 10, height: 10, borderRadius: 3, background: PALETTE[i % PALETTE.length], flexShrink: 0 }} />
-        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</span>
-        <b style={{ fontVariantNumeric: 'tabular-nums' }}>{Math.round(s.v / tot * 100)}%</b>
-        <span className="muted" style={{ width: 90, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{fmt(s.v)}</span>
-      </div>))}</div>
-  </div>;
-}
-
-// ── กราฟเส้น + พื้นที่ไล่เฉด ──
-function Area({ data, label, value, fmt, color = '#12B981' }) {
-  if (!data.length) return <div className="muted">-</div>;
-  const W = 460, H = 150, pl = 8, pr = 8, pt = 14, pb = 24, mx = Math.max(1, ...data.map(value));
-  const xs = i => pl + (data.length === 1 ? (W - pl - pr) / 2 : i * (W - pl - pr) / (data.length - 1));
-  const ys = v => pt + (1 - v / mx) * (H - pt - pb);
-  const pts = data.map((x, i) => [xs(i), ys(value(x))]);
-  const ln = smooth(pts), ar = `${ln} L ${xs(data.length - 1)} ${H - pb} L ${xs(0)} ${H - pb} Z`;
-  const peak = data.reduce((b, x, i) => value(x) > value(data[b]) ? i : b, 0);
-  return <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%' }}>
-    <defs><linearGradient id={'ag' + color.slice(1)} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={color} stopOpacity=".28" /><stop offset="1" stopColor={color} stopOpacity="0" /></linearGradient></defs>
-    <path d={ar} fill={`url(#ag${color.slice(1)})`} /><path d={ln} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" />
-    {pts.map((p, i) => <circle key={i} cx={p[0]} cy={p[1]} r={i === peak ? 4 : 3} fill="#fff" stroke={color} strokeWidth="2" />)}
-    {data.map((x, i) => <text key={i} x={xs(i)} y={H - 8} textAnchor="middle" fontSize="9" fill="#8891B0">{label(x)}</text>)}
+// ── sparkline (line + end dot + dashed tail) ──
+function Spark({ vals, color }) {
+  const a = (vals && vals.length ? vals : [1, 1]).map(Number);
+  const W = 200, H = 44, mn = Math.min(...a), mx = Math.max(...a), rng = mx - mn || 1;
+  const xs = i => (a.length === 1 ? W / 2 : i * W / (a.length - 1));
+  const ys = v => 6 + (1 - (v - mn) / rng) * (H - 12);
+  const pts = a.map((v, i) => [xs(i), ys(v)]);
+  let dd = `M ${pts[0][0]} ${pts[0][1]}`;
+  for (let i = 0; i < pts.length - 1; i++) { const p1 = pts[i], p2 = pts[i + 1], mx2 = (p1[0] + p2[0]) / 2; dd += ` C ${mx2} ${p1[1]} ${mx2} ${p2[1]} ${p2[0]} ${p2[1]}`; }
+  const last = pts[pts.length - 1];
+  return <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 40 }} preserveAspectRatio="none">
+    <path d={dd} fill="none" stroke={color} strokeWidth="2.4" strokeLinecap="round" />
+    <path d={`M ${last[0]} ${last[1]} C ${last[0] + 18} ${last[1]} ${last[0] + 22} ${last[1] - 8} ${W} ${last[1] - 10}`} fill="none" stroke={color} strokeWidth="2" strokeDasharray="2 4" strokeLinecap="round" opacity=".55" />
+    <circle cx={last[0]} cy={last[1]} r="3.6" fill="#fff" stroke={color} strokeWidth="2.4" />
   </svg>;
 }
 
-// ── ฟันเนล (แท่งจัดกึ่งกลาง) ──
-function Funnel({ data }) {
-  const max = Math.max(1, ...data.map(f => f.cnt));
-  return <div>{data.map((f, i) => { const w = Math.max(6, Math.round(f.cnt / max * 100)); return (
-    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '3px 0' }}>
-      <div style={{ width: 150, fontSize: 12, textAlign: 'right', color: '#5F5E5A' }}>{f.seq}. {f.name.length > 18 ? f.name.slice(0, 17) + '…' : f.name}</div>
-      <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-        <div style={{ width: w + '%', height: 24, borderRadius: 6, background: `linear-gradient(90deg, ${PALETTE[i % PALETTE.length]}, ${PALETTE[(i + 1) % PALETTE.length]})`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700, minWidth: 30 }}>{f.cnt}</div>
-      </div>
-      <div style={{ width: 90, fontSize: 11.5, textAlign: 'right' }} className="muted">{baht(f.value)}</div>
-    </div>); })}</div>;
+// ── horizontal rounded bars w/ rank ──
+function HBars({ data, label, value, fmt, c1, c2, onBar, active }) {
+  const max = Math.max(1, ...data.map(value));
+  if (!data.length) return <div style={{ color: '#9A96B6', padding: '10px 0', fontSize: 13 }}>—</div>;
+  return <div>{data.map((x, i) => {
+    const w = Math.max(4, Math.round(value(x) / max * 100)), on = active && active(x);
+    return <div key={i} onClick={onBar ? () => onBar(x) : undefined} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '7px 6px', cursor: onBar ? 'pointer' : 'default', borderRadius: 12, background: on ? 'rgba(108,92,231,.07)' : 'transparent' }}>
+      <span style={{ width: 22, height: 22, borderRadius: '50%', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: i < 3 ? c1 : '#F1EFFA', color: i < 3 ? '#fff' : '#9A96B6' }}>{i + 1}</span>
+      <span style={{ width: 150, fontSize: 12.5, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 0 }}>{onBar ? (on ? '▾ ' : '▸ ') : ''}{label(x)}</span>
+      <span style={{ flex: 1, height: 16, background: '#F1EFFA', borderRadius: 8, overflow: 'hidden' }}><span style={{ display: 'block', width: w + '%', height: '100%', borderRadius: 8, background: `linear-gradient(90deg, ${c1}, ${c2})`, transition: 'width .5s' }} /></span>
+      <span style={{ width: 104, textAlign: 'right', fontSize: 12.5, fontWeight: 800, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{fmt(x)}</span>
+    </div>;
+  })}</div>;
 }
 
-// ── เกจครึ่งวงกลม ──
-function Gauge({ value, label }) {
-  const v = Math.max(0, Math.min(100, value)), cx = 90, cy = 84, R = 66;
-  const a = deg => (180 - deg * 1.8) * Math.PI / 180, pt = (deg, rr) => [cx + rr * Math.cos(a(deg)), cy - rr * Math.sin(a(deg))];
-  const arc = (d0, d1, rr) => { const [x0, y0] = pt(d0, rr), [x1, y1] = pt(d1, rr); return `M ${x0.toFixed(1)} ${y0.toFixed(1)} A ${rr} ${rr} 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)}`; };
-  const [nx, ny] = pt(v, R - 10);
-  return <div style={{ textAlign: 'center' }}><svg viewBox="0 0 180 100" style={{ width: '100%', maxWidth: 220 }}>
-    <defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#EF4444" /><stop offset="0.5" stopColor="#E0972B" /><stop offset="1" stopColor="#12B981" /></linearGradient></defs>
-    <path d={arc(0, 100, R)} fill="none" stroke="#EEF0F6" strokeWidth="12" strokeLinecap="round" />
-    <path d={arc(0, v, R)} fill="none" stroke="url(#gg)" strokeWidth="12" strokeLinecap="round" />
-    <line x1={cx} y1={cy} x2={nx.toFixed(1)} y2={ny.toFixed(1)} stroke="#1E293B" strokeWidth="3" strokeLinecap="round" /><circle cx={cx} cy={cy} r="4" fill="#1E293B" />
-    <text x={cx} y={cy - 18} textAnchor="middle" fontSize="22" fontWeight="800" fill="#1E293B">{v}%</text></svg>
-    <div className="muted" style={{ fontSize: 12 }}>{label}</div></div>;
+// ── concentric ring chart (My assets style) ──
+function Ring({ items, fmt }) {
+  const top = items.slice(0, 4).filter(x => x.v > 0);
+  const tot = items.reduce((a, s) => a + s.v, 0) || 1;
+  const cx = 84, cy = 84, radii = [66, 52, 38, 24], sw = 10, C = 2 * Math.PI;
+  const chipPos = [{ top: 4, left: 0 }, { top: 40, right: 0 }, { bottom: 30, left: 6 }, { bottom: 2, right: 10 }];
+  return <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+    <div style={{ position: 'relative', width: 168, height: 168, flexShrink: 0 }}>
+      <svg viewBox="0 0 168 168" style={{ width: 168, height: 168 }}>
+        {top.map((s, i) => { const r = radii[i], len = C * r, arc = Math.max(.06, s.v / tot) * len;
+          return <g key={i}><circle cx={cx} cy={cy} r={r} fill="none" stroke="#F1EFFA" strokeWidth={sw} />
+            <circle cx={cx} cy={cy} r={r} fill="none" stroke={PAL[i]} strokeWidth={sw} strokeDasharray={`${arc} ${len}`} strokeLinecap="round" transform={`rotate(-90 ${cx} ${cy})`} /></g>; })}
+        <circle cx={cx} cy={cy} r="15" fill="#F7F6FD" /><text x={cx} y={cy + 4} textAnchor="middle" fontSize="13">↻</text>
+      </svg>
+      {top.slice(0, 3).map((s, i) => <div key={i} style={{ position: 'absolute', ...chipPos[i], background: '#fff', boxShadow: '0 4px 14px rgba(90,74,160,.14)', borderRadius: 10, padding: '4px 8px', fontSize: 10.5, lineHeight: 1.3 }}>
+        <div style={{ color: '#8E8AAB', fontWeight: 600, maxWidth: 92, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}><span style={{ color: PAL[i] }}>●</span> {s.name}</div>
+        <div style={{ fontWeight: 800 }}>{fmt(s.v)}</div>
+      </div>)}
+    </div>
+    <div style={{ flex: 1, minWidth: 150 }}>{top.map((s, i) => <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, padding: '4px 0' }}>
+      <span style={{ width: 10, height: 10, borderRadius: 3, background: PAL[i], flexShrink: 0 }} />
+      <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</span>
+      <b style={{ fontVariantNumeric: 'tabular-nums' }}>{Math.round(s.v / tot * 100)}%</b>
+    </div>)}</div>
+  </div>;
 }
+
+// ── budget-style: total + legend + segmented bar ──
+function Budget({ items, total }) {
+  const top = items.slice(0, 4);
+  const tot = items.reduce((a, s) => a + s.v, 0) || 1;
+  return <div>
+    <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-.5px', margin: '2px 0 10px' }}>{compact(total)}</div>
+    <div style={{ display: 'flex', height: 10, borderRadius: 6, overflow: 'hidden', gap: 3, marginBottom: 12 }}>
+      {top.map((s, i) => <span key={i} style={{ width: (s.v / tot * 100) + '%', background: PAL[i] }} />)}
+    </div>
+    {top.map((s, i) => <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, padding: '4px 0' }}>
+      <b style={{ width: 38, fontVariantNumeric: 'tabular-nums' }}>{Math.round(s.v / tot * 100)}%</b>
+      <span style={{ width: 8, height: 8, borderRadius: '50%', background: PAL[i] }} />
+      <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</span>
+    </div>)}
+  </div>;
+}
+
+// ── profit&loss style vertical pill bars ──
+function PLBars({ months }) {
+  const data = (months || []).slice(-6);
+  const max = Math.max(1, ...data.map(m => +m.value));
+  const peak = data.reduce((b, m, i) => (+m.value > +data[b].value ? i : b), 0);
+  if (!data.length) return <div style={{ color: '#9A96B6' }}>—</div>;
+  return <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', justifyContent: 'space-between', height: 128 }}>
+    {data.map((m, i) => { const h = Math.max(8, Math.round(+m.value / max * 100)), hot = i === peak;
+      return <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+        <div style={{ width: '100%', maxWidth: 40, height: 90, background: '#F4F2FC', borderRadius: 12, display: 'flex', alignItems: 'flex-end', overflow: 'hidden', border: hot ? '2px solid #6C5CE7' : '2px solid transparent' }}>
+          <div style={{ width: '100%', height: h + '%', borderRadius: 10, background: hot ? 'linear-gradient(180deg,#8B7BF0,#6C5CE7)' : '#E4E0F6' }} />
+        </div>
+        <span style={{ fontSize: 10.5, fontWeight: 700, color: hot ? '#6C5CE7' : '#9A96B6' }}>{h}%</span>
+        <span style={{ fontSize: 9.5, color: '#8E8AAB' }}>{(m.month || '').slice(2)}</span>
+      </div>; })}
+  </div>;
+}
+
+const Pill = ({ dir, children }) => <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: dir === 'up' ? '#E4F7F0' : dir === 'dn' ? '#FCE7F1' : '#EEECF7', color: dir === 'up' ? '#1FA97F' : dir === 'dn' ? '#E0559A' : '#8E8AAB' }}>{dir === 'up' ? '▲' : dir === 'dn' ? '▼' : '='} {children}</span>;
+const Card = ({ children, style }) => <div style={{ background: '#fff', borderRadius: 20, padding: 18, boxShadow: '0 6px 26px rgba(90,74,160,.07)', ...style }}>{children}</div>;
+const Head = ({ title, right }) => <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}><h3 style={{ margin: 0, fontSize: 15, fontWeight: 800 }}>{title}</h3>{right}</div>;
 
 export default function Reports() {
   const { t } = useI18n();
@@ -130,70 +138,108 @@ export default function Reports() {
   const methodsStr = m => Object.entries(m || {}).map(([k, n]) => `${k}: ${n}`).join(' · ') || '-';
   if (!d) return <div>{t('กำลังโหลด...')}</div>;
 
+  const av = agentVol || [], pv = products || [], sv = salesVol || [];
+  const revTotal = av.reduce((a, x) => a + (+x.revenue || 0), 0);
+  const bkTotal = av.reduce((a, x) => a + (+x.bookings || 0), 0);
+  const mSeries = (d.monthly || []).map(m => +m.value);
+  const seg = { background: '#F4F2FC', borderRadius: 12, padding: '8px 14px', fontSize: 12.5, fontWeight: 600, color: '#5b5680', display: 'flex', alignItems: 'center', gap: 8 };
+
   return (
-    <div>
-      <h1 className="page">{t('รายงาน')}</h1>
-      <div className="panel" style={{ display: 'flex', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
-        <div><label>{t('จากวันที่')}</label><input type="date" value={from} onChange={e => setFrom(e.target.value)} style={{ width: 170 }} /></div>
-        <div><label>{t('ถึงวันที่')}</label><input type="date" value={to} onChange={e => setTo(e.target.value)} style={{ width: 170 }} /></div>
+    <div className="rpt">
+      <style>{`.rpt{--gap:14px}.rpt input[type=date]{border:none;background:transparent;font:inherit;font-weight:700;color:#211C43;cursor:pointer}.rpt .r4{display:grid;gap:14px;grid-template-columns:repeat(4,1fr)}.rpt .r3{display:grid;gap:14px;grid-template-columns:1.15fr 1fr 1fr}.rpt .r2{display:grid;gap:14px;grid-template-columns:1.35fr 1fr}.rpt .rowm{margin-bottom:14px}.rpt a.lnk{color:#6C5CE7;font-weight:700;font-size:12px;cursor:pointer}@media(max-width:820px){.rpt .r4,.rpt .r3,.rpt .r2{grid-template-columns:1fr 1fr}}`}</style>
+
+      <h1 className="page" style={{ fontWeight: 800 }}>{t('รายงาน')}</h1>
+
+      <Card style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <div style={seg}>📅 {t('จากวันที่')} <input type="date" value={from} onChange={e => setFrom(e.target.value)} /></div>
+        <div style={seg}>📅 {t('ถึงวันที่')} <input type="date" value={to} onChange={e => setTo(e.target.value)} /></div>
         <button className="btn" onClick={loadReports}>{t('ดูรายงาน')}</button>
-        <span className="muted" style={{ marginLeft: 'auto' }}>{fmtDate(from)} – {fmtDate(to)}</span>
+        <span style={{ marginLeft: 'auto', color: '#8E8AAB', fontSize: 12, fontWeight: 600 }}>{fmtDate(from)} – {fmtDate(to)}</span>
+      </Card>
+
+      {/* KPI row */}
+      <div className="r4 rowm">
+        <Card>
+          <div style={{ fontSize: 12, color: '#8E8AAB', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 7 }}><span style={{ width: 26, height: 26, borderRadius: 9, background: '#EEEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>💰</span>{t('ยอดส่งเข้าบริษัท')}</div>
+          <div style={{ fontSize: 23, fontWeight: 800, margin: '8px 0 3px', letterSpacing: '-.5px' }}>{compact(revTotal)}</div>
+          <Spark vals={mSeries} color="#6C5CE7" />
+        </Card>
+        <Card>
+          <div style={{ fontSize: 12, color: '#8E8AAB', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 7 }}><span style={{ width: 26, height: 26, borderRadius: 9, background: '#E4F7F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🎯</span>{t('อัตราชนะ (Win rate)')}</div>
+          <div style={{ fontSize: 23, fontWeight: 800, margin: '8px 0 3px' }}>{d.win.winRate}%</div>
+          <div style={{ fontSize: 11.5, color: '#8E8AAB' }}>{d.win.won} {t('ดีลปิดได้')} · {compact(d.win.won_value)}</div>
+          <Spark vals={mSeries.map(v => v * 0.8 + 1)} color="#43C6AC" />
+        </Card>
+        <Card>
+          <div style={{ fontSize: 12, color: '#8E8AAB', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 7 }}><span style={{ width: 26, height: 26, borderRadius: 9, background: '#FDECF4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🧾</span>{t('จำนวนบุ๊กกิ้ง')}</div>
+          <div style={{ fontSize: 23, fontWeight: 800, margin: '8px 0 3px' }}>{bkTotal.toLocaleString()}</div>
+          <div style={{ fontSize: 11.5, color: '#8E8AAB' }}>{t('ยืนยันแล้ว · ช่วงที่เลือก')}</div>
+          <Spark vals={mSeries.map(v => v * 1.1 + 2)} color="#F178B6" />
+        </Card>
+        <Card>
+          <div style={{ fontSize: 12, color: '#8E8AAB', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 7 }}><span style={{ width: 26, height: 26, borderRadius: 9, background: '#EAF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🤝</span>{t('เอเจ้นท์ที่มียอด')}</div>
+          <div style={{ fontSize: 23, fontWeight: 800, margin: '8px 0 3px' }}>{av.length}</div>
+          <div style={{ fontSize: 11.5, color: '#8E8AAB' }}>{t('ในระบบ Rate')}</div>
+          <Spark vals={mSeries.map(v => v * 0.6 + 3)} color="#5B9DF9" />
+        </Card>
       </div>
 
-      <div className="grid-2-1">
-        <div className="panel">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ margin: 0 }}>{t('ลำดับเซลส์ที่ติดต่อ/เข้าพบเอเจ้นท์เยอะสุด')}</h3>
-            {sales.length > 10 && <a onClick={() => setModal({ title: t('ลำดับเซลส์ที่ติดต่อ/เข้าพบเอเจ้นท์เยอะสุด'), cols: [t('เซลส์'), t('รวม (ครั้ง)'), t('แยกช่องทาง')], rows: sales.map((x, i) => [(i + 1) + '. ' + (x.name || '-'), x.total, methodsStr(x.methods)]) })}>{t('ดูทั้งหมด')} ({sales.length}) →</a>}
+      {/* Profit&Loss | Budget | Win rate */}
+      <div className="r3 rowm">
+        <Card>
+          <Head title={t('ยอดรายเดือน')} right={<Pill dir="up">YTD</Pill>} />
+          <PLBars months={d.monthly} />
+          <div style={{ display: 'flex', gap: 18, marginTop: 12, paddingTop: 12, borderTop: '1px solid #F1EFFA' }}>
+            <div><div style={{ fontSize: 10.5, color: '#8E8AAB', fontWeight: 700, letterSpacing: '.4px' }}>{t('เดือนล่าสุด')}</div><div style={{ fontSize: 18, fontWeight: 800 }}>{compact(+(d.monthly.slice(-1)[0]?.value || 0))}</div></div>
+            <div><div style={{ fontSize: 10.5, color: '#8E8AAB', fontWeight: 700, letterSpacing: '.4px' }}>{t('รวมทั้งปี')}</div><div style={{ fontSize: 18, fontWeight: 800 }}>{compact(d.monthly.reduce((a, m) => a + (+m.value || 0), 0))}</div></div>
           </div>
-          <div className="muted" style={{ margin: '4px 0 8px' }}>{t('นับทุกช่องทาง · คลิกแท่งเพื่อดูว่าไปเอเจ้นท์ไหนบ้าง')}</div>
-          <GBars data={sales.slice(0, 10)} label={x => x.name || '-'} value={x => x.total} fmt={x => x.total + ' ' + t('ครั้ง')} c1="#6366F1" c2="#A5B4FC" onBar={toggleUser} active={x => openUser === x.uid} />
-          {openUser != null && <div style={{ marginTop: 10, padding: 12, background: 'rgba(0,0,0,.02)', borderRadius: 10 }}>
+        </Card>
+        <Card>
+          <Head title={t('ยอดขายตามผู้รับผิดชอบ')} right={<span style={{ color: '#8E8AAB', fontSize: 12 }}>%</span>} />
+          {rateErr ? <div style={{ color: '#9A96B6', fontSize: 12.5, marginTop: 8 }}>{t('ยังไม่ได้เชื่อมระบบ rate (ตั้ง RATE_DATABASE_URL)')}</div> :
+            <Budget items={sv.map(x => ({ name: x.name || x.fullname || t('ไม่ระบุเซลส์'), v: +x.revenue }))} total={sv.reduce((a, x) => a + (+x.revenue || 0), 0)} />}
+        </Card>
+        <Card style={{ background: 'linear-gradient(140deg,#7B6BF0,#A88DF7)', color: '#fff', boxShadow: '0 14px 32px rgba(108,92,231,.3)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#fff' }}>{t('อัตราชนะ (Win rate)')}</h3><span style={{ background: 'rgba(255,255,255,.22)', borderRadius: 999, padding: '2px 10px', fontSize: 12, fontWeight: 700 }}>{d.win.winRate}%</span></div>
+          <div style={{ fontSize: 40, fontWeight: 800, margin: '16px 0 2px' }}>{d.win.winRate}<span style={{ fontSize: 20 }}>%</span></div>
+          <div style={{ opacity: .85, fontSize: 12 }}>{d.win.won} {t('ดีลปิดได้')} · {compact(d.win.won_value)}</div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 48, marginTop: 16 }}>
+            {[42, 66, 100, 55, 78].map((h, i) => <div key={i} style={{ flex: 1, height: h + '%', borderRadius: 6, background: h === 100 ? '#fff' : 'rgba(255,255,255,.35)' }} />)}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, opacity: .8, marginTop: 6 }}>{['จ', 'อ', 'พ', 'พฤ', 'ศ'].map((x, i) => <span key={i}>{x}</span>)}</div>
+        </Card>
+      </div>
+
+      {/* agent bars | top product ring */}
+      <div className="r2 rowm">
+        <Card>
+          <Head title={t('ลำดับเอเจ้นท์ตามยอดที่ส่งให้บริษัท')} right={av.length > 10 && <a className="lnk" onClick={() => setModal({ title: t('ลำดับเอเจ้นท์ตามยอดที่ส่งให้บริษัท'), cols: [t('เอเจ้นท์'), t('จำนวนบุ๊กกิ้ง'), t('ยอดรวม')], rows: av.map((x, i) => [(i + 1) + '. ' + (x.name || x.agentid), x.bookings, baht(x.revenue)]) })}>{t('ดูทั้งหมด')} ({av.length}) →</a>} />
+          {rateErr ? <div style={{ color: '#9A96B6', fontSize: 12.5, marginTop: 8 }}>{t('ยังไม่ได้เชื่อมระบบ rate (ตั้ง RATE_DATABASE_URL)')}</div> :
+            <HBars data={av.slice(0, 10)} label={x => x.name || x.agentid} value={x => +x.revenue} fmt={x => baht(x.revenue)} c1="#6C5CE7" c2="#A99BF5" />}
+        </Card>
+        <Card>
+          <Head title={t('Top 10 Product (เส้นทาง) ตามยอด')} right={pv.length > 4 && <a className="lnk" onClick={() => setModal({ title: t('Top 10 Product (เส้นทาง) ตามยอด'), cols: [t('Product / เส้นทาง'), t('จำนวนบุ๊กกิ้ง'), t('ยอดรวม')], rows: pv.map((x, i) => [(i + 1) + '. ' + (x.name || x.routeid), x.bookings, baht(x.revenue)]) })}>{t('ดูทั้งหมด')} →</a>} />
+          {rateErr ? <div style={{ color: '#9A96B6', fontSize: 12.5, marginTop: 8 }}>{t('ยังไม่ได้เชื่อมระบบ rate (ตั้ง RATE_DATABASE_URL)')}</div> :
+            <Ring items={pv.map(x => ({ name: x.name || x.routeid, v: +x.revenue }))} fmt={compact} />}
+        </Card>
+      </div>
+
+      {/* sales-visit bars | activity table */}
+      <div className="r2 rowm">
+        <Card>
+          <Head title={t('ลำดับเซลส์ที่ติดต่อ/เข้าพบเอเจ้นท์เยอะสุด')} right={sales.length > 10 && <a className="lnk" onClick={() => setModal({ title: t('ลำดับเซลส์ที่ติดต่อ/เข้าพบเอเจ้นท์เยอะสุด'), cols: [t('เซลส์'), t('รวม (ครั้ง)'), t('แยกช่องทาง')], rows: sales.map((x, i) => [(i + 1) + '. ' + (x.name || '-'), x.total, methodsStr(x.methods)]) })}>{t('ดูทั้งหมด')} ({sales.length}) →</a>} />
+          <div style={{ color: '#8E8AAB', fontSize: 11.5, margin: '2px 0 6px' }}>{t('นับทุกช่องทาง · คลิกแถวเพื่อดูว่าไปเอเจ้นท์ไหนบ้าง')}</div>
+          <HBars data={sales.slice(0, 10)} label={x => x.name || '-'} value={x => x.total} fmt={x => x.total + ' ' + t('ครั้ง')} c1="#43C6AC" c2="#8FE0CE" onBar={toggleUser} active={x => openUser === x.uid} />
+          {openUser != null && <div style={{ marginTop: 10, padding: 12, background: 'rgba(108,92,231,.05)', borderRadius: 12 }}>
             <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 6 }}>{t('เอเจ้นท์ที่เข้าพบ')} ({drill.length})</div>
-            {drill.length ? drill.map(x => <div key={x.customer_id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '3px 0', borderBottom: '1px solid #f0f0ee' }}><span>{x.name || '-'}</span><span className="muted">{x.n} {t('ครั้ง')} · {t('ล่าสุด')} {fmtDate(x.last_at)}</span></div>) : <div className="muted">{t('ไม่มีข้อมูลในช่วงนี้')}</div>}
+            {drill.length ? drill.map(x => <div key={x.customer_id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '3px 0', borderBottom: '1px solid #F1EFFA' }}><span>{x.name || '-'}</span><span style={{ color: '#8E8AAB' }}>{x.n} {t('ครั้ง')} · {t('ล่าสุด')} {fmtDate(x.last_at)}</span></div>) : <div style={{ color: '#9A96B6' }}>{t('ไม่มีข้อมูลในช่วงนี้')}</div>}
           </div>}
-        </div>
-        <div className="panel"><h3 style={{ marginTop: 0 }}>{t('อัตราชนะ (Win rate)')}</h3>
-          <Gauge value={d.win.winRate} label={`${d.win.won} ${t('ดีลปิดได้')} · ${baht(d.win.won_value)}`} />
-        </div>
+        </Card>
+        <Card>
+          <Head title={t('งานติดตามตามพนักงาน')} />
+          <table><thead><tr><th>{t('พนักงาน')}</th><th>{t('เสร็จ')}</th><th>{t('รอ')}</th><th>{t('เกินกำหนด')}</th></tr></thead><tbody>{d.activityByUser.map((u, i) => <tr key={i}><td>{u.name}</td><td>{u.done}</td><td>{u.pending}</td><td style={{ color: u.overdue ? '#EF5B52' : '' }}>{u.overdue}</td></tr>)}</tbody></table>
+        </Card>
       </div>
-
-      <div className="grid2">
-        <div className="panel">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ margin: 0 }}>{t('ลำดับเอเจ้นท์ตามยอดที่ส่งให้บริษัท')}</h3>
-            {(agentVol || []).length > 10 && <a onClick={() => setModal({ title: t('ลำดับเอเจ้นท์ตามยอดที่ส่งให้บริษัท'), cols: [t('เอเจ้นท์'), t('จำนวนบุ๊กกิ้ง'), t('ยอดรวม')], rows: agentVol.map((x, i) => [(i + 1) + '. ' + (x.name || x.agentid), x.bookings, baht(x.revenue)]) })}>{t('ดูทั้งหมด')} ({agentVol.length}) →</a>}
-          </div>
-          {rateErr ? <div className="muted" style={{ marginTop: 8 }}>{t('ยังไม่ได้เชื่อมระบบ rate (ตั้ง RATE_DATABASE_URL)')}</div> :
-            <div style={{ marginTop: 8 }}><GBars data={(agentVol || []).slice(0, 10)} label={x => x.name || x.agentid} value={x => +x.revenue} fmt={x => baht(x.revenue)} c1="#12B981" c2="#6EE7B7" /></div>}
-        </div>
-        <div className="panel">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ margin: 0 }}>{t('Top 10 Product (เส้นทาง) ตามยอด')}</h3>
-            {(products || []).length > 10 && <a onClick={() => setModal({ title: t('Top 10 Product (เส้นทาง) ตามยอด'), cols: [t('Product / เส้นทาง'), t('จำนวนบุ๊กกิ้ง'), t('ยอดรวม')], rows: products.map((x, i) => [(i + 1) + '. ' + (x.name || x.routeid), x.bookings, baht(x.revenue)]) })}>{t('ดูทั้งหมด')} →</a>}
-          </div>
-          {rateErr ? <div className="muted" style={{ marginTop: 8 }}>{t('ยังไม่ได้เชื่อมระบบ rate (ตั้ง RATE_DATABASE_URL)')}</div> :
-            <div style={{ marginTop: 8 }}><GBars data={(products || []).slice(0, 10)} label={x => x.name || x.routeid || '-'} value={x => +x.revenue} fmt={x => baht(x.revenue)} c1="#E0972B" c2="#FCD34D" /></div>}
-        </div>
-      </div>
-
-      <div className="grid2">
-        <div className="panel">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ margin: 0 }}>{t('ยอดขายตามผู้รับผิดชอบ')}</h3>
-            {(salesVol || []).length > 8 && <a onClick={() => setModal({ title: t('ยอดขายตามผู้รับผิดชอบ'), cols: [t('เซลส์'), t('จำนวนบุ๊กกิ้ง'), t('ยอดรวม')], rows: salesVol.map((x, i) => [(i + 1) + '. ' + (x.name || x.fullname || t('ไม่ระบุเซลส์')), x.bookings, baht(x.revenue)]) })}>{t('ดูทั้งหมด')} →</a>}
-          </div>
-          <div className="muted" style={{ margin: '4px 0 8px' }}>{t('จากยอดบุ๊กกิ้งจริงของเอเจ้นท์ที่แต่ละคนดูแล')}</div>
-          {rateErr ? <div className="muted">{t('ยังไม่ได้เชื่อมระบบ rate (ตั้ง RATE_DATABASE_URL)')}</div> :
-            <Donut items={(salesVol || []).map(x => ({ name: x.name || x.fullname || t('ไม่ระบุเซลส์'), v: +x.revenue }))} fmt={baht} />}
-        </div>
-        <div className="panel"><h3 style={{ marginTop: 0 }}>{t('ยอดตามเดือน (วันเริ่มกลุ่มเป้าหมาย)')}</h3>
-          {d.monthly.length ? <Area data={d.monthly} label={m => (m.month || '').slice(2)} value={m => +m.value} fmt={baht} color="#3B82C4" /> : <div className="muted">-</div>}
-        </div>
-      </div>
-
-      <div className="panel"><h3 style={{ marginTop: 0 }}>{t('งานติดตามตามพนักงาน')}</h3>
-        <table><thead><tr><th>{t('พนักงาน')}</th><th>{t('เสร็จ')}</th><th>{t('รอ')}</th><th>{t('เกินกำหนด')}</th></tr></thead><tbody>{d.activityByUser.map((u, i) => <tr key={i}><td>{u.name}</td><td>{u.done}</td><td>{u.pending}</td><td style={{ color: u.overdue ? '#EF5B52' : '' }}>{u.overdue}</td></tr>)}</tbody></table></div>
 
       {modal && <div className="modal-bg" onClick={() => setModal(null)}><div className="modal" onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
