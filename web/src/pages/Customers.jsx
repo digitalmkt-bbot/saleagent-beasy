@@ -16,8 +16,10 @@ export default function Customers() {
   const [f, setF] = useState({ search: '', lifecycle: '', team: '', owner: '', tag: '', priority: '' });
   const [meta, setMeta] = useState({ users: [], teams: [], tags: [] });
   const [show, setShow] = useState(false);
-  const set = (k, v) => setF(p => ({ ...p, [k]: v }));
-  function load() { api('/customers', { params: { ...f, sort: tab === 'rank' ? 'rank' : '', limit: 100 } }).then(setData).catch(() => {}); }
+  const [page, setPage] = useState(1);
+  const set = (k, v) => { setPage(1); setF(p => ({ ...p, [k]: v })); };
+  function load(pg = page) { api('/customers', { params: { ...f, sort: tab === 'rank' ? 'rank' : '', limit: 100, page: pg } }).then(setData).catch(() => {}); }
+  function goPage(pg) { setPage(pg); load(pg); }
   async function importFromRate(silent) {
     if (!silent && !confirm(t('ดึงเอเจ้นท์จากระบบ Rate มาสร้างใน CRM? (map เจ้าของตามเซลส์อัตโนมัติ)'))) return;
     setImporting(true);
@@ -33,7 +35,7 @@ export default function Customers() {
       importFromRate(true);
     }
   }, [data, user]);
-  useEffect(() => { load(); }, [f.lifecycle, f.team, f.owner, f.tag, f.priority, tab]);
+  useEffect(() => { setPage(1); load(1); }, [f.lifecycle, f.team, f.owner, f.tag, f.priority, tab]);
   useEffect(() => { Promise.all([api('/meta/users'), api('/meta/teams'), api('/tags', { params: { scope: 'customer' } })]).then(([u, t, tg]) => setMeta({ users: u.rows, teams: t.rows, tags: tg.rows })).catch(() => {}); }, []);
   const s = data.stats || {};
   const PR = ['ต่ำ', 'ปานกลาง', 'สูง', 'สูงมาก', 'ด่วนที่สุด'];
@@ -49,7 +51,7 @@ export default function Customers() {
           <div className="card" key={k}><div className="label">{t(l)}</div><div className="value">{s[k] || 0}</div></div>)}
       </div>
       <div className="toolbar">
-        <input placeholder={t('ค้นหา ชื่อ/ผู้ติดต่อ/เลขภาษี')} value={f.search} onChange={e => set('search', e.target.value)} onKeyDown={e => e.key === 'Enter' && load()} />
+        <input placeholder={t('ค้นหา ชื่อ/ผู้ติดต่อ/เลขภาษี')} value={f.search} onChange={e => set('search', e.target.value)} onKeyDown={e => e.key === 'Enter' && load(1)} />
         <select value={f.lifecycle} onChange={e => set('lifecycle', e.target.value)}><option value="">{t('สถานะ: ทั้งหมด')}</option>{Object.entries(LIFE).map(([k, v]) => <option key={k} value={k}>{t(v[0])}</option>)}</select>
         <select value={f.team} onChange={e => set('team', e.target.value)}><option value="">{t('ทีม: ทั้งหมด')}</option>{meta.teams.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}</select>
         <select value={f.owner} onChange={e => set('owner', e.target.value)}><option value="">{t('ผู้รับผิดชอบ: ทั้งหมด')}</option>{meta.users.map(u => <option key={u.id} value={u.id}>{u.display_name}</option>)}</select>
@@ -69,6 +71,16 @@ export default function Customers() {
             {!data.rows.length && <tr><td colSpan="8" className="muted">{t('ไม่พบเอเจ้นท์')}</td></tr>}
           </tbody></table>
       </div>
+      {data.total > 100 && (() => {
+        const totalPages = Math.ceil(data.total / 100);
+        return (
+          <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'center', alignItems: 'center' }}>
+            <button className="btn" disabled={page <= 1} onClick={() => goPage(page - 1)}>{t('← ก่อนหน้า')}</button>
+            <span className="muted">{t('หน้า')} {page} / {totalPages} ({data.total} {t('รายการ')})</span>
+            <button className="btn" disabled={page >= totalPages} onClick={() => goPage(page + 1)}>{t('ถัดไป →')}</button>
+          </div>
+        );
+      })()}
       {show && <CustomerModal meta={meta} t={t} onClose={() => setShow(false)} onSaved={() => { setShow(false); load(); }} />}
     </div>
   );
