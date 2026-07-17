@@ -24,8 +24,8 @@ h1,h2,h3,h4{font-weight:700;}
 /* ---------- Sidebar (frosted glass) ---------- */
 .sidebar{width:216px;position:fixed;top:12px;bottom:12px;left:12px;overflow-y:auto;padding:14px 0;transition:transform .25s ease;z-index:100;display:flex;flex-direction:column;
   background:#fff;border:1px solid var(--glass-border);border-radius:22px;box-shadow:var(--shadow);}
-.brand{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:800;letter-spacing:-.3px;white-space:nowrap;color:var(--ink);padding:6px 18px 16px;}
-.brand span{color:var(--brand);}
+.brand{display:flex;align-items:center;gap:9px;font-size:14.5px;font-weight:800;letter-spacing:-.3px;white-space:nowrap;color:var(--ink);padding:6px 16px 16px;overflow:hidden;}
+.brand .dot{color:var(--brand);}
 .brand .logo{width:30px;height:30px;flex-shrink:0;border-radius:10px;background:linear-gradient(135deg,#FF4B26,#FF7A4D);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(255,75,38,.26);}
 .nav{display:flex;flex-direction:column;gap:2px;}
 .nav-section{padding:14px 20px 6px;font-size:11px;letter-spacing:.04em;color:var(--muted);text-transform:uppercase;}
@@ -59,10 +59,10 @@ h1.page{font-size:21px;color:var(--ink);margin:0 0 4px;}
 .card .ico-badge{width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .card .ico-badge svg{width:18px;height:18px;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round;}
 .ib-green{background:var(--brand-tint);color:var(--brand-text);}
-.ib-blue{background:var(--teal-tint);color:var(--teal-text);}
-.ib-amber{background:var(--purple-tint);color:var(--purple-text);}
+.ib-blue{background:var(--brand-tint);color:var(--brand-text);}
+.ib-amber{background:rgba(26,25,29,.07);color:#1A191D;}
 .ib-red{background:var(--red-tint);color:var(--red-text);}
-.ib-purple{background:var(--purple-tint);color:var(--purple-text);}
+.ib-purple{background:var(--brand-tint);color:var(--brand-text);}
 .panel{padding:18px;margin-bottom:16px;}
 .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
 .panel-head h3{margin:0;font-size:15px;color:var(--ink);}

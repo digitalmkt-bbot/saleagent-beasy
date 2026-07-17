@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import { useI18n } from '../i18n.jsx';
 
-const IND = '#6366F1', BLU = '#3B82F6', TEAL = '#14B8A6', VIO = '#8B5CF6', SKY = '#38BDF8', GRN = '#34D399';
+const IND = '#FF4B26', BLU = '#FF9269', TEAL = '#1A191D', VIO = '#FFC5AC', SKY = '#8A8790', GRN = '#34D399';
 const kfmt = (n) => { n = Number(n) || 0; if (n >= 1e6) return '฿' + (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + 'M'; if (n >= 1e3) return '฿' + Math.round(n / 1e3) + 'K'; return '฿' + Math.round(n); };
 const ATYPES = ['โทรติดตาม', 'นัดหมาย', 'เข้าพบ/นำเสนอ', 'ส่งสัญญา', 'ติดตามชำระเงิน', 'อื่นๆ'];
 
@@ -35,7 +35,7 @@ const IC = {
   gauge: 'M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4z M13.4 12.6L19 7 M4 20a8 8 0 1 1 16 0z',
 };
 function Stat({ label, value, sub, subUp, badge, icon, chart, live }) {
-  return (<div className="card"><div className="card-top"><span className="label">{label}{live && <span style={{ marginLeft: 6, fontSize: 10, color: '#0F766E', fontWeight: 700 }}>● Live</span>}</span>
+  return (<div className="card"><div className="card-top"><span className="label">{label}{live && <span style={{ marginLeft: 6, fontSize: 10, color: '#FF4B26', fontWeight: 700 }}>● Live</span>}</span>
     <span className={'ico-badge ' + BADGE[badge]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d={IC[icon]} /></svg></span></div>
     <div className="value">{value}</div><div className={'delta ' + (subUp ? 'up' : 'down')}>{subUp ? '↑' : '↓'} {sub}</div><div style={{ marginTop: 6 }}>{chart}</div></div>);
 }
@@ -82,9 +82,9 @@ function RStriped({ rows }) {
   const max = Math.max(1, ...data.map(r => +r.value));
   if (!data.length) return <div className="empty">—</div>;
   const peak = data.reduce((b, r, i) => +r.value > +data[b].value ? i : b, 0);
-  return <div><div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: data.length > 7 ? 8 : 16, height: 200 }}>
+  return <div><div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: data.length > 7 ? 8 : 14, height: 150 }}>
     {data.map((r, i) => { const solid = Math.max(4, Math.round(+r.value / max * 100)), hot = i === peak, on = hv === i;
-      return <div key={i} onMouseEnter={() => setHv(i)} onMouseLeave={() => setHv(null)} style={{ flex: '1 1 0', maxWidth: 54, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', cursor: 'pointer', position: 'relative' }}>
+      return <div key={i} onMouseEnter={() => setHv(i)} onMouseLeave={() => setHv(null)} style={{ flex: '1 1 0', maxWidth: 40, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', cursor: 'pointer', position: 'relative' }}>
         {on && <div style={{ position: 'absolute', top: -4, left: '50%', transform: 'translateX(-50%)', background: '#1A191D', color: '#fff', fontSize: 10, fontWeight: 700, padding: '4px 8px', borderRadius: 8, whiteSpace: 'nowrap', zIndex: 5 }}>{kfmt(+r.value)}</div>}
         <div style={{ width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', flex: 1 }}>
           <div style={{ height: (100 - solid) + '%', borderRadius: '8px 8px 0 0', background: '#EFEDF1', backgroundImage: 'repeating-linear-gradient(45deg,rgba(26,25,29,.10) 0 4px,transparent 4px 9px)', border: '1px solid #E6E4E9', borderBottom: 'none' }} />
@@ -192,8 +192,8 @@ export default function Dashboard() {
   const recent = acts.slice(0, 5);
   const riskScore = c => { let s = 40; if (c.lifecycle_stage === 'regular') s += 40; else if (c.lifecycle_stage === 'new') s += 25; else if (c.lifecycle_stage === 'target') s += 15; s += (c.priority_id || 0) * 4; if (c.last_activity_date) s += 8; return Math.max(12, Math.min(96, s)); };
   const risk = custs.map(c => ({ ...c, score: riskScore(c) })).sort((a, b) => a.score - b.score).slice(0, 5);
-  const riskLabel = s => s < 35 ? ['เสี่ยงสูง', '#BE123C'] : s < 55 ? ['ห่างหาย', '#B45309'] : s < 75 ? ['เฝ้าระวัง', '#B45309'] : ['ปกติ', '#0F766E'];
-  const scoreColor = s => s < 35 ? '#F43F5E' : s < 55 ? '#F59E0B' : s < 75 ? '#F59E0B' : '#14B8A6';
+  const riskLabel = s => s < 35 ? ['เสี่ยงสูง', '#BE123C'] : s < 55 ? ['ห่างหาย', '#B45309'] : s < 75 ? ['เฝ้าระวัง', '#B45309'] : ['ปกติ', '#1A9E6E'];
+  const scoreColor = s => s < 35 ? '#F43F5E' : s < 55 ? '#F59E0B' : s < 75 ? '#F59E0B' : '#FF4B26';
   const aiText = win.winRate >= 50
     ? `อัตราปิดการขายอยู่ที่ ${win.winRate}% — ทีมทำได้ดี เน้นดูแลดีลที่เปิดอยู่ ${d.projects.open} รายการให้ปิดต่อเนื่อง`
     : `มีดีลเปิดอยู่ ${d.projects.open} รายการ มูลค่า ${kfmt(d.projects.pipeline_value)} — เร่งติดตามงานค้าง ${d.activities.pending} รายการเพื่อเพิ่มอัตราปิด`;
@@ -249,7 +249,7 @@ export default function Dashboard() {
           <div className="panel-head"><h3>{t('ยอดขายตามทีม')}</h3></div>
           {teams.length ? teams.map((x, i) => (<div key={i} style={{ margin: '11px 0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, marginBottom: 4 }}><span style={{ color: '#4A5578', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{x.name}</span><b>{kfmt(x.v)}</b></div>
-            <span style={{ display: 'block', background: 'rgba(99,102,241,.1)', borderRadius: 6, height: 8 }}><span style={{ display: 'block', height: 8, width: Math.round(x.v / maxTeam * 100) + '%', background: [IND, BLU, VIO, TEAL, SKY][i % 5], borderRadius: 6 }} /></span></div>)) : <div className="empty">{t('ยังไม่มีข้อมูล')}</div>}
+            <span style={{ display: 'block', background: 'rgba(26,25,29,.08)', borderRadius: 6, height: 8 }}><span style={{ display: 'block', height: 8, width: Math.round(x.v / maxTeam * 100) + '%', background: [IND, BLU, VIO, TEAL, SKY][i % 5], borderRadius: 6 }} /></span></div>)) : <div className="empty">{t('ยังไม่มีข้อมูล')}</div>}
         </div>
         <div className="panel">
           <div className="panel-head"><h3>{t('ประเภทกิจกรรม')}</h3></div>
@@ -267,7 +267,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="panel" style={{ background: 'linear-gradient(135deg,rgba(99,102,241,.92),rgba(129,140,248,.85))', color: '#fff', border: 'none' }}>
+      <div className="panel" style={{ background: 'linear-gradient(135deg,#FF5C36,#FF8A5C)', color: '#fff', border: 'none' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
           <span style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(255,255,255,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15l-1.9-4.1L5.5 9l4.6-1.4z M18 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" /></svg></span>
@@ -282,7 +282,7 @@ export default function Dashboard() {
           <tbody>{risk.length ? risk.map(c => { const rl = riskLabel(c.score); return (<tr key={c.id}>
             <td><b>{c.name}</b></td>
             <td><span style={{ display: 'inline-block', minWidth: 34, textAlign: 'center', padding: '2px 8px', borderRadius: 8, fontWeight: 800, fontSize: 12, background: scoreColor(c.score) + '22', color: scoreColor(c.score) }}>{c.score}</span></td>
-            <td><span style={{ display: 'inline-block', width: 90, height: 8, borderRadius: 6, background: 'rgba(99,102,241,.1)' }}><span style={{ display: 'block', height: 8, width: c.score + '%', borderRadius: 6, background: scoreColor(c.score) }} /></span></td>
+            <td><span style={{ display: 'inline-block', width: 90, height: 8, borderRadius: 6, background: 'rgba(26,25,29,.08)' }}><span style={{ display: 'block', height: 8, width: c.score + '%', borderRadius: 6, background: scoreColor(c.score) }} /></span></td>
             <td className="muted">{(c.last_activity_date || '').slice(0, 10) || '-'}</td>
             <td><span style={{ color: rl[1], fontWeight: 700, fontSize: 12.5 }}>{rl[0]}</span></td></tr>); }) : <tr><td colSpan="5" className="empty">{t('ยังไม่มีข้อมูล')}</td></tr>}</tbody>
         </table>
