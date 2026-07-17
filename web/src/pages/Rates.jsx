@@ -16,6 +16,7 @@ export default function Rates() {
   const [agents, setAgents] = useState([]);
   const [scope, setScope] = useState(null);
   const [aid, setAid] = useState('');
+  const [q, setQ] = useState('');
   const [data, setData] = useState(null);
   const [zone, setZone] = useState('PK');
   const [route, setRoute] = useState('');
@@ -48,6 +49,8 @@ export default function Rates() {
     }).filter(l => l.n > 0);
   }, [sr, route, zone, qty]);
   const total = lines.reduce((s, l) => s + l.sub, 0);
+  const ql = q.trim().toLowerCase();
+  const shownAgents = ql ? agents.filter(a => ((a.name || '') + ' ' + (a.code || '') + ' ' + (a.rate_type_name || '')).toLowerCase().includes(ql)) : agents;
 
   if (ready === false) return (
     <div>
@@ -69,11 +72,14 @@ export default function Rates() {
       <div className="page-sub">{t('ดูแพ็กเกจราคาของเอเจ้นท์ และคำนวณราคาตามจำนวนผู้โดยสาร (อ่านจากระบบ rate โดยตรง)')}</div>
 
       <div className="card">
+        <label>{t('ค้นหาเอเจ้นท์')}</label>
+        <input type="text" value={q} onChange={e => setQ(e.target.value)} placeholder={t('พิมพ์ชื่อ หรือรหัสเอเจ้นท์...')} style={{ marginBottom: 10 }} />
         <label>{t('เลือกเอเจ้นท์')}</label>
         <select value={aid} onChange={e => setAid(e.target.value)}>
-          <option value="">{t('- เลือกเอเจ้นท์ -')} ({agents.length})</option>
-          {agents.map(a => <option key={a.id} value={a.id}>{a.name} · {a.code}{a.rate_type_name ? ' — ' + a.rate_type_name : ''}</option>)}
+          <option value="">{t('- เลือกเอเจ้นท์ -')} ({shownAgents.length}{ql ? ' / ' + agents.length : ''})</option>
+          {shownAgents.map(a => <option key={a.id} value={a.id}>{a.name} · {a.code}{a.rate_type_name ? ' — ' + a.rate_type_name : ''}</option>)}
         </select>
+        {ql && shownAgents.length === 0 && <div className="muted" style={{ marginTop: 6, fontSize: 12.5 }}>{t('ไม่พบเอเจ้นท์ที่ตรงกับคำค้น')} "{q}"</div>}
         {scope && !scope.all && scope.code && <div className="muted" style={{ marginTop: 6, fontSize: 12.5 }}>👤 {t('แสดงเฉพาะเอเจ้นท์ที่คุณดูแล')} — {scope.name}</div>}
         {scope && !scope.all && !scope.code && <div className="err" style={{ marginTop: 8 }}>{t('ไม่พบเซลส์ที่ตรงกับอีเมลของคุณในระบบ rate')}{scope.email ? ' (' + scope.email + ')' : ''} — {t('ให้แอดมินตั้งอีเมลให้ตรงกัน')}</div>}
         {data && <div style={{ marginTop: 10 }}>
