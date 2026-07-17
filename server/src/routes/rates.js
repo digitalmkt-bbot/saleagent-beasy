@@ -317,4 +317,23 @@ router.get('/report/monthly', wrap(async (req, res) => {
   res.json({ rows });
 }));
 
-module.exports = router;module.exports = router;
+router.get('/agent-bookings/:code', wrap(async (req, res) => {
+  const code = req.params.code;
+  const a = (await rq(`SELECT id, code, name, sales FROM operation_schemas.sb_agents WHERE code=$1 OR id=$1 LIMIT 1`, [code])).rows[0];
+  if (!a) return res.json({ rows: [], total: 0 });
+  const sc = await scopeFor(req);
+  if (!sc.all && a.sales !== sc.code) return res.status(403).json({ error: 'ไม่มีสิทธิ์' });
+  const page = Math.max(1, +(req.query.page || 1));
+  const limit = 20;
+  const off = (page - 1) * limit;
+  const rows = (await rq(
+    `SELECT b.id, b.status, COALESCE(NULLIF(b.bookingdate,''), b.createdat::text) AS date, b.total
+     FROM operation_schemas.sb_bookings b
+     WHERE b.agentid = $1
+     ORDER BY COALESCE(NULLIF(b.bookingdate,''), b.createdat::text) DESC NULLS LAST
+     LIMIT $2 OFFSET $3`, [a.id, limit, off])).rows;
+  const total = +(await rq(`SELECT count(*)::int FROM operation_schemas.sb_bookings WHERE agentid=$1`, [a.id])).rows[0].count;
+  res.json({ rows, total, page });
+}));
+
+module.exports = router;

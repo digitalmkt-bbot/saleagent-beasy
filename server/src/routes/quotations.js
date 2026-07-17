@@ -5,13 +5,14 @@ const { isStaff, OWNED } = require('./_scope');
 
 router.get('/', wrap(async (req, res) => {
   const staff = isStaff(req.user);
-  const rows = await q(
-    `SELECT q.*, c.name AS customer_name, p.name AS project_name
+  const args = staff ? [req.user.company_id, req.user.id] : [req.user.company_id];
+  let sql = `SELECT q.*, c.name AS customer_name, p.name AS project_name
      FROM quotation q LEFT JOIN customer c ON c.id=q.customer_id
        LEFT JOIN project p ON p.id=q.project_id
-     WHERE q.company_id=$1 ${staff ? `AND q.customer_id IN ${OWNED}` : ''}
-     ORDER BY q.created_at DESC LIMIT 100`,
-    staff ? [req.user.company_id, req.user.id] : [req.user.company_id]);
+     WHERE q.company_id=$1 ${staff ? `AND q.customer_id IN ${OWNED}` : ''}`;
+  if (req.query.customer_id) { args.push(+req.query.customer_id); sql += ` AND q.customer_id = $${args.length}`; }
+  sql += ` ORDER BY q.created_at DESC LIMIT 100`;
+  const rows = await q(sql, args);
   res.json({ rows: rows.rows });
 }));
 
