@@ -31,22 +31,26 @@ export default function Layout() {
   const [notif, setNotif] = useState({ rows: [], count: 0 });
   const [open, setOpen] = useState(false);
   const [menu, setMenu] = useState(false);
+  const [dark, setDark] = useState(() => { try { return localStorage.getItem('theme') === 'dark'; } catch (e) { return false; } });
+  useEffect(() => { document.body.classList.toggle('dark', dark); try { localStorage.setItem('theme', dark ? 'dark' : 'light'); } catch (e) {} }, [dark]);
   useEffect(() => { api('/meta/notifications').then(setNotif).catch(() => {}); }, []);
   const initial = (user?.name || 'A').trim().charAt(0).toUpperCase();
   return (
     <div className="app">
       <aside className={'sidebar' + (menu ? ' open' : '')}>
-        <div className="brand"><span className="logo"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#fff" strokeWidth="2" strokeLinejoin="round"><path d="M12 2l9 6-9 14L3 8z" /></svg></span>SaleAgent<span>.</span>BeasyApp</div>
-        {[...sections, ...(String((user && user.role) || '').toLowerCase() === 'admin' ? [['ผู้ดูแลระบบ', [['/users', 'จัดการผู้ใช้', 'shield']]]] : [])].map(([title, items]) => (
-          <div key={title}>
-            <div className="nav-section">{t(title)}</div>
-            <nav className="nav">{items.map(([to, label, icon]) =>
-              <NavLink key={to} to={to} end={to === '/'} onClick={() => setMenu(false)}><Ic d={I[icon]} />{t(label)}</NavLink>)}</nav>
-          </div>
-        ))}
+        <div className="brand"><span className="logo"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" strokeWidth="2" strokeLinejoin="round"><path d="M12 2l9 6-9 14L3 8z" /></svg></span></div>
+        <nav className="nav">
+          {[...sections[0][1], ...sections[1][1], ...(String((user && user.role) || '').toLowerCase() === 'admin' ? [['/users', 'จัดการผู้ใช้', 'shield']] : [])].map(([to, label, icon]) =>
+            <NavLink key={to} to={to} end={to === '/'} title={t(label)} onClick={() => setMenu(false)}><Ic d={I[icon]} /></NavLink>)}
+        </nav>
         <div className="side-foot">
-          <span className="side-user"><span className="avatar">{initial}</span><span className="side-uname">{user?.name}</span></span>
-          <a className="side-logout" onClick={logout}>{t('ออกจากระบบ')}</a>
+          <a className="side-theme" title={dark ? t('โหมดสว่าง') : t('โหมดมืด')} onClick={() => setDark(d => !d)}>
+            {dark
+              ? <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M12 2v2 M12 20v2 M4.9 4.9l1.4 1.4 M17.7 17.7l1.4 1.4 M2 12h2 M20 12h2 M4.9 19.1l1.4-1.4 M17.7 6.3l1.4-1.4" /></svg>
+              : <svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>}
+          </a>
+          <span className="avatar" title={user?.name}>{initial}</span>
+          <a className="side-logout" title={t('ออกจากระบบ')} onClick={logout}><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4 M16 17l5-5-5-5 M21 12H9" /></svg></a>
         </div>
       </aside>
       {menu && <div className="overlay" onClick={() => setMenu(false)} />}
