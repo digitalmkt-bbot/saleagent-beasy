@@ -177,9 +177,16 @@ export function EligibilitySection({ T }) {
 // ─── Programs ────────────────────────────────────────────────────────────────
 export function ProgramsSection({ a, rt, T, fmt, routes }) {
   const rvMap = rt ? (rt.routeValidity || {}) : {};
+  // routeValidity[key] is now an array of {from, to} season periods
+  const seasons = rId => {
+    const v = rvMap[rId];
+    if (!v) return [];
+    return Array.isArray(v) ? v : [v];
+  };
   const periods = (a.programPeriods || []).map(p => {
-    const rv = rvMap[p.routeId];
-    if (rv) return { ...p, travelFrom: rv.from || '', travelTo: rv.to || '' };
+    const sv = seasons(p.routeId);
+    const first = sv[0] || {};
+    if (sv.length) return { ...p, travelFrom: first.from || '', travelTo: first.to || '' };
     if (rt) return { ...p, travelFrom: '', travelTo: '' };
     return p;
   });
@@ -209,6 +216,11 @@ export function ProgramsSection({ a, rt, T, fmt, routes }) {
               <td style={{ padding: '8px 0', fontSize: 11, fontWeight: 600, color: '#0F1419' }}>
                 {rName(p.routeId)}
                 <div style={{ fontSize: '9.5px', color: '#7a7770', fontWeight: 500, marginTop: 1 }}>{rPier(p.routeId)}</div>
+                {seasons(p.routeId).length > 0 && (
+                  <div style={{ fontSize: '9px', color: '#A85C00', fontWeight: 500, marginTop: 2 }}>
+                    Season {seasons(p.routeId).map(s => `${fmt(s.from)} – ${fmt(s.to)}`).join(' · ')}
+                  </div>
+                )}
               </td>
               <td style={{ padding: '8px 10px', fontSize: '10.5px', fontVariantNumeric: 'tabular-nums', color: '#5F5E5A' }}>{fmt(p.bookFrom)} → {fmt(p.bookTo)}</td>
               <td style={{ padding: '8px 10px', fontSize: '10.5px', fontVariantNumeric: 'tabular-nums', color: '#5F5E5A' }}>

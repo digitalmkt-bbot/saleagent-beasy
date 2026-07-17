@@ -9,6 +9,19 @@ const PAX = ['adult_thai', 'adult_fr', 'child_thai', 'child_fr', 'infant_thai', 
 
 router.get('/status', (req, res) => res.json({ ready: rateReady() }));
 
+// admin-only: list all tables in operation_schemas that contain 'rate_type' — for schema discovery
+router.get('/schema-probe', wrap(async (req, res) => {
+  if (String(req.user.role || '').toLowerCase() !== 'admin') return res.status(403).json({ error: 'admin only' });
+  const tables = (await rq(`SELECT table_name FROM information_schema.tables WHERE table_schema='operation_schemas' ORDER BY table_name`)).rows.map(r => r.table_name);
+  const sample = {};
+  for (const t of tables.filter(n => n.includes('rate_type'))) {
+    const cols = (await rq(`SELECT column_name FROM information_schema.columns WHERE table_schema='operation_schemas' AND table_name=$1 ORDER BY ordinal_position`, [t])).rows.map(r => r.column_name);
+    const row = (await rq(`SELECT * FROM operation_schemas.${t} LIMIT 1`)).rows[0] || null;
+    sample[t] = { cols, sample: row };
+  }
+  res.json({ tables, sample });
+}));
+
 // admin/manager -> {all:true}. staff -> match CRM email กับ sb_sales.email ได้ code เซลส์ (หรือ unmatched)
 async function scopeFor(req) {
   if (!isStaff(req.user)) return { all: true };
@@ -195,7 +208,11 @@ router.get('/contract/:code', wrap(async (req, res) => {
       const routesArr = (await rq(`SELECT value FROM operation_schemas.sb_rate_types__routes WHERE sb_rate_types_id=$1 ORDER BY idx`, [rt.id])).rows.map(r => r.value);
       const rvRows = (await rq(`SELECT key, "from", "to" FROM operation_schemas.sb_rate_types__routevalidity WHERE sb_rate_types_id=$1`, [rt.id])).rows;
       const chRows = (await rq(`SELECT * FROM operation_schemas.sb_rate_types__charterrates WHERE sb_rate_types_id=$1`, [rt.id])).rows;
-      const routeValidity = {}; rvRows.forEach(x => { routeValidity[x.key] = { from: x.from, to: x.to }; });
+      const routeValidity = {};
+      rvRows.forEach(x => {
+        if (!routeValidity[x.key]) routeValidity[x.key] = [];
+        routeValidity[x.key].push({ from: x.from, to: x.to });
+      });
       rateType = {
         id: rt.id, code: rt.code, name: rt.name, note: rt.note, validFrom: rt.validfrom, validTo: rt.validto,
         routes: routesArr.length ? routesArr : Object.keys(nestSeatContract(sr)),
