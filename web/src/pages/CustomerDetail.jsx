@@ -9,23 +9,40 @@ export default function CustomerDetail() {
   const { id } = useParams(); const nav = useNavigate();
   const { t } = useI18n();
   const [c, setC] = useState(null);
+  const [allotment, setAllotment] = useState(null);
+  const [allotmentErr, setAllotmentErr] = useState(null);
+  const [allotmentLoading, setAllotmentLoading] = useState(false);
   const [contract, setContract] = useState(null);
-  const [ctLoading, setCtLoading] = useState(false);
+
   useEffect(() => { api('/customers/' + id).then(setC).catch(() => {}); }, [id]);
-  async function openContract() {
-    if (!c.ref_code) { alert(t('เอเจ้นท์นี้ไม่มีรหัสอ้างอิงที่ตรงกับระบบ rate')); return; }
-    setCtLoading(true);
-    try { const d = await api('/rates/contract/' + encodeURIComponent(c.ref_code)); setContract(d); }
-    catch (e) { alert(e.message); } finally { setCtLoading(false); }
-  }
+
+  useEffect(() => {
+    if (!c?.ref_code) return;
+    setAllotmentLoading(true);
+    setAllotment(null); setAllotmentErr(null);
+    api('/rates/contract/' + encodeURIComponent(c.ref_code))
+      .then(d => { setAllotment(d); })
+      .catch(e => { setAllotmentErr(e.message || 'ไม่พบข้อมูลในระบบ allotment'); })
+      .finally(() => setAllotmentLoading(false));
+  }, [c?.ref_code]);
+
   if (!c) return <div>{t('กำลังโหลด...')}</div>;
   const l = LIFE[c.lifecycle_stage] || ['-', 'gray'];
+  const rt = allotment?.rateType;
+  const aa = allotment?.agent;
   return (
     <div>
       <span className="back" onClick={() => nav('/customers')}>{t('← กลับรายการเอเจ้นท์')}</span>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
         <h1 className="page" style={{ margin: 0 }}>{c.name}</h1>
-        <button className="btn" onClick={openContract} disabled={ctLoading}>{ctLoading ? '...' : '📄 ' + t('สร้างสัญญา')}</button>
+        <button className="btn" disabled={allotmentLoading}
+          onClick={() => {
+            if (!c.ref_code) { alert(t('เอเจ้นท์นี้ไม่มีรหัสอ้างอิงที่ตรงกับระบบ rate')); return; }
+            if (allotmentErr) { alert(allotmentErr); return; }
+            if (allotment) setContract(allotment);
+          }}>
+          {allotmentLoading ? '...' : '📄 ' + t('ออกสัญญา')}
+        </button>
       </div>
       <div className="grid2">
         <div className="panel"><h3 style={{ marginTop: 0 }}>{t('ข้อมูลเอเจ้นท์')}</h3><table><tbody>
@@ -44,6 +61,31 @@ export default function CustomerDetail() {
           {c.branches.map(b => <div key={b.id} className="muted" style={{ padding: '4px 0' }}>{b.branch_name}: {b.address} {b.province}</div>)}
         </div>
       </div>
+
+      {/* Allotment match panel */}
+      {c.ref_code && (
+        <div className="panel">
+          <h3 style={{ marginTop: 0 }}>
+            {t('ข้อมูล Allotment')}
+            {' '}
+            {allotmentLoading && <span className="muted" style={{ fontWeight: 400, fontSize: 13 }}>{t('กำลังโหลด...')}</span>}
+            {allotment && <span className="pill green">matched</span>}
+            {allotmentErr && <span className="pill" style={{ background: '#fee', color: '#c00' }}>ไม่พบ</span>}
+          </h3>
+          {allotment && (
+            <table><tbody>
+              <tr><td className="muted">{t('Rate Type')}</td><td>{rt ? <><b>{rt.code}</b> — {rt.name}</> : '—'}</td></tr>
+              {rt?.validFrom && <tr><td className="muted">{t('ช่วงอัตรา')}</td><td>{rt.validFrom} – {rt.validTo || '…'}</td></tr>}
+              <tr><td className="muted">{t('สัญญาเวอร์ชัน')}</td><td>{aa?.contractVersion || '—'}</td></tr>
+              {(aa?.contractStart || aa?.contractEnd) && <tr><td className="muted">{t('ระยะสัญญา')}</td><td>{aa.contractStart || '—'} – {aa.contractEnd || '—'}</td></tr>}
+              <tr><td className="muted">{t('ชำระ')}</td><td>{aa?.payType ? <>{aa.payType.toUpperCase()} · {t('เครดิต')} {aa.creditDays || 0} {t('วัน')}</> : '—'}</td></tr>
+              {aa?.bookingChannel?.method && <tr><td className="muted">{t('ช่องทางบุ๊กกิ้ง')}</td><td>{aa.bookingChannel.method}</td></tr>}
+            </tbody></table>
+          )}
+          {allotmentErr && <div style={{ color: '#c00', fontSize: 13 }}>{allotmentErr}</div>}
+        </div>
+      )}
+
       <div className="panel"><h3 style={{ marginTop: 0 }}>{t('กลุ่มเป้าหมายของเอเจ้นท์')} ({c.projects.length})</h3>
         <table><thead><tr><th>{t('รหัส')}</th><th>{t('กลุ่มเป้าหมาย')}</th><th>{t('สถานะ')}</th><th>{t('มูลค่า')}</th></tr></thead>
           <tbody>{c.projects.map(p => <tr key={p.id}><td>{p.code}</td><td><a onClick={() => nav('/projects/' + p.id)}>{p.name}</a></td><td><span className={'pill ' + (p.is_open ? 'blue' : 'green')}>{p.stage_seq}. {p.stage_name}</span></td><td>{baht(p.estimated_value)}</td></tr>)}
