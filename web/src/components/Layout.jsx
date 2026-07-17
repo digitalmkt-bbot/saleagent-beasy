@@ -22,7 +22,7 @@ const Ic = ({ d }) => <span className="ico"><svg viewBox="0 0 24 24"><path d={d}
 
 const sections = [
   ['เมนูหลัก', [['/', 'แผงบริหาร', 'dashboard'], ['/activities', 'งานติดตาม', 'checklist'], ['/checkin', 'เช็คอินเอเจ้นท์', 'pin'], ['/customers', 'เอเจ้นท์', 'users'], ['/projects', 'กลุ่มเป้าหมาย', 'briefcase']]],
-  ['เอกสาร & รายงาน', [['/quotations', 'ออกสัญญา', 'file'], ['/rates', 'เรตราคา', 'price'], ['/reports', 'รายงาน', 'chart'], ['/settings', 'ตั้งค่า', 'sliders']]],
+  ['เอกสาร & รายงาน', [['/rates', 'สัญญา', 'file'], ['/reports', 'รายงาน', 'chart'], ['/settings', 'ตั้งค่า', 'sliders']]],
 ];
 
 export default function Layout() {
