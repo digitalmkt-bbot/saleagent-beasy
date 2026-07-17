@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../auth.jsx';
 import { useI18n } from '../i18n.jsx';
@@ -35,8 +35,32 @@ export default function Layout() {
   useEffect(() => { document.body.classList.toggle('dark', dark); try { localStorage.setItem('theme', dark ? 'dark' : 'light'); } catch (e) {} }, [dark]);
   useEffect(() => { api('/meta/notifications').then(setNotif).catch(() => {}); }, []);
   const initial = (user?.name || 'A').trim().charAt(0).toUpperCase();
+  const avKey = 'avatar_' + ((user && (user.id || user.email)) || '');
+  const [avatar, setAvatar] = useState(() => { try { return localStorage.getItem(avKey) || ''; } catch (e) { return ''; } });
+  const fileRef = useRef(null);
+  function pickAvatar() { if (fileRef.current) fileRef.current.click(); }
+  function onAvatarFile(e) {
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const S = 160, c = document.createElement('canvas'); c.width = S; c.height = S;
+        const ctx = c.getContext('2d');
+        const scale = Math.max(S / img.width, S / img.height), w = img.width * scale, h = img.height * scale;
+        ctx.drawImage(img, (S - w) / 2, (S - h) / 2, w, h);
+        const data = c.toDataURL('image/jpeg', 0.85);
+        setAvatar(data);
+        try { localStorage.setItem(avKey, data); } catch (err) {}
+      };
+      img.src = rd.result;
+    };
+    rd.readAsDataURL(f); e.target.value = '';
+  }
+  const Av = () => <span className="avatar" onClick={pickAvatar} title={t('เปลี่ยนรูปโปรไฟล์')} style={{ cursor: 'pointer', overflow: 'hidden' }}>{avatar ? <img src={avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initial}</span>;
   return (
     <div className="app">
+      <input type="file" accept="image/*" ref={fileRef} onChange={onAvatarFile} style={{ display: 'none' }} />
       <aside className={'sidebar' + (menu ? ' open' : '')}>
         <div className="brand"><span className="logo"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" strokeWidth="2" strokeLinejoin="round"><path d="M12 2l9 6-9 14L3 8z" /></svg></span><span className="bt">{(user && user.name) || t('ผู้ใช้')}<span className="dot">.</span>BeasyApp</span></div>
         {[...sections, ...(String((user && user.role) || '').toLowerCase() === 'admin' ? [['ผู้ดูแลระบบ', [['/users', 'จัดการผู้ใช้', 'shield']]]] : [])].map(([title, items]) => (
@@ -53,7 +77,7 @@ export default function Layout() {
               : <svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z" /></svg>}
             <span>{dark ? t('โหมดสว่าง') : t('โหมดมืด')}</span>
           </a>
-          <span className="side-user"><span className="avatar">{initial}</span><span className="side-uname">{user?.name}</span></span>
+          <span className="side-user"><Av /><span className="side-uname">{user?.name}</span></span>
           <a className="side-logout" onClick={logout}>{t('ออกจากระบบ')}</a>
         </div>
       </aside>
@@ -76,7 +100,7 @@ export default function Layout() {
               <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={I.bell} /></svg>
               {notif.count ? <span className="badge">{notif.count}</span> : null}
             </span>
-            <span className="userbox"><span className="avatar">{initial}</span>{user?.name} · <a onClick={logout}>{t('ออกจากระบบ')}</a></span>
+            <span className="userbox"><Av />{user?.name} · <a onClick={logout}>{t('ออกจากระบบ')}</a></span>
           </div>
         </div>
         {open && (
