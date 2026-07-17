@@ -105,6 +105,7 @@ CREATE TABLE customer (                      -- ลูกค้า / prospect
     phone_ext       VARCHAR(10),              -- ต่อ
     email           VARCHAR(255),
     country_code    CHAR(2) DEFAULT 'TH',
+    address         TEXT,                        -- ที่อยู่ (freetext)
     province        VARCHAR(120),
     district        VARCHAR(120),
     priority_id     SMALLINT REFERENCES priority(id),

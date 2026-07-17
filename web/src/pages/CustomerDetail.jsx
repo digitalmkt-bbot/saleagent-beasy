@@ -33,7 +33,7 @@ export default function CustomerDetail() {
           <tr><td className="muted">{t('รหัสอ้างอิง')}</td><td>{c.ref_code || '-'}</td></tr>
           <tr><td className="muted">{t('เลขผู้เสียภาษี')}</td><td>{c.tax_id || '-'}</td></tr>
           <tr><td className="muted">{t('โทร / อีเมล')}</td><td>{c.phone || '-'} · {c.email || '-'}</td></tr>
-          <tr><td className="muted">{t('ที่ตั้ง')}</td><td>{[c.district, c.province].filter(Boolean).join(', ') || '-'}</td></tr>
+          <tr><td className="muted">{t('ที่ตั้ง')}</td><td>{c.address || [c.district, c.province].filter(Boolean).join(', ') || '-'}</td></tr>
           <tr><td className="muted">{t('ความสำคัญ')}</td><td><Stars n={c.priority_id} /></td></tr>
           <tr><td className="muted">{t('ผู้รับผิดชอบ / ทีม')}</td><td>{c.owner_name} · {c.team_name}</td></tr>
           <tr><td className="muted">{t('แท็ก')}</td><td>{(c.tags || []).map(x => <span key={x.id} className="pill blue">{x.name}</span>)}</td></tr>

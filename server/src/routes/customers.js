@@ -68,9 +68,9 @@ router.post('/', wrap(async (req, res) => {
   const cid = req.user.company_id; const b = req.body;
   const out = await tx(async (cl) => {
     const cr = await cl.query(
-      `INSERT INTO customer (company_id,name,ref_code,tax_id,phone,phone_ext,email,country_code,province,district,priority_id,owner_user_id,owner_team_id,lifecycle_stage,is_followed,note,created_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,COALESCE($8,'TH'),$9,$10,$11,$12,$13,COALESCE($14,'target'),COALESCE($15,true),$16,$17) RETURNING *`,
-      [cid, b.name, b.ref_code, b.tax_id, b.phone, b.phone_ext, b.email, b.country_code, b.province, b.district, b.priority_id, b.owner_user_id, b.owner_team_id, b.lifecycle_stage, b.is_followed, b.note, req.user.id]);
+      `INSERT INTO customer (company_id,name,ref_code,tax_id,phone,phone_ext,email,country_code,address,province,district,priority_id,owner_user_id,owner_team_id,lifecycle_stage,is_followed,note,created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,COALESCE($8,'TH'),$9,$10,$11,$12,$13,$14,COALESCE($15,'target'),COALESCE($16,true),$17,$18) RETURNING *`,
+      [cid, b.name, b.ref_code, b.tax_id, b.phone, b.phone_ext, b.email, b.country_code, b.address, b.province, b.district, b.priority_id, b.owner_user_id, b.owner_team_id, b.lifecycle_stage, b.is_followed, b.note, req.user.id]);
     const cust = cr.rows[0];
     for (const ct of (b.contacts || []))
       await cl.query(`INSERT INTO contact (customer_id,name,is_primary,phone,phone_ext,position,role_id,email,chat_channel_id,chat_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
@@ -87,10 +87,10 @@ router.post('/', wrap(async (req, res) => {
 router.put('/:id', wrap(async (req, res) => {
   const b = req.body;
   const r = await q(
-    `UPDATE customer SET name=COALESCE($3,name), ref_code=$4, tax_id=$5, phone=$6, email=$7, province=$8, district=$9,
-       priority_id=$10, owner_user_id=$11, owner_team_id=$12, lifecycle_stage=COALESCE($13,lifecycle_stage),
-       is_followed=COALESCE($14,is_followed), note=$15, updated_at=now() WHERE id=$1 AND company_id=$2 RETURNING *`,
-    [req.params.id, req.user.company_id, b.name, b.ref_code, b.tax_id, b.phone, b.province, b.district, b.priority_id, b.owner_user_id, b.owner_team_id, b.lifecycle_stage, b.is_followed, b.note]);
+    `UPDATE customer SET name=COALESCE($3,name), ref_code=$4, tax_id=$5, phone=$6, email=$7, address=$8, province=$9, district=$10,
+       priority_id=$11, owner_user_id=$12, owner_team_id=$13, lifecycle_stage=COALESCE($14,lifecycle_stage),
+       is_followed=COALESCE($15,is_followed), note=$16, updated_at=now() WHERE id=$1 AND company_id=$2 RETURNING *`,
+    [req.params.id, req.user.company_id, b.name, b.ref_code, b.tax_id, b.phone, b.email, b.address, b.province, b.district, b.priority_id, b.owner_user_id, b.owner_team_id, b.lifecycle_stage, b.is_followed, b.note]);
   if (!r.rows[0]) return res.status(404).json({ error: 'not found' });
   if (Array.isArray(b.tag_ids)) {
     await q('DELETE FROM customer_tag WHERE customer_id=$1', [req.params.id]);

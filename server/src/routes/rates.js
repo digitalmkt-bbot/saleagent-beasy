@@ -78,25 +78,66 @@ router.get('/agent/:id', wrap(async (req, res) => {
 router.post('/import-agents', wrap(async (req, res) => {
   if (String(req.user.role || '').toLowerCase() !== 'admin') return res.status(403).json({ error: 'เฉพาะผู้ดูแลระบบ (admin)' });
   const cid = req.user.company_id;
-  const agents = (await rq(`SELECT id, code, name, sales, email, phone, ratetypeid FROM operation_schemas.sb_agents WHERE name IS NOT NULL AND name <> '' ORDER BY name`)).rows;
+  const agents = (await rq(`
+    SELECT id, code, name, sales, email, phone,
+      companyinfo_taxid, companyinfo_address, companyinfo_legalname, companyinfo_tatlicense,
+      companyinfo_tel, companyinfo_hotline, companyinfo_fax, companyinfo_website,
+      market, paytype, creditdays, creditlimit, contractstart, contractend, contractversion,
+      agentsignatory_name, agentsignatory_designation, agentsignatory_tel,
+      bookingchannel_method, bookingchannel_cutoff, bookingchannel_cancelpolicy, bookingchannel_email, bookingchannel_phone
+    FROM operation_schemas.sb_agents WHERE name IS NOT NULL AND name <> '' ORDER BY name`)).rows;
   const sales = (await rq(`SELECT id, email FROM operation_schemas.sb_sales`)).rows;
   const salesEmail = {}; sales.forEach(x => { if (x.email) salesEmail[x.id] = String(x.email).toLowerCase().trim(); });
   const users = (await q('SELECT id, lower(email) AS email FROM app_user WHERE company_id=$1', [cid])).rows;
   const userByEmail = {}; users.forEach(u => { userByEmail[u.email] = u.id; });
+
+  function buildNote(a) {
+    const lines = [];
+    if (a.companyinfo_legalname) lines.push(`ชื่อนิติบุคคล: ${a.companyinfo_legalname}`);
+    if (a.companyinfo_tatlicense) lines.push(`ใบอนุญาต TAT: ${a.companyinfo_tatlicense}`);
+    if (a.companyinfo_tel) lines.push(`โทร (สำนักงาน): ${a.companyinfo_tel}`);
+    if (a.companyinfo_hotline) lines.push(`Hotline: ${a.companyinfo_hotline}`);
+    if (a.companyinfo_fax) lines.push(`Fax: ${a.companyinfo_fax}`);
+    if (a.companyinfo_website) lines.push(`เว็บไซต์: ${a.companyinfo_website}`);
+    if (a.market) lines.push(`Market: ${a.market}`);
+    if (a.paytype) lines.push(`รูปแบบชำระ: ${a.paytype}`);
+    if (a.creditdays) lines.push(`เครดิต: ${a.creditdays} วัน`);
+    if (a.creditlimit) lines.push(`วงเงินเครดิต: ${a.creditlimit}`);
+    if (a.contractstart || a.contractend) lines.push(`สัญญา: ${a.contractstart || ''} – ${a.contractend || ''}${a.contractversion ? ` (v${a.contractversion})` : ''}`);
+    if (a.bookingchannel_method) lines.push(`Booking channel: ${a.bookingchannel_method}`);
+    if (a.bookingchannel_cutoff) lines.push(`Cutoff: ${a.bookingchannel_cutoff}`);
+    if (a.bookingchannel_cancelpolicy) lines.push(`Cancel policy: ${a.bookingchannel_cancelpolicy}`);
+    if (a.bookingchannel_email) lines.push(`Booking email: ${a.bookingchannel_email}`);
+    if (a.bookingchannel_phone) lines.push(`Booking โทร: ${a.bookingchannel_phone}`);
+    return lines.length ? lines.join('\n') : null;
+  }
+
   let created = 0, updated = 0;
   for (const a of agents) {
     const code = (a.code || a.id || '').toString().trim() || null;
     const owner = userByEmail[salesEmail[a.sales]] || null;
+    const note = buildNote(a);
     const existing = code ? (await q('SELECT id FROM customer WHERE company_id=$1 AND ref_code=$2 LIMIT 1', [cid, code])).rows[0] : null;
+    let custId;
     if (existing) {
-      await q(`UPDATE customer SET name=$2, phone=COALESCE($3,phone), email=COALESCE($4,email), owner_user_id=COALESCE($5,owner_user_id), updated_at=now() WHERE id=$1`,
-        [existing.id, a.name, a.phone || null, a.email || null, owner]);
+      custId = existing.id;
+      await q(`UPDATE customer SET name=$2, phone=COALESCE($3,phone), email=COALESCE($4,email), owner_user_id=COALESCE($5,owner_user_id), tax_id=COALESCE($6,tax_id), address=COALESCE($7,address), note=COALESCE($8,note), updated_at=now() WHERE id=$1`,
+        [custId, a.name, a.phone || null, a.email || null, owner, a.companyinfo_taxid || null, a.companyinfo_address || null, note]);
       updated++;
     } else {
-      await q(`INSERT INTO customer (company_id,name,ref_code,phone,email,priority_id,owner_user_id,lifecycle_stage,is_followed,created_by)
-        VALUES ($1,$2,$3,$4,$5,3,$6,'regular',true,$7)`,
-        [cid, a.name, code, a.phone || null, a.email || null, owner, req.user.id]);
+      const r = await q(`INSERT INTO customer (company_id,name,ref_code,phone,email,tax_id,address,note,priority_id,owner_user_id,lifecycle_stage,is_followed,created_by)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,3,$9,'regular',true,$10) RETURNING id`,
+        [cid, a.name, code, a.phone || null, a.email || null, a.companyinfo_taxid || null, a.companyinfo_address || null, note, owner, req.user.id]);
+      custId = r.rows[0].id;
       created++;
+    }
+    if (a.agentsignatory_name) {
+      const ec = (await q('SELECT id FROM contact WHERE customer_id=$1 AND name=$2 LIMIT 1', [custId, a.agentsignatory_name])).rows[0];
+      if (ec) {
+        await q('UPDATE contact SET position=$2, phone=$3 WHERE id=$1', [ec.id, a.agentsignatory_designation || null, a.agentsignatory_tel || null]);
+      } else {
+        await q('INSERT INTO contact (customer_id,name,is_primary,position,phone) VALUES ($1,$2,true,$3,$4)', [custId, a.agentsignatory_name, a.agentsignatory_designation || null, a.agentsignatory_tel || null]);
+      }
     }
   }
   res.json({ created, updated, total: agents.length });
