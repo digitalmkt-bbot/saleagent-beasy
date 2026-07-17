@@ -38,7 +38,7 @@ export default function Layout() {
   return (
     <div className="app">
       <aside className={'sidebar' + (menu ? ' open' : '')}>
-        <div className="brand"><span className="logo"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" strokeWidth="2" strokeLinejoin="round"><path d="M12 2l9 6-9 14L3 8z" /></svg></span><span className="bt">SaleAgent<span className="dot">.</span>BeasyApp</span></div>
+        <div className="brand"><span className="logo"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" strokeWidth="2" strokeLinejoin="round"><path d="M12 2l9 6-9 14L3 8z" /></svg></span><span className="bt">{(user && user.name) || t('ผู้ใช้')}<span className="dot">.</span>BeasyApp</span></div>
         {[...sections, ...(String((user && user.role) || '').toLowerCase() === 'admin' ? [['ผู้ดูแลระบบ', [['/users', 'จัดการผู้ใช้', 'shield']]]] : [])].map(([title, items]) => (
           <div key={title}>
             <div className="nav-section">{t(title)}</div>
