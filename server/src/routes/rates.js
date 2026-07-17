@@ -179,6 +179,7 @@ router.get('/report/agent-volume', wrap(async (req, res) => {
   if (from) { where.push(`COALESCE(NULLIF(b.bookingdate,''),b.createdat) >= $${i++}`); args.push(from); }
   if (to) { where.push(`COALESCE(NULLIF(b.bookingdate,''),b.createdat) <= $${i++}`); args.push(to); }
   if (!sc.all) { where.push(`a.sales = $${i++}`); args.push(sc.code); }
+  where.push("a.sales IS NOT NULL AND EXISTS (SELECT 1 FROM operation_schemas.sb_sales s WHERE s.id = a.sales)");
   const rows = (await rq(`SELECT b.agentid, a.name, a.code, count(*)::int bookings, COALESCE(sum(b.total),0)::bigint revenue
     FROM operation_schemas.sb_bookings b
     LEFT JOIN operation_schemas.sb_agents a ON a.id=b.agentid
