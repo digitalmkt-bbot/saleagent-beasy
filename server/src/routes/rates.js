@@ -190,6 +190,7 @@ router.get('/contract/:code', wrap(async (req, res) => {
   if (!sc.all && a.sales !== sc.code) return res.status(403).json({ error: 'ไม่มีสิทธิ์สร้างสัญญาของเอเจ้นท์รายนี้' });
   const agent = {
     id: a.id, name: a.name, code: a.code, email: a.email, sales: a.sales,
+    market: a.market,
     payType: a.paytype, creditDays: a.creditdays, creditLimit: a.creditlimit,
     contractStart: a.contractstart, contractEnd: a.contractend, contractVersion: a.contractversion,
     companyInfo: { legalName: a.companyinfo_legalname, tatLicense: a.companyinfo_tatlicense, address: a.companyinfo_address, tel: a.companyinfo_tel, hotline: a.companyinfo_hotline, fax: a.companyinfo_fax, website: a.companyinfo_website, taxId: a.companyinfo_taxid },
