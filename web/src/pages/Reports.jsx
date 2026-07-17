@@ -4,6 +4,7 @@ import { useI18n } from '../i18n.jsx';
 
 const today = () => new Date().toISOString().slice(0, 10);
 const monthStart = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`; };
+const yearStart = () => new Date().getFullYear() + '-01-01';
 const fmtDate = s => s ? new Date(s).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '-';
 const PAL = ['#FF4B26', '#1A191D', '#FF9269', '#8A8790', '#FFC5AC', '#E11D48', '#F59E0B', '#5B9DF9'];
 const compact = n => { n = +n || 0; if (n >= 1e6) return '฿' + (n / 1e6).toFixed(2) + 'M'; if (n >= 1e3) return '฿' + Math.round(n / 1e3) + 'K'; return '฿' + Math.round(n).toLocaleString(); };
@@ -31,8 +32,8 @@ function Spline({ vals }) {
 function MiniBars({ vals }) {
   const a = (vals && vals.length ? vals : [1]).map(Number).slice(-7);
   const mx = Math.max(1, ...a), peak = a.reduce((b, v, i) => v > a[b] ? i : b, 0);
-  return <div style={{ display: 'flex', alignItems: 'flex-end', gap: 5, height: 52 }}>
-    {a.map((v, i) => <div key={i} style={{ flex: 1, height: Math.max(8, Math.round(v / mx * 100)) + '%', borderRadius: 4, background: i === peak ? '#FF4B26' : 'rgba(26,25,29,.18)' }} />)}
+  return <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 5, height: 52 }}>
+    {a.map((v, i) => <div key={i} style={{ flex: '1 1 0', maxWidth: 18, height: Math.max(8, Math.round(v / mx * 100)) + '%', borderRadius: 4, background: i === peak ? '#FF4B26' : 'rgba(26,25,29,.18)' }} />)}
   </div>;
 }
 
@@ -51,22 +52,20 @@ function SegBar({ won, open }) {
 // ── striped monthly bar chart (income striped + profit solid, hover tooltip) ──
 function StripedChart({ rows }) {
   const [hv, setHv] = useState(null);
-  const data = (rows || []).slice(-9);
+  const data = (rows || []).slice(-12);
   const max = Math.max(1, ...data.map(r => +r.value));
   if (!data.length) return <div style={{ color: '#8A8790', padding: 20 }}>—</div>;
   const peak = data.reduce((b, r, i) => +r.value > +data[b].value ? i : b, 0);
-  return <div>
-    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8, height: 200, position: 'relative' }}>
-      {data.map((r, i) => { const solid = Math.max(4, Math.round(+r.value / max * 100)), hot = i === peak, on = hv === i;
-        return <div key={i} onMouseEnter={() => setHv(i)} onMouseLeave={() => setHv(null)} style={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', cursor: 'pointer', position: 'relative' }}>
-          {on && <div style={{ position: 'absolute', top: -4, left: '50%', transform: 'translateX(-50%)', background: '#1A191D', color: '#fff', fontSize: 10, fontWeight: 700, padding: '4px 8px', borderRadius: 8, whiteSpace: 'nowrap', zIndex: 5 }}>{compact(+r.value)}</div>}
-          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', height: '100%' }}>
-            <div style={{ height: (100 - solid) + '%', borderRadius: '8px 8px 0 0', background: '#EFEDF1', backgroundImage: 'repeating-linear-gradient(45deg,rgba(26,25,29,.10) 0 4px,transparent 4px 9px)', border: '1px solid #E6E4E9', borderBottom: 'none' }} />
-            <div style={{ height: solid + '%', borderRadius: '0 0 8px 8px', background: hot || on ? 'linear-gradient(180deg,#FF7A4D,#FF4B26)' : '#1A191D', transition: 'background .2s' }} />
-          </div>
-        </div>; })}
-    </div>
-    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: 10, color: '#8A8790', fontWeight: 600 }}>{data.map((r, i) => <span key={i} style={{ flex: 1, textAlign: 'center' }}>{(r.month || '').slice(5)}</span>)}</div>
+  return <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: data.length > 7 ? 8 : 16, height: 210 }}>
+    {data.map((r, i) => { const solid = Math.max(4, Math.round(+r.value / max * 100)), hot = i === peak, on = hv === i;
+      return <div key={i} onMouseEnter={() => setHv(i)} onMouseLeave={() => setHv(null)} style={{ flex: '1 1 0', maxWidth: 54, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', cursor: 'pointer', position: 'relative' }}>
+        {on && <div style={{ position: 'absolute', top: -4, left: '50%', transform: 'translateX(-50%)', background: '#1A191D', color: '#fff', fontSize: 10, fontWeight: 700, padding: '4px 8px', borderRadius: 8, whiteSpace: 'nowrap', zIndex: 5 }}>{compact(+r.value)}</div>}
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', flex: 1 }}>
+          <div style={{ height: (100 - solid) + '%', borderRadius: '8px 8px 0 0', background: '#EFEDF1', backgroundImage: 'repeating-linear-gradient(45deg,rgba(26,25,29,.10) 0 4px,transparent 4px 9px)', border: '1px solid #E6E4E9', borderBottom: 'none' }} />
+          <div style={{ height: solid + '%', borderRadius: '0 0 8px 8px', background: hot || on ? 'linear-gradient(180deg,#FF7A4D,#FF4B26)' : '#1A191D', transition: 'background .2s' }} />
+        </div>
+        <span style={{ fontSize: 10, color: '#8A8790', fontWeight: 600, marginTop: 6 }}>{(r.month || '').slice(2)}</span>
+      </div>; })}
   </div>;
 }
 
@@ -116,7 +115,7 @@ const Head = ({ title, right }) => <div style={{ display: 'flex', justifyContent
 export default function Reports() {
   const { t } = useI18n();
   const [d, setD] = useState(null);
-  const [from, setFrom] = useState(monthStart());
+  const [from, setFrom] = useState(yearStart());
   const [to, setTo] = useState(today());
   const [sales, setSales] = useState([]);
   const [agentVol, setAgentVol] = useState(null);
