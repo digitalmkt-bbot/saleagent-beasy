@@ -73,11 +73,20 @@ export default function Customers() {
       </div>
       {data.total > 100 && (() => {
         const totalPages = Math.ceil(data.total / 100);
+        const pages = [];
+        for (let i = 1; i <= totalPages; i++) {
+          if (i === 1 || i === totalPages || (i >= page - 2 && i <= page + 2)) pages.push(i);
+          else if (pages[pages.length - 1] !== '...') pages.push('...');
+        }
         return (
-          <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'center', alignItems: 'center' }}>
-            <button className="btn" disabled={page <= 1} onClick={() => goPage(page - 1)}>{t('← ก่อนหน้า')}</button>
-            <span className="muted">{t('หน้า')} {page} / {totalPages} ({data.total} {t('รายการ')})</span>
-            <button className="btn" disabled={page >= totalPages} onClick={() => goPage(page + 1)}>{t('ถัดไป →')}</button>
+          <div style={{ display: 'flex', gap: 4, marginTop: 12, justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
+            <button className="btn" disabled={page <= 1} onClick={() => goPage(page - 1)}>←</button>
+            {pages.map((p, i) => p === '...'
+              ? <span key={'e' + i} className="muted" style={{ padding: '0 4px' }}>…</span>
+              : <button key={p} className={'btn' + (p === page ? ' green' : '')} onClick={() => goPage(p)}>{p}</button>
+            )}
+            <button className="btn" disabled={page >= totalPages} onClick={() => goPage(page + 1)}>→</button>
+            <span className="muted" style={{ fontSize: 12, marginLeft: 4 }}>({data.total} {t('รายการ')})</span>
           </div>
         );
       })()}
