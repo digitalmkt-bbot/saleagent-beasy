@@ -197,6 +197,7 @@ router.get('/report/product-volume', wrap(async (req, res) => {
   if (from) { where.push(`COALESCE(NULLIF(b.bookingdate,''),b.createdat) >= $${i++}`); args.push(from); }
   if (to) { where.push(`COALESCE(NULLIF(b.bookingdate,''),b.createdat) <= $${i++}`); args.push(to); }
   if (!sc.all) { where.push(`b.agentid IN (SELECT id FROM operation_schemas.sb_agents WHERE sales=$${i++})`); args.push(sc.code); }
+  where.push("EXISTS (SELECT 1 FROM operation_schemas.sb_agents a JOIN operation_schemas.sb_sales s ON s.id=a.sales WHERE a.id=b.agentid)");
   const rows = (await rq(`SELECT t.routeid, r.name, count(DISTINCT t.sb_bookings_id)::int bookings,
       COALESCE(sum(t.subtotal),0)::bigint revenue
     FROM operation_schemas.sb_bookings__trips t
@@ -219,7 +220,7 @@ router.get('/report/sales-volume', wrap(async (req, res) => {
   const rows = (await rq(`SELECT a.sales AS sales_id, s.name, s.fullname, count(*)::int bookings, COALESCE(sum(b.total),0)::bigint revenue
     FROM operation_schemas.sb_bookings b
     JOIN operation_schemas.sb_agents a ON a.id=b.agentid
-    LEFT JOIN operation_schemas.sb_sales s ON s.id=a.sales
+    JOIN operation_schemas.sb_sales s ON s.id=a.sales
     WHERE ${where.join(' AND ')}
     GROUP BY a.sales,s.name,s.fullname ORDER BY revenue DESC NULLS LAST`, args)).rows;
   res.json({ rows });
@@ -233,6 +234,7 @@ router.get('/report/winrate', wrap(async (req, res) => {
   if (from) { where.push(`COALESCE(NULLIF(b.bookingdate,''),b.createdat) >= $${i++}`); args.push(from); }
   if (to) { where.push(`COALESCE(NULLIF(b.bookingdate,''),b.createdat) <= $${i++}`); args.push(to); }
   if (!sc.all) { where.push(`a.sales = $${i++}`); args.push(sc.code); }
+  where.push("EXISTS (SELECT 1 FROM operation_schemas.sb_sales s WHERE s.id = a.sales)");
   const w = where.length ? 'WHERE ' + where.join(' AND ') : '';
   const r = (await rq(`SELECT count(*) FILTER (WHERE b.status='confirmed')::int won, count(*)::int total,
       COALESCE(sum(b.total) FILTER (WHERE b.status='confirmed'),0)::bigint won_value,
@@ -249,6 +251,7 @@ router.get('/report/monthly', wrap(async (req, res) => {
   if (from) { where.push(`COALESCE(NULLIF(b.bookingdate,''),b.createdat) >= $${i++}`); args.push(from); }
   if (to) { where.push(`COALESCE(NULLIF(b.bookingdate,''),b.createdat) <= $${i++}`); args.push(to); }
   if (!sc.all) { where.push(`a.sales = $${i++}`); args.push(sc.code); }
+  where.push("EXISTS (SELECT 1 FROM operation_schemas.sb_sales s WHERE s.id = a.sales)");
   const rows = (await rq(`SELECT LEFT(COALESCE(NULLIF(b.bookingdate,''), b.createdat::text), 7) AS month,
       count(*)::int deals, COALESCE(sum(b.total),0)::bigint value
     FROM operation_schemas.sb_bookings b LEFT JOIN operation_schemas.sb_agents a ON a.id=b.agentid
