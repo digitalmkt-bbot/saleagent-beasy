@@ -40,6 +40,86 @@ function Stat({ label, value, sub, subUp, badge, icon, chart, live }) {
     <div className="value">{value}</div><div className={'delta ' + (subUp ? 'up' : 'down')}>{subUp ? '↑' : '↓'} {sub}</div><div style={{ marginTop: 6 }}>{chart}</div></div>);
 }
 
+// ── reference-style chart components ──
+const PAL2 = ['#FF4B26', '#1A191D', '#FF9269', '#8A8790', '#FFC5AC', '#E11D48'];
+function RSpline({ vals }) {
+  const a = (vals && vals.length ? vals : [1, 1]).map(Number);
+  const W = 200, H = 64, mn = Math.min(...a), mx = Math.max(...a), rng = mx - mn || 1;
+  const xs = i => (a.length === 1 ? W / 2 : i * W / (a.length - 1));
+  const ys = v => 8 + (1 - (v - mn) / rng) * (H - 16);
+  const pts = a.map((v, i) => [xs(i), ys(v)]);
+  let dd = `M ${pts[0][0]} ${pts[0][1]}`;
+  for (let i = 0; i < pts.length - 1; i++) { const p1 = pts[i], p2 = pts[i + 1], m = (p1[0] + p2[0]) / 2; dd += ` C ${m} ${p1[1]} ${m} ${p2[1]} ${p2[0]} ${p2[1]}`; }
+  const last = pts[pts.length - 1];
+  return <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 52 }} preserveAspectRatio="none">
+    <defs><linearGradient id="dspg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fff" stopOpacity=".18" /><stop offset="1" stopColor="#fff" stopOpacity="0" /></linearGradient></defs>
+    <path d={`${dd} L ${last[0]} ${H} L ${pts[0][0]} ${H} Z`} fill="url(#dspg)" />
+    <path d={dd} fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" />
+    <path d={`M ${last[0]} ${last[1]} C ${last[0] + 16} ${last[1]} ${last[0] + 20} ${last[1] - 6} ${W} ${last[1] - 8}`} fill="none" stroke="#fff" strokeWidth="1.6" strokeDasharray="2 4" opacity=".5" />
+    <circle cx={last[0]} cy={last[1]} r="3.6" fill="#fff" />
+  </svg>;
+}
+function RMiniBars({ vals }) {
+  const a = (vals && vals.length ? vals : [1]).map(Number).slice(-7);
+  const mx = Math.max(1, ...a), peak = a.reduce((b, v, i) => v > a[b] ? i : b, 0);
+  return <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 5, height: 52 }}>
+    {a.map((v, i) => <div key={i} style={{ flex: '1 1 0', maxWidth: 18, height: Math.max(8, Math.round(v / mx * 100)) + '%', borderRadius: 4, background: i === peak ? '#FF4B26' : 'rgba(26,25,29,.18)' }} />)}
+  </div>;
+}
+function RSegBar({ won, open }) {
+  const tot = (won + open) || 1, wp = Math.round(won / tot * 100);
+  return <div>
+    <div style={{ height: 38, background: 'rgba(0,0,0,.18)', borderRadius: 10, display: 'flex', alignItems: 'center', padding: 6, gap: 4 }}>
+      <div style={{ height: '100%', background: '#fff', borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', width: wp + '%', minWidth: 34 }}><span style={{ fontSize: 10, fontWeight: 800, color: '#1A191D' }}>{wp}%</span></div>
+      <div style={{ height: '100%', background: '#1A191D', borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 }}><span style={{ fontSize: 10, fontWeight: 800, color: '#fff' }}>{100 - wp}%</span></div>
+    </div>
+    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, fontWeight: 700, marginTop: 8, color: 'rgba(255,255,255,.9)' }}><span>● ปิดได้ {won}</span><span>● เปิดอยู่ {open}</span></div>
+  </div>;
+}
+function RStriped({ rows }) {
+  const [hv, setHv] = useState(null);
+  const data = (rows || []).slice(-12);
+  const max = Math.max(1, ...data.map(r => +r.value));
+  if (!data.length) return <div className="empty">—</div>;
+  const peak = data.reduce((b, r, i) => +r.value > +data[b].value ? i : b, 0);
+  return <div><div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: data.length > 7 ? 8 : 16, height: 200 }}>
+    {data.map((r, i) => { const solid = Math.max(4, Math.round(+r.value / max * 100)), hot = i === peak, on = hv === i;
+      return <div key={i} onMouseEnter={() => setHv(i)} onMouseLeave={() => setHv(null)} style={{ flex: '1 1 0', maxWidth: 54, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', cursor: 'pointer', position: 'relative' }}>
+        {on && <div style={{ position: 'absolute', top: -4, left: '50%', transform: 'translateX(-50%)', background: '#1A191D', color: '#fff', fontSize: 10, fontWeight: 700, padding: '4px 8px', borderRadius: 8, whiteSpace: 'nowrap', zIndex: 5 }}>{kfmt(+r.value)}</div>}
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', flex: 1 }}>
+          <div style={{ height: (100 - solid) + '%', borderRadius: '8px 8px 0 0', background: '#EFEDF1', backgroundImage: 'repeating-linear-gradient(45deg,rgba(26,25,29,.10) 0 4px,transparent 4px 9px)', border: '1px solid #E6E4E9', borderBottom: 'none' }} />
+          <div style={{ height: solid + '%', borderRadius: '0 0 8px 8px', background: hot || on ? 'linear-gradient(180deg,#FF7A4D,#FF4B26)' : '#1A191D' }} />
+        </div>
+        <span style={{ fontSize: 10, color: '#8A8790', fontWeight: 600, marginTop: 6 }}>{(r.month || '').slice(2)}</span>
+      </div>; })}
+  </div></div>;
+}
+function RDonut({ items }) {
+  const [hv, setHv] = useState(null);
+  const top = items.slice(0, 5).filter(x => x.v > 0);
+  const tot = items.reduce((a, s) => a + s.v, 0) || 1;
+  const R = 38, C = 2 * Math.PI * R; let off = 0;
+  const segs = top.map((s, i) => { const len = s.v / tot * C, o = -off; off += len; return { ...s, dash: `${len} ${C - len}`, off: o }; });
+  const cur = hv != null ? top[hv] : top[0];
+  return <div>
+    <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', margin: '6px 0 14px' }}>
+      <svg width="160" height="160" viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
+        <defs><pattern id="dstp" width="4" height="4" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="4" stroke="#FF4B26" strokeWidth="1.4" /></pattern></defs>
+        {segs.map((s, i) => <circle key={i} cx="50" cy="50" r={R} fill="transparent" stroke={i === 2 ? 'url(#dstp)' : PAL2[i % PAL2.length]} strokeWidth="11" strokeDasharray={s.dash} strokeDashoffset={s.off} onMouseEnter={() => setHv(i)} onMouseLeave={() => setHv(null)} style={{ cursor: 'pointer', transition: 'opacity .2s', opacity: hv == null || hv === i ? 1 : .45 }} />)}
+      </svg>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+        <span style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 700 }}>สัดส่วน</span>
+        <span style={{ fontSize: 20, fontWeight: 800 }}>{cur ? Math.round(cur.v / tot * 100) : 0}%</span>
+        <span style={{ fontSize: 10, color: 'var(--muted)', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cur ? cur.name : ''}</span>
+      </div>
+    </div>
+    <div>{top.map((s, i) => <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, padding: '4px 0' }}>
+      <span style={{ width: 10, height: 10, borderRadius: 3, background: i === 2 ? '#FF4B26' : PAL2[i % PAL2.length], flexShrink: 0 }} />
+      <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</span>
+      <b>{kfmt(s.v)}</b></div>)}</div>
+  </div>;
+}
+
 const A_STATUS = { done: ['green'], pending: ['orange'] };
 export default function Dashboard() {
   const nav = useNavigate();
@@ -126,32 +206,41 @@ export default function Dashboard() {
           <select value={period} onChange={e => setPeriod(e.target.value)}><option value="year">{t('ปีนี้')}</option><option value="quarter">{t('ไตรมาสนี้')}</option><option value="month">{t('เดือนนี้')}</option><option value="all">{t('ทั้งหมด')}</option></select></span>
       </div>
 
-      <div className="cards" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))' }}>
-        <Stat label={t('ปิดการขายแล้ว')} value={kfmt(win.won_value)} sub={`${win.won} ${t('ดีล')}`} subUp badge="i" icon="trophy" chart={<DotWave data={chartSeries} />} live />
-        <Stat label={t('เอเจ้นท์ทั้งหมด')} value={d.customers.total} sub={`${t('ใหม่')} +${d.customers.new}`} subUp badge="b" icon="users" chart={<DotGrid data={monthly} />} />
-        <Stat label={t('มูลค่ารวม (Booking)')} value={kfmt(win.total_value)} sub={`${win.total} ${t('บุ๊กกิ้ง')}`} subUp badge="a" icon="coins" chart={<AreaMini data={chartSeries} />} />
-        <Stat label={t('ยอดเฉลี่ย/บุ๊กกิ้ง')} value={kfmt(win.won ? win.won_value / win.won : 0)} sub={`${win.won} ${t('บุ๊กกิ้ง')}`} subUp badge="p" icon="target" chart={<DotLine data={chartSeries} />} />
-        <Stat label={t('งานติดตามค้าง')} value={d.activities.pending} sub={`${d.activities.overdue} ${t('เกินกำหนด')}`} subUp={d.activities.overdue === 0} badge="r" icon="clock" chart={<BarsMini data={monthly} />} />
-        <Stat label={t('สุขภาพการขาย')} value={hexAvg} sub={`${win.winRate}% ${t('ยืนยัน')}`} subUp badge="p" icon="gauge" chart={<Gauge value={hexAvg} />} />
+      <style>{`@media(max-width:820px){.hero3{grid-template-columns:1fr!important}}`}</style>
+      <div className="hero3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 14 }}>
+        <div style={{ background: '#1C1B1F', color: '#fff', borderRadius: 20, padding: 18, boxShadow: '0 10px 30px rgba(28,27,35,.18)' }}>
+          <div style={{ fontSize: 12, color: '#A0A0A8', fontWeight: 600 }}>{t('ปิดการขายแล้ว')} <span style={{ fontSize: 10, color: '#34D399', fontWeight: 700 }}>● Live</span></div>
+          <div style={{ fontSize: 26, fontWeight: 800, margin: '8px 0 2px' }}>{kfmt(win.won_value)}</div>
+          <div style={{ fontSize: 11, color: '#A0A0A8' }}>{win.won} {t('ดีล')}</div>
+          <div style={{ marginTop: 10 }}><RSpline vals={chartSeries.map(m => +m.value)} /></div>
+        </div>
+        <div style={{ background: '#FF4B26', color: '#fff', borderRadius: 20, padding: 18, boxShadow: '0 12px 30px rgba(255,75,38,.28)' }}>
+          <div style={{ fontSize: 12, opacity: .85, fontWeight: 600 }}>{t('อัตราชนะ (Win rate)')}</div>
+          <div style={{ fontSize: 26, fontWeight: 800, margin: '8px 0 2px' }}>{win.winRate}%</div>
+          <div style={{ fontSize: 11, opacity: .82 }}>{win.won} {t('ปิดได้')} · {kfmt(win.won_value)}</div>
+          <div style={{ marginTop: 14 }}><RSegBar won={win.won} open={win.open} /></div>
+        </div>
+        <div className="card">
+          <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600 }}>{t('มูลค่ารวม (Booking)')}</div>
+          <div style={{ fontSize: 26, fontWeight: 800, margin: '8px 0 2px' }}>{kfmt(win.total_value)}</div>
+          <div style={{ fontSize: 11, color: 'var(--muted)' }}>{win.total} {t('บุ๊กกิ้ง')}</div>
+          <div style={{ marginTop: 14 }}><RMiniBars vals={chartSeries.map(m => +m.value)} /></div>
+        </div>
       </div>
-
-      <div className="grid-glass-3">
+      <div className="cards" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))' }}>
+        <Stat label={t('เอเจ้นท์ทั้งหมด')} value={d.customers.total} sub={`${t('ใหม่')} +${d.customers.new}`} subUp badge="b" icon="users" />
+        <Stat label={t('ยอดเฉลี่ย/บุ๊กกิ้ง')} value={kfmt(win.won ? win.won_value / win.won : 0)} sub={`${win.won} ${t('บุ๊กกิ้ง')}`} subUp badge="p" icon="target" />
+        <Stat label={t('งานติดตามค้าง')} value={d.activities.pending} sub={`${d.activities.overdue} ${t('เกินกำหนด')}`} subUp={d.activities.overdue === 0} badge="r" icon="clock" />
+        <Stat label={t('สุขภาพการขาย')} value={hexAvg} sub={`${win.winRate}% ${t('ยืนยัน')}`} subUp badge="p" icon="gauge" />
+      </div>
+      <div className="grid-2-1" style={{ marginBottom: 16 }}>
+        <div className="panel">
+          <div className="panel-head"><h3>{t('ยอดรายเดือน')}</h3><div style={{ display: 'flex', gap: 14, fontSize: 12, fontWeight: 600, color: 'var(--muted)' }}><span><span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: '#D9D6DE', marginRight: 5 }} />{t('เป้า')}</span><span><span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: '#1A191D', marginRight: 5 }} />{t('ยอดจริง')}</span></div></div>
+          <RStriped rows={chartSeries} />
+        </div>
         <div className="panel">
           <div className="panel-head"><h3>{t('ยอดตามผู้รับผิดชอบ')}</h3></div>
-          {donutSeg.length ? (<div style={{ display: 'flex', alignItems: 'center', gap: 14 }}><Donut segments={donutSeg} />
-            <div style={{ flex: 1, minWidth: 0, fontSize: 13 }}>{donutSeg.map((s, i) => (<div key={i} style={{ display: 'flex', alignItems: 'center', gap: 9, margin: '10px 0' }}>
-              <span style={{ width: 10, height: 10, borderRadius: '50%', background: s.c, flexShrink: 0 }} />
-              <div style={{ flex: 1, minWidth: 0 }}><div style={{ color: '#334155', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.name}</div><div style={{ color: '#8891B0', fontSize: 11 }}>{kfmt(s.v)}</div></div>
-              <span style={{ color: '#4A5578', fontWeight: 700, flexShrink: 0 }}>{Math.round(s.v / (donutTot || 1) * 100)}%</span></div>))}</div></div>) : <div className="empty">{t('ยังไม่มีข้อมูล')}</div>}
-        </div>
-        <div className="panel">
-          <div className="panel-head"><h3>{t('ไปป์ไลน์การขาย')}</h3></div>
-          {funnel.length ? <Funnel stages={funnel} /> : <div className="empty">{t('ยังไม่มีกลุ่มเป้าหมายในไปป์ไลน์')}</div>}
-        </div>
-        <div className="panel">
-          <div className="panel-head"><h3>{t('สุขภาพการขาย')}</h3></div>
-          <Hexagon metrics={hexMetrics} />
-          <div style={{ marginTop: 8, fontSize: 12 }}>{hexMetrics.map((m, i) => (<div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', color: '#4A5578' }}><span><span style={{ width: 7, height: 7, borderRadius: '50%', background: [IND, BLU, TEAL, GRN, VIO, SKY][i], display: 'inline-block', marginRight: 6 }} />{m.k}</span><b>{m.v}</b></div>))}</div>
+          {ownersRaw.length ? <RDonut items={ownersRaw} /> : <div className="empty">{t('ยังไม่มีข้อมูล')}</div>}
         </div>
       </div>
 
