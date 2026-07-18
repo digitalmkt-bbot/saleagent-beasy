@@ -4,6 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import { useI18n } from '../i18n.jsx';
 
+const rtry = (fn, n = 3, ms = 1200) => new Promise((res, rej) => {
+  const go = (i) => fn().then(res).catch(e => i >= n ? rej(e) : setTimeout(() => go(i + 1), ms));
+  go(0);
+});
+
 const IND = '#FF4B26', BLU = '#FF9269', TEAL = '#1A191D', VIO = '#FFC5AC', SKY = '#8A8790', GRN = '#34D399';
 const kfmt = (n) => { n = Number(n) || 0; if (n >= 1e6) return '฿' + (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + 'M'; if (n >= 1e3) return '฿' + Math.round(n / 1e3) + 'K'; return '฿' + Math.round(n); };
 const ATYPES = ['โทรติดตาม', 'นัดหมาย', 'เข้าพบ/นำเสนอ', 'ส่งสัญญา', 'ติดตามชำระเงิน', 'อื่นๆ'];
@@ -147,9 +152,9 @@ export default function Dashboard() {
   }, []);
   function loadRate() {
     const params = { from, to };
-    api('/rates/report/winrate', { params }).then(setRwin).catch(() => setRwin(null));
-    api('/rates/report/monthly', { params }).then(r => setRmon(r.rows || [])).catch(() => setRmon(null));
-    api('/rates/report/sales-volume', { params }).then(r => setRown(r.rows || [])).catch(() => setRown(null));
+    rtry(() => api('/rates/report/winrate', { params })).then(setRwin).catch(() => setRwin(null));
+    rtry(() => api('/rates/report/monthly', { params })).then(r => setRmon(r.rows || [])).catch(() => setRmon(null));
+    rtry(() => api('/rates/report/sales-volume', { params })).then(r => setRown(r.rows || [])).catch(() => setRown(null));
   }
   useEffect(() => { loadRate(); }, []); // eslint-disable-line
   const monthly = rep?.monthly || [];

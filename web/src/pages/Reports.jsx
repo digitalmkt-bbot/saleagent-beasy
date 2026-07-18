@@ -2,6 +2,11 @@ import { useEffect, useState } from 'react';
 import { api, baht } from '../api.js';
 import { useI18n } from '../i18n.jsx';
 
+const rtry = (fn, n = 3, ms = 1200) => new Promise((res, rej) => {
+  const go = (i) => fn().then(res).catch(e => i >= n ? rej(e) : setTimeout(() => go(i + 1), ms));
+  go(0);
+});
+
 const today = () => new Date().toISOString().slice(0, 10);
 const monthStart = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`; };
 const yearStart = () => new Date().getFullYear() + '-01-01';
@@ -136,12 +141,12 @@ export default function Reports() {
   useEffect(() => { api('/reports/summary').then(setD).catch(() => {}); }, []);
   function loadReports() {
     const params = { from, to };
-    api('/reports/sales-activity', { params }).then(r => setSales(r.rows || [])).catch(() => setSales([]));
-    api('/rates/report/agent-volume', { params }).then(r => { setAgentVol(r.rows || []); setRateErr(''); }).catch(e => { setAgentVol([]); setRateErr(e.message); });
-    api('/rates/report/product-volume', { params }).then(r => setProducts(r.rows || [])).catch(() => setProducts([]));
-    api('/rates/report/sales-volume', { params }).then(r => setSalesVol(r.rows || [])).catch(() => setSalesVol([]));
-    api('/rates/report/winrate', { params }).then(setWr).catch(() => setWr(null));
-    api('/rates/report/monthly', { params }).then(r => setMonthly(r.rows || [])).catch(() => setMonthly(null));
+    rtry(() => api('/reports/sales-activity', { params })).then(r => setSales(r.rows || [])).catch(() => setSales([]));
+    rtry(() => api('/rates/report/agent-volume', { params })).then(r => { setAgentVol(r.rows || []); setRateErr(''); }).catch(e => { setAgentVol([]); setRateErr(e.message); });
+    rtry(() => api('/rates/report/product-volume', { params })).then(r => setProducts(r.rows || [])).catch(() => setProducts([]));
+    rtry(() => api('/rates/report/sales-volume', { params })).then(r => setSalesVol(r.rows || [])).catch(() => setSalesVol([]));
+    rtry(() => api('/rates/report/winrate', { params })).then(setWr).catch(() => setWr(null));
+    rtry(() => api('/rates/report/monthly', { params })).then(r => setMonthly(r.rows || [])).catch(() => setMonthly(null));
     setOpenUser(null); setDrill([]);
   }
   useEffect(() => { loadReports(); }, []); // eslint-disable-line
