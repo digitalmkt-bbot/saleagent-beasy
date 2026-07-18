@@ -81,7 +81,7 @@ router.delete('/:id', wrap(async (req, res) => {
   const id = req.params.id, cid = req.user.company_id;
   await q('DELETE FROM activity_tag WHERE activity_id=$1', [id]);
   await q('DELETE FROM activity_mention WHERE activity_id=$1', [id]);
-  await q('UPDATE checkin SET activity_id=NULL WHERE activity_id=$1', [id]);
+  await q('DELETE FROM checkin WHERE activity_id=$1 AND company_id=$2', [id, cid]);
   await q('UPDATE customer SET last_activity_id=NULL WHERE last_activity_id=$1 AND company_id=$2', [id, cid]);
   await q('DELETE FROM activity WHERE id=$1 AND company_id=$2', [id, cid]);
   res.json({ ok: true });
