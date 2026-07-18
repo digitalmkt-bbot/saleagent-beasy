@@ -11,6 +11,7 @@ export default function Login() {
   const [password, setPassword] = useState('password');
   const [err, setErr] = useState('');
   const [show, setShow] = useState(false);
+  const [showReset, setShowReset] = useState(false);
   async function submit(e) {
     e.preventDefault(); setErr('');
     try { await login(email, password); nav('/'); }
@@ -19,7 +20,7 @@ export default function Login() {
   return (
     <div className="login-wrap">
       <form className="login-box" onSubmit={submit}>
-        <div style={{ fontSize: 26, fontWeight: 800, color: '#4338CA' }}>SaleAgent<span style={{ color: '#6366F1' }}>.</span>BeasyApp</div>
+        <div style={{ fontSize: 26, fontWeight: 800, color: '#1A191D' }}>SaleAgent<span style={{ color: '#FF4B26' }}>.</span>BeasyApp</div>
         <div className="muted" style={{ marginBottom: 16 }}>{t('ระบบบริหารงานขาย (Sales CRM)')}</div>
         <label>{t('อีเมล')}</label>
         <input value={email} onChange={e => setEmail(e.target.value)} />
@@ -32,7 +33,14 @@ export default function Login() {
         </div>
         <button className="btn" style={{ width: '100%', marginTop: 18, justifyContent: 'center' }}>{t('เข้าสู่ระบบ')}</button>
         {err && <div className="err">{err}</div>}
-        <div className="muted" style={{ marginTop: 14 }}>{t('ทดลอง: admin@loveandaman.com / password')}</div>
+        <div style={{ marginTop: 14, textAlign: 'center' }}>
+          <a onClick={() => setShowReset(v => !v)} style={{ fontSize: 13, cursor: 'pointer', fontWeight: 600 }}>{t('ลืมรหัสผ่าน / รีเซ็ตรหัสผ่าน?')}</a>
+        </div>
+        {showReset && <div className="muted" style={{ marginTop: 10, background: 'rgba(255,75,38,.06)', border: '1px solid var(--glass-border)', borderRadius: 12, padding: '11px 13px', fontSize: 12.5, lineHeight: 1.7 }}>
+          {t('เพื่อความปลอดภัย การรีเซ็ตรหัสผ่านทำได้โดยผู้ดูแลระบบ (admin) เท่านั้น')}<br />
+          • {t('ติดต่อแอดมินของบริษัทเพื่อขอรีเซ็ตรหัสผ่าน')}<br />
+          • {t('แอดมิน: เข้าเมนู "จัดการผู้ใช้" → เลือกผู้ใช้ → กดรีเซ็ตรหัส แล้วส่งรหัสใหม่ให้')}
+        </div>}
       </form>
     </div>
   );
