@@ -271,16 +271,21 @@ router.get('/report/sales-volume', wrap(async (req, res) => {
   const { from, to } = req.query;
   const sc = await scopeFor(req);
   if (!sc.all && !sc.code) return res.json({ rows: [] });
-  const where = ["b.status='confirmed'"]; const args = []; let i = 1;
-  if (from) { where.push(`COALESCE(NULLIF(b.bookingdate,''),b.createdat) >= $${i++}`); args.push(from); }
-  if (to) { where.push(`COALESCE(NULLIF(b.bookingdate,''),b.createdat) <= $${i++}`); args.push(to); }
-  if (!sc.all) { where.push(`a.sales = $${i++}`); args.push(sc.code); }
-  const rows = (await rq(`SELECT a.sales AS sales_id, s.name, s.fullname, count(*)::int bookings, COALESCE(sum(b.total),0)::bigint revenue
-    FROM operation_schemas.sb_bookings b
-    JOIN operation_schemas.sb_agents a ON a.id=b.agentid
-    JOIN operation_schemas.sb_sales s ON s.id=a.sales
-    WHERE ${where.join(' AND ')}
-    GROUP BY a.sales,s.name,s.fullname ORDER BY revenue DESC NULLS LAST`, args)).rows;
+  // start from sb_sales so every sales rep shows (even 0 bookings), then LEFT JOIN bookings via their agents
+  const bc = ["b.status='confirmed'"]; const args = []; let i = 1;
+  if (from) { bc.push(`COALESCE(NULLIF(b.bookingdate,''),b.createdat) >= $${i++}`); args.push(from); }
+  if (to) { bc.push(`COALESCE(NULLIF(b.bookingdate,''),b.createdat) <= $${i++}`); args.push(to); }
+  const uc = [];
+  if (!sc.all) { uc.push(`s.id = $${i++}`); args.push(sc.code); }
+  const whereU = uc.length ? 'WHERE ' + uc.join(' AND ') : '';
+  const rows = (await rq(`SELECT s.id AS sales_id, s.name, s.fullname,
+      count(b.id)::int bookings, COALESCE(sum(b.total),0)::bigint revenue
+    FROM operation_schemas.sb_sales s
+    LEFT JOIN operation_schemas.sb_agents a ON a.sales = s.id
+    LEFT JOIN operation_schemas.sb_bookings b ON b.agentid = a.id AND ${bc.join(' AND ')}
+    ${whereU}
+    GROUP BY s.id, s.name, s.fullname
+    ORDER BY revenue DESC NULLS LAST, s.name`, args)).rows;
   res.json({ rows });
 }));
 
