@@ -90,4 +90,20 @@ router.put('/:id', wrap(async (req, res) => {
   res.json(ck);
 }));
 
+router.delete('/:id', wrap(async (req, res) => {
+  const id = req.params.id, cid = req.user.company_id;
+  const args = [id, cid]; let cond = 'id=$1 AND company_id=$2';
+  if (isStaff(req.user)) { cond += ' AND user_id=$3'; args.push(req.user.id); }
+  const ck = (await q('SELECT activity_id FROM checkin WHERE ' + cond, args)).rows[0];
+  if (!ck) return res.status(404).json({ error: 'not found' });
+  await q('DELETE FROM checkin WHERE ' + cond, args);
+  if (ck.activity_id) {
+    await q('UPDATE customer SET last_activity_id=NULL WHERE last_activity_id=$1 AND company_id=$2', [ck.activity_id, cid]);
+    await q('DELETE FROM activity_tag WHERE activity_id=$1', [ck.activity_id]);
+    await q('DELETE FROM activity_mention WHERE activity_id=$1', [ck.activity_id]);
+    await q('DELETE FROM activity WHERE id=$1 AND company_id=$2', [ck.activity_id, cid]);
+  }
+  res.json({ ok: true });
+}));
+
 module.exports = router;

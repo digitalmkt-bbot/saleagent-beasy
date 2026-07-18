@@ -69,6 +69,11 @@ export default function Checkin() {
   const [outD, setOutD] = useState(dPart(new Date())); const [outT, setOutT] = useState(tPart(new Date()));
   // แก้ไขรายการเก่า
   const [edit, setEdit] = useState(null);
+  async function delCheckin(id) {
+    if (!confirm(t('ลบเช็คอินนี้?'))) return;
+    try { await api('/checkins/' + id, { method: 'DELETE' }); loadAll(); }
+    catch (e) { setMsg(e.message || 'error'); }
+  }
 
   function loadAll() {
     api('/checkins/open').then(d => {
@@ -208,7 +213,7 @@ export default function Checkin() {
                 <td>{durTxt(h.check_in_at, h.check_out_at)}</td>
                 <td>{h.image_url ? <Img src={h.image_url} h={38} /> : '-'}</td>
                 <td>{mapUrl(h.check_in_lat, h.check_in_lng) ? <a href={mapUrl(h.check_in_lat, h.check_in_lng)} target="_blank" rel="noreferrer">📍</a> : '-'}</td>
-                <td><a onClick={() => setEdit(h)}>{t('แก้ไข')}</a></td>
+                <td style={{ whiteSpace: 'nowrap' }}><a onClick={() => setEdit(h)}>{t('แก้ไข')}</a> <a onClick={() => delCheckin(h.id)} style={{ color: 'var(--red-text)', marginLeft: 8 }}>{t('ลบ')}</a></td>
               </tr>
             )) : <tr><td colSpan="8" className="muted">{t('ยังไม่มีประวัติ')}</td></tr>}
           </tbody>
