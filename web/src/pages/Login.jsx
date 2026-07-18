@@ -21,7 +21,7 @@ export default function Login() {
     if (!email) { setRMsg(t('กรุณากรอกอีเมลด้านบนก่อน')); return; }
     if ((rNew || '').length < 6) { setRMsg(t('รหัสผ่านใหม่ต้องยาวอย่างน้อย 6 ตัวอักษร')); return; }
     if (rNew !== rNew2) { setRMsg(t('รหัสผ่านใหม่ไม่ตรงกัน')); return; }
-    try { await resetPassword(email, rCur, rNew); nav('/'); }
+    try { await resetPassword(email, rNew); nav('/'); }
     catch (er) { setRMsg(er.message); }
   }
   async function submit(e) {
@@ -49,9 +49,7 @@ export default function Login() {
           <a onClick={() => setShowReset(v => !v)} style={{ fontSize: 13, cursor: 'pointer', fontWeight: 600 }}>{t('เปลี่ยน / รีเซ็ตรหัสผ่านด้วยตัวเอง')}</a>
         </div>
         {showReset && <div style={{ marginTop: 10, background: 'rgba(255,75,38,.05)', border: '1px solid var(--glass-border)', borderRadius: 12, padding: '12px 13px' }}>
-          <div className="muted" style={{ fontSize: 12.5, marginBottom: 4 }}>{t('ใช้อีเมลด้านบน + รหัสปัจจุบัน เพื่อตั้งรหัสใหม่ (ไม่ต้องติดต่อแอดมิน)')}</div>
-          <label>{t('รหัสผ่านปัจจุบัน')}</label>
-          <input type="password" value={rCur} onChange={e => setRCur(e.target.value)} />
+          <div className="muted" style={{ fontSize: 12.5, marginBottom: 4 }}>{t('กรอกอีเมล (ช่องบน) แล้วตั้งรหัสผ่านใหม่ได้เลย (ไม่ต้องติดต่อแอดมิน)')}</div>
           <label>{t('รหัสผ่านใหม่')}</label>
           <input type="password" value={rNew} onChange={e => setRNew(e.target.value)} />
           <label>{t('ยืนยันรหัสผ่านใหม่')}</label>
