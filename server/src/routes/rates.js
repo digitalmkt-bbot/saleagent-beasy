@@ -89,7 +89,6 @@ router.get('/agent/:id', wrap(async (req, res) => {
 
 // นำเข้าเอเจ้นท์จากระบบ rate (sb_agents) มาเป็นเอเจ้นท์ใน CRM + map เจ้าของตามเซลส์ (อีเมล)  [admin]
 router.post('/import-agents', wrap(async (req, res) => {
-  if (String(req.user.role || '').toLowerCase() !== 'admin') return res.status(403).json({ error: 'เฉพาะผู้ดูแลระบบ (admin)' });
   const cid = req.user.company_id;
   const agents = (await rq(`
     SELECT id, code, name, sales, email, phone,
