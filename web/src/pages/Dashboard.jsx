@@ -128,7 +128,8 @@ export default function Dashboard() {
   const [rep, setRep] = useState(null);
   const [acts, setActs] = useState([]);
   const [custs, setCusts] = useState([]);
-  const [period, setPeriod] = useState('year');
+  const [from, setFrom] = useState(() => new Date().getFullYear() + '-01-01');
+  const [to, setTo] = useState(() => new Date().toISOString().slice(0, 10));
   const [rwin, setRwin] = useState(null);
   const [rmon, setRmon] = useState(null);
   const [rown, setRown] = useState(null);
@@ -138,22 +139,14 @@ export default function Dashboard() {
     api('/activities', { params: { limit: 80, sort: 'due' } }).then(r => setActs(r.rows)).catch(() => {});
     api('/customers', { params: { limit: 100 } }).then(r => setCusts(r.rows)).catch(() => {});
   }, []);
-  useEffect(() => {
-    const now = new Date(), y = now.getFullYear(), pad = n => String(n).padStart(2, '0'), to = now.toISOString().slice(0, 10);
-    let params = { from: `${y}-01-01`, to };
-    if (period === 'month') params = { from: `${y}-${pad(now.getMonth() + 1)}-01`, to };
-    else if (period === 'quarter') params = { from: `${y}-${pad(Math.floor(now.getMonth() / 3) * 3 + 1)}-01`, to };
-    else if (period === 'all') params = {};
+  function loadRate() {
+    const params = { from, to };
     api('/rates/report/winrate', { params }).then(setRwin).catch(() => setRwin(null));
     api('/rates/report/monthly', { params }).then(r => setRmon(r.rows || [])).catch(() => setRmon(null));
     api('/rates/report/sales-volume', { params }).then(r => setRown(r.rows || [])).catch(() => setRown(null));
-  }, [period]);
-  const monthly = useMemo(() => {
-    const all = rep?.monthly || []; const now = new Date(); const y = String(now.getFullYear()); const m = now.getMonth();
-    if (period === 'all') return all; if (period === 'year') return all.filter(x => (x.month || '').startsWith(y));
-    if (period === 'month') return all.filter(x => x.month === `${y}-${String(m + 1).padStart(2, '0')}`);
-    const q = Math.floor(m / 3); return all.filter(x => (x.month || '').startsWith(y) && Math.floor((parseInt(x.month.slice(5, 7), 10) - 1) / 3) === q);
-  }, [rep, period]);
+  }
+  useEffect(() => { loadRate(); }, []); // eslint-disable-line
+  const monthly = rep?.monthly || [];
   if (!d) return <div className="empty">{t('กำลังโหลด...')}</div>;
 
   const win = (rwin && rwin.total != null)
@@ -202,8 +195,11 @@ export default function Dashboard() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 10 }}>
         <div><h1 className="page">{t('แผงบริหาร')}</h1><div className="page-sub">{t('ภาพรวมการขายแบบเรียลไทม์')} · {t('บริษัท เลิฟ ไอแลนด์ จำกัด')}</div></div>
-        <span className="period-sel"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
-          <select value={period} onChange={e => setPeriod(e.target.value)}><option value="year">{t('ปีนี้')}</option><option value="quarter">{t('ไตรมาสนี้')}</option><option value="month">{t('เดือนนี้')}</option><option value="all">{t('ทั้งหมด')}</option></select></span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <div style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', borderRadius: 12, padding: '7px 11px', fontSize: 12.5, fontWeight: 600, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', gap: 6 }}>📅 <input type="date" value={from} onChange={e => setFrom(e.target.value)} style={{ border: 'none', background: 'transparent', font: 'inherit', fontWeight: 700, width: 'auto', minWidth: 0, padding: 0, color: 'var(--ink)' }} /></div>
+          <div style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', borderRadius: 12, padding: '7px 11px', fontSize: 12.5, fontWeight: 600, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', gap: 6 }}>→ <input type="date" value={to} onChange={e => setTo(e.target.value)} style={{ border: 'none', background: 'transparent', font: 'inherit', fontWeight: 700, width: 'auto', minWidth: 0, padding: 0, color: 'var(--ink)' }} /></div>
+          <button className="btn" onClick={loadRate}>{t('ดูข้อมูล')}</button>
+        </div>
       </div>
 
       <style>{`@media(max-width:820px){.hero3{grid-template-columns:1fr!important}}`}</style>
