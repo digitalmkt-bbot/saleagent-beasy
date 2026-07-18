@@ -58,7 +58,6 @@ export default function Customers() {
         <select value={f.tag} onChange={e => set('tag', e.target.value)}><option value="">{t('แท็ก: ทั้งหมด')}</option>{meta.tags.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}</select>
         <select value={f.priority} onChange={e => set('priority', e.target.value)}><option value="">{t('ความสำคัญ: ทั้งหมด')}</option>{[1, 2, 3, 4, 5].map(p => <option key={p} value={p}>{t(PR[p - 1])}</option>)}</select>
         {String((user && user.role) || '').toLowerCase() === 'admin' && <button className="btn ghost" style={{ marginLeft: 'auto' }} disabled={importing} onClick={importFromRate}>{importing ? '...' : '⤓ ' + t('ดึงจากระบบ Rate')}</button>}
-        <button className="btn green" style={{ marginLeft: String((user && user.role) || '').toLowerCase() === 'admin' ? '8px' : 'auto' }} onClick={() => setShow(true)}>{t('+ สร้างเอเจ้นท์')}</button>
       </div>
       <div className="panel">
         <table><thead><tr><th>{t('สถานะ')}</th><th>{t('ชื่อเอเจ้นท์')}</th><th>{t('รหัสอ้างอิง')}</th><th>{t('ผู้ติดต่อ')}</th><th>{t('สำคัญ')}</th><th>{t('ผู้รับผิดชอบ')}</th><th>{t('กิจกรรมล่าสุด')}</th><th>{t('แท็กกิจกรรม')}</th></tr></thead>
