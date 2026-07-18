@@ -44,17 +44,22 @@ router.get('/summary', wrap(async (req, res) => {
 router.get('/sales-activity', wrap(async (req, res) => {
   const c = cid(req); const staff = isStaff(req.user);
   const { from, to } = req.query;
-  const where = ['a.company_id=$1']; const args = [c]; let i = 2;
-  if (from) { where.push(`a.activity_at::date >= $${i++}`); args.push(from); }
-  if (to) { where.push(`a.activity_at::date <= $${i++}`); args.push(to); }
-  if (staff) { where.push(`a.assignee_user_id=$${i++}`); args.push(req.user.id); }
-  const W = where.join(' AND ');
-  const totals = (await q(`SELECT a.assignee_user_id AS uid, u.display_name AS name, count(*)::int total
-    FROM activity a LEFT JOIN app_user u ON u.id=a.assignee_user_id
-    WHERE ${W} GROUP BY a.assignee_user_id,u.display_name ORDER BY total DESC`, args)).rows;
+  // include ALL sales users (role not admin/manager, active) even with 0 activities
+  const jc = ['a.assignee_user_id=u.id', 'a.company_id=$1']; const args = [c]; let i = 2;
+  if (from) { jc.push(`a.activity_at::date >= $${i++}`); args.push(from); }
+  if (to) { jc.push(`a.activity_at::date <= $${i++}`); args.push(to); }
+  const uc = ["u.company_id=$1", "u.is_active=true", "lower(u.role) NOT IN ('admin','manager')"];
+  if (staff) { uc.push(`u.id=$${i++}`); args.push(req.user.id); }
+  const totals = (await q(`SELECT u.id AS uid, u.display_name AS name, count(a.id)::int total
+    FROM app_user u LEFT JOIN activity a ON ${jc.join(' AND ')}
+    WHERE ${uc.join(' AND ')} GROUP BY u.id,u.display_name ORDER BY total DESC, u.display_name`, args)).rows;
+  const mWhere = ['a.company_id=$1']; const mArgs = [c]; let j = 2;
+  if (from) { mWhere.push(`a.activity_at::date >= $${j++}`); mArgs.push(from); }
+  if (to) { mWhere.push(`a.activity_at::date <= $${j++}`); mArgs.push(to); }
+  if (staff) { mWhere.push(`a.assignee_user_id=$${j++}`); mArgs.push(req.user.id); }
   const methods = (await q(`SELECT a.assignee_user_id AS uid, COALESCE(cm.name,'-') AS method, count(*)::int n
     FROM activity a LEFT JOIN contact_method cm ON cm.id=a.contact_method_id
-    WHERE ${W} GROUP BY a.assignee_user_id,cm.name`, args)).rows;
+    WHERE ${mWhere.join(' AND ')} GROUP BY a.assignee_user_id,cm.name`, mArgs)).rows;
   const byU = {}; methods.forEach(m => { (byU[m.uid] = byU[m.uid] || {})[m.method] = m.n; });
   res.json({ rows: totals.map(r => ({ ...r, methods: byU[r.uid] || {} })) });
 }));
