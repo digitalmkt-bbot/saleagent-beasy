@@ -56,15 +56,21 @@ function StripedChart({ rows }) {
   const max = Math.max(1, ...data.map(r => +r.value));
   if (!data.length) return <div style={{ color: '#8A8790', padding: 20 }}>—</div>;
   const peak = data.reduce((b, r, i) => +r.value > +data[b].value ? i : b, 0);
-  return <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: data.length > 7 ? 8 : 16, height: 210 }}>
-    {data.map((r, i) => { const solid = Math.max(4, Math.round(+r.value / max * 100)), hot = i === peak, on = hv === i;
-      return <div key={i} onMouseEnter={() => setHv(i)} onMouseLeave={() => setHv(null)} style={{ flex: '1 1 0', maxWidth: 54, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', cursor: 'pointer', position: 'relative' }}>
-        {on && <div style={{ position: 'absolute', top: -4, left: '50%', transform: 'translateX(-50%)', background: '#1A191D', color: '#fff', fontSize: 10, fontWeight: 700, padding: '4px 8px', borderRadius: 8, whiteSpace: 'nowrap', zIndex: 5 }}>{compact(+r.value)}</div>}
-        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', flex: 1 }}>
-          <div style={{ height: solid + '%', minHeight: 4, borderRadius: 8, background: hot || on ? 'linear-gradient(180deg,#FF7A4D,#FF4B26)' : '#1A191D', transition: 'height .2s' }} />
-        </div>
-        <span style={{ fontSize: 10, color: '#8A8790', fontWeight: 600, marginTop: 6 }}>{(r.month || '').slice(2)}</span>
-      </div>; })}
+  const gap = data.length > 7 ? 8 : 16;
+  return <div>
+    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap, height: 210, borderBottom: '2px solid #ECEAEF' }}>
+      {data.map((r, i) => { const total = Math.max(9, Math.round(+r.value / max * 100)), hot = i === peak, on = hv === i;
+        return <div key={i} onMouseEnter={() => setHv(i)} onMouseLeave={() => setHv(null)} style={{ flex: '1 1 0', maxWidth: 54, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', cursor: 'pointer', position: 'relative' }}>
+          {on && <div style={{ position: 'absolute', top: -6, left: '50%', transform: 'translateX(-50%)', background: '#1A191D', color: '#fff', fontSize: 11, fontWeight: 700, padding: '5px 9px', borderRadius: 9, whiteSpace: 'nowrap', zIndex: 5, boxShadow: '0 4px 12px rgba(0,0,0,.18)' }}>{compact(+r.value)}</div>}
+          <div style={{ width: '100%', height: total + '%', minHeight: 9, display: 'flex', flexDirection: 'column', transition: 'height .2s' }}>
+            <div style={{ height: '32%', borderRadius: '6px 6px 0 0', backgroundColor: (hot || on) ? 'rgba(255,75,38,.12)' : '#F1EFF3', backgroundImage: (hot || on) ? 'repeating-linear-gradient(45deg,rgba(255,75,38,.5) 0 3px,transparent 3px 7px)' : 'repeating-linear-gradient(45deg,rgba(26,25,29,.26) 0 3px,transparent 3px 7px)' }} />
+            <div style={{ height: '68%', minHeight: 5, borderRadius: '0 0 3px 3px', background: (hot || on) ? 'linear-gradient(180deg,#FF7A4D,#FF4B26)' : '#1A191D' }} />
+          </div>
+        </div>; })}
+    </div>
+    <div style={{ display: 'flex', justifyContent: 'center', gap, marginTop: 8 }}>
+      {data.map((r, i) => <span key={i} style={{ flex: '1 1 0', maxWidth: 54, textAlign: 'center', fontSize: 10, color: '#8A8790', fontWeight: 600 }}>{(r.month || '').slice(2)}</span>)}
+    </div>
   </div>;
 }
 
