@@ -61,8 +61,7 @@ function StripedChart({ rows }) {
       return <div key={i} onMouseEnter={() => setHv(i)} onMouseLeave={() => setHv(null)} style={{ flex: '1 1 0', maxWidth: 54, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', cursor: 'pointer', position: 'relative' }}>
         {on && <div style={{ position: 'absolute', top: -4, left: '50%', transform: 'translateX(-50%)', background: '#1A191D', color: '#fff', fontSize: 10, fontWeight: 700, padding: '4px 8px', borderRadius: 8, whiteSpace: 'nowrap', zIndex: 5 }}>{compact(+r.value)}</div>}
         <div style={{ width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', flex: 1 }}>
-          <div style={{ height: (100 - solid) + '%', borderRadius: '8px 8px 0 0', background: '#EFEDF1', backgroundImage: 'repeating-linear-gradient(45deg,rgba(26,25,29,.10) 0 4px,transparent 4px 9px)', border: '1px solid #E6E4E9', borderBottom: 'none' }} />
-          <div style={{ height: solid + '%', borderRadius: '0 0 8px 8px', background: hot || on ? 'linear-gradient(180deg,#FF7A4D,#FF4B26)' : '#1A191D', transition: 'background .2s' }} />
+          <div style={{ height: solid + '%', minHeight: 4, borderRadius: 8, background: hot || on ? 'linear-gradient(180deg,#FF7A4D,#FF4B26)' : '#1A191D', transition: 'height .2s' }} />
         </div>
         <span style={{ fontSize: 10, color: '#8A8790', fontWeight: 600, marginTop: 6 }}>{(r.month || '').slice(2)}</span>
       </div>; })}
@@ -200,7 +199,7 @@ export default function Reports() {
 
           {/* striped monthly chart */}
           <div className="card">
-            <Head title={t('ยอดรายเดือน')} right={<div style={{ display: 'flex', gap: 14, fontSize: 12, fontWeight: 600, color: 'var(--muted)' }}><span><span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: '#D9D6DE', marginRight: 5 }} />{t('เป้า')}</span><span><span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: '#1A191D', marginRight: 5 }} />{t('ยอดจริง')}</span></div>} />
+            <Head title={t('ยอดรายเดือน')} right={<span style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)' }}><span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: '#1A191D', marginRight: 5 }} />{t('ยอดขายจริง')}</span>} />
             <StripedChart rows={mrows} />
           </div>
 

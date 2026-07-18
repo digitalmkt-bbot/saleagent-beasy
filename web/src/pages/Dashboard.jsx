@@ -82,13 +82,12 @@ function RStriped({ rows }) {
   const max = Math.max(1, ...data.map(r => +r.value));
   if (!data.length) return <div className="empty">—</div>;
   const peak = data.reduce((b, r, i) => +r.value > +data[b].value ? i : b, 0);
-  return <div><div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: data.length > 7 ? 8 : 14, height: 150 }}>
+  return <div style={{ flex: 1, minHeight: 200, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}><div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: data.length > 7 ? 8 : 14, flex: 1, minHeight: 150 }}>
     {data.map((r, i) => { const solid = Math.max(4, Math.round(+r.value / max * 100)), hot = i === peak, on = hv === i;
       return <div key={i} onMouseEnter={() => setHv(i)} onMouseLeave={() => setHv(null)} style={{ flex: '1 1 0', maxWidth: 40, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', cursor: 'pointer', position: 'relative' }}>
         {on && <div style={{ position: 'absolute', top: -4, left: '50%', transform: 'translateX(-50%)', background: '#1A191D', color: '#fff', fontSize: 10, fontWeight: 700, padding: '4px 8px', borderRadius: 8, whiteSpace: 'nowrap', zIndex: 5 }}>{kfmt(+r.value)}</div>}
         <div style={{ width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', flex: 1 }}>
-          <div style={{ height: (100 - solid) + '%', borderRadius: '8px 8px 0 0', background: '#EFEDF1', backgroundImage: 'repeating-linear-gradient(45deg,rgba(26,25,29,.10) 0 4px,transparent 4px 9px)', border: '1px solid #E6E4E9', borderBottom: 'none' }} />
-          <div style={{ height: solid + '%', borderRadius: '0 0 8px 8px', background: hot || on ? 'linear-gradient(180deg,#FF7A4D,#FF4B26)' : '#1A191D' }} />
+          <div style={{ height: solid + '%', minHeight: 4, borderRadius: 8, background: hot || on ? 'linear-gradient(180deg,#FF7A4D,#FF4B26)' : '#1A191D', transition: 'height .2s' }} />
         </div>
         <span style={{ fontSize: 10, color: '#8A8790', fontWeight: 600, marginTop: 6 }}>{(r.month || '').slice(2)}</span>
       </div>; })}
@@ -96,11 +95,12 @@ function RStriped({ rows }) {
 }
 function RDonut({ items }) {
   const [hv, setHv] = useState(null);
-  const top = items.slice(0, 5).filter(x => x.v > 0);
+  const arcs = items.filter(x => x.v > 0).slice(0, 6);
+  const legend = items.slice(0, 12);
   const tot = items.reduce((a, s) => a + s.v, 0) || 1;
   const R = 38, C = 2 * Math.PI * R; let off = 0;
-  const segs = top.map((s, i) => { const len = s.v / tot * C, o = -off; off += len; return { ...s, dash: `${len} ${C - len}`, off: o }; });
-  const cur = hv != null ? top[hv] : top[0];
+  const segs = arcs.map((s, i) => { const len = s.v / tot * C, o = -off; off += len; return { ...s, dash: `${len} ${C - len}`, off: o }; });
+  const cur = hv != null ? arcs[hv] : arcs[0];
   return <div>
     <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', margin: '6px 0 14px' }}>
       <svg width="160" height="160" viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
@@ -113,7 +113,7 @@ function RDonut({ items }) {
         <span style={{ fontSize: 10, color: 'var(--muted)', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cur ? cur.name : ''}</span>
       </div>
     </div>
-    <div>{top.map((s, i) => <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, padding: '4px 0' }}>
+    <div>{legend.map((s, i) => <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, padding: '4px 0' }}>
       <span style={{ width: 10, height: 10, borderRadius: 3, background: i === 2 ? '#FF4B26' : PAL2[i % PAL2.length], flexShrink: 0 }} />
       <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</span>
       <b>{kfmt(s.v)}</b></div>)}</div>
@@ -155,7 +155,7 @@ export default function Dashboard() {
   const chartSeries = (rmon && rmon.length) ? rmon : monthly;
   const ownersRaw = ((rown && rown.length)
     ? rown.map(o => ({ name: o.name || o.fullname || t('ไม่ระบุเซลส์'), v: +o.revenue }))
-    : (rep?.byOwner || []).map(o => ({ name: o.name, v: (+o.won_value + +o.open_value) }))).filter(o => o.v > 0).sort((a, b) => b.v - a.v);
+    : (rep?.byOwner || []).map(o => ({ name: o.name, v: (+o.won_value + +o.open_value) }))).sort((a, b) => b.v - a.v);
   const dc = [IND, BLU, VIO, TEAL, SKY];
   const donutSeg = ownersRaw.slice(0, 4).map((o, i) => ({ ...o, c: dc[i] }));
   if (ownersRaw.length > 4) donutSeg.push({ name: 'อื่นๆ', v: ownersRaw.slice(4).reduce((a, o) => a + o.v, 0), c: dc[4] });
@@ -230,8 +230,8 @@ export default function Dashboard() {
         <Stat label={t('สุขภาพการขาย')} value={hexAvg} sub={`${win.winRate}% ${t('ยืนยัน')}`} subUp badge="p" icon="gauge" />
       </div>
       <div className="grid-2-1" style={{ marginBottom: 16 }}>
-        <div className="panel">
-          <div className="panel-head"><h3>{t('ยอดรายเดือน')}</h3><div style={{ display: 'flex', gap: 14, fontSize: 12, fontWeight: 600, color: 'var(--muted)' }}><span><span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: '#D9D6DE', marginRight: 5 }} />{t('เป้า')}</span><span><span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: '#1A191D', marginRight: 5 }} />{t('ยอดจริง')}</span></div></div>
+        <div className="panel" style={{ display: 'flex', flexDirection: 'column' }}>
+          <div className="panel-head"><h3>{t('ยอดรายเดือน')}</h3><span style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)' }}><span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: '#1A191D', marginRight: 5 }} />{t('ยอดขายจริง')}</span></div>
           <RStriped rows={chartSeries} />
         </div>
         <div className="panel">
@@ -240,13 +240,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid-glass-3">
-        <div className="panel">
-          <div className="panel-head"><h3>{t('ยอดขายตามทีม')}</h3></div>
-          {teams.length ? teams.map((x, i) => (<div key={i} style={{ margin: '11px 0' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, marginBottom: 4 }}><span style={{ color: '#4A5578', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{x.name}</span><b>{kfmt(x.v)}</b></div>
-            <span style={{ display: 'block', background: 'rgba(26,25,29,.08)', borderRadius: 6, height: 8 }}><span style={{ display: 'block', height: 8, width: Math.round(x.v / maxTeam * 100) + '%', background: [IND, BLU, VIO, TEAL, SKY][i % 5], borderRadius: 6 }} /></span></div>)) : <div className="empty">{t('ยังไม่มีข้อมูล')}</div>}
-        </div>
+      <div className="grid-2-1" style={{ marginBottom: 16 }}>
         <div className="panel">
           <div className="panel-head"><h3>{t('ประเภทกิจกรรม')}</h3></div>
           {typeCounts.length ? (<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 6, padding: '6px 0' }}>

@@ -29,7 +29,7 @@ export default function Customers() {
   // ดึงจากระบบ Rate อัตโนมัติครั้งแรกถ้ายังไม่มีเอเจ้นท์ (เฉพาะ admin) — ไม่ต้องกดเอง
   useEffect(() => {
     if (autoTried || importing) return;
-    if (String((user && user.role) || '').toLowerCase() !== 'admin') return;
+    if (!['admin', 'executive'].includes(String((user && user.role) || '').toLowerCase())) return;
     if (data.rows && data.rows.length === 0 && !f.search && !f.lifecycle && !f.owner && !f.team && !f.tag && !f.priority) {
       setAutoTried(true);
       importFromRate(true);

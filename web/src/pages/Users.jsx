@@ -3,9 +3,9 @@ import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { useI18n } from '../i18n.jsx';
 
-const ROLES = [['sales', 'พนักงานขาย (Sales)'], ['manager', 'ผู้จัดการ (Manager)'], ['admin', 'ผู้ดูแลระบบ (Admin)']];
+const ROLES = [['sales', 'พนักงานขาย (Sales)'], ['manager', 'ผู้จัดการ (Manager)'], ['executive', 'ผู้บริหาร (Executive)'], ['admin', 'ผู้ดูแลระบบ (Admin)']];
 const roleLabel = r => (ROLES.find(x => x[0] === r) || [r, r])[1];
-const rolePill = r => r === 'admin' ? 'red' : r === 'manager' ? 'blue' : 'green';
+const rolePill = r => (r === 'admin' || r === 'executive') ? 'red' : r === 'manager' ? 'blue' : 'green';
 
 export default function Users() {
   const { t } = useI18n();
@@ -17,15 +17,10 @@ export default function Users() {
   function load() { api('/users').then(d => setRows(d.rows || [])).catch(e => setErr(e.message)); }
   useEffect(() => { load(); }, []);
 
-  if (user && String(user.role).toLowerCase() !== 'admin')
+  if (user && !['admin', 'executive'].includes(String(user.role).toLowerCase()))
     return <div><h1 className="page">{t('จัดการผู้ใช้')}</h1><div className="card"><div className="muted">{t('เฉพาะผู้ดูแลระบบ (admin) เท่านั้น')}</div></div></div>;
 
-  async function resetPw(u) {
-    const pw = prompt(t('ตั้งรหัสผ่านใหม่ให้') + ' ' + u.display_name + ' (อย่างน้อย 6 ตัว):', 'loveandaman123');
-    if (!pw) return;
-    try { await api('/users/' + u.id + '/password', { method: 'PUT', body: { password: pw } }); alert(t('เปลี่ยนรหัสผ่านแล้ว')); }
-    catch (e) { alert(e.message); }
-  }
+  const [resetU, setResetU] = useState(null);
   async function del(u) {
     if (!confirm(t('ลบผู้ใช้') + ' ' + u.display_name + ' ?')) return;
     try { await api('/users/' + u.id, { method: 'DELETE' }); load(); }
@@ -53,7 +48,7 @@ export default function Users() {
                 <td>{u.is_active ? <span className="pill green">{t('ใช้งาน')}</span> : <span className="pill">{t('ปิด')}</span>}</td>
                 <td style={{ whiteSpace: 'nowrap' }}>
                   <a onClick={() => setModal(u)}>{t('แก้ไข')}</a>{' · '}
-                  <a onClick={() => resetPw(u)}>{t('รีเซ็ตรหัส')}</a>{u.id !== user.id && <>{' · '}<a onClick={() => del(u)} style={{ color: 'var(--red-text)' }}>{t('ลบ')}</a></>}
+                  <a onClick={() => setResetU(u)}>{t('รีเซ็ตรหัส')}</a>{u.id !== user.id && <>{' · '}<a onClick={() => del(u)} style={{ color: 'var(--red-text)' }}>{t('ลบ')}</a></>}
                 </td>
               </tr>
             ))}
@@ -62,6 +57,7 @@ export default function Users() {
         </table>
       </div>
       {modal && <UserModal init={modal} onClose={() => setModal(null)} onSaved={() => { setModal(null); load(); }} />}
+      {resetU && <ResetModal u={resetU} onClose={() => setResetU(null)} />}
     </div>
   );
 }
@@ -103,6 +99,49 @@ function UserModal({ init, onClose, onSaved }) {
       <div className="row" style={{ marginTop: 16, justifyContent: 'flex-end' }}>
         <button className="btn ghost" onClick={onClose}>{t('ยกเลิก')}</button>
         <button className="btn" disabled={busy} onClick={save}>{busy ? '...' : t('บันทึก')}</button>
+      </div>
+    </div></div>
+  );
+}
+
+function genPw() {
+  const cs = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+  let s = '';
+  for (let i = 0; i < 10; i++) s += cs[Math.floor(Math.random() * cs.length)];
+  return s;
+}
+
+function ResetModal({ u, onClose }) {
+  const { t } = useI18n();
+  const [pw, setPw] = useState(genPw());
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const [copied, setCopied] = useState(false);
+  useEffect(() => { const on = e => { if (e.key === 'Escape') onClose(); }; document.addEventListener('keydown', on); return () => document.removeEventListener('keydown', on); }, [onClose]);
+  function copy() { navigator.clipboard.writeText(pw).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }).catch(() => {}); }
+  async function save() {
+    if (!pw || pw.length < 6) { setErr(t('รหัสผ่านอย่างน้อย 6 ตัวอักษร')); return; }
+    setBusy(true); setErr('');
+    try { await api('/users/' + u.id + '/password', { method: 'PUT', body: { password: pw } }); onClose(); alert(t('ตั้งรหัสผ่านใหม่แล้ว') + ' — ' + u.display_name); }
+    catch (e) { setErr(e.message); setBusy(false); }
+  }
+  return (
+    <div className="modal-bg" onClick={onClose}><div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 440 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h3 style={{ margin: 0 }}>{t('รีเซ็ตรหัสผ่าน')} — {u.display_name}</h3>
+        <button type="button" aria-label="close" onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 28, cursor: 'pointer', color: 'var(--muted)' }}>×</button>
+      </div>
+      <div className="muted" style={{ marginTop: 4 }}>{t('สุ่มรหัสชั่วคราวให้ กดคัดลอกแล้วส่งให้ผู้ใช้')}</div>
+      <label style={{ marginTop: 12, display: 'block' }}>{t('รหัสผ่านใหม่')}</label>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input value={pw} onChange={e => setPw(e.target.value)} style={{ fontFamily: 'monospace', fontSize: 16, letterSpacing: 1 }} />
+        <button type="button" className="btn ghost" onClick={() => setPw(genPw())} title={t('สุ่มใหม่')}>🎲</button>
+        <button type="button" className="btn" onClick={copy}>{copied ? '✓ ' + t('คัดลอกแล้ว') : t('คัดลอก')}</button>
+      </div>
+      {err && <div className="err">{err}</div>}
+      <div className="row" style={{ marginTop: 16, justifyContent: 'flex-end' }}>
+        <button className="btn ghost" onClick={onClose}>{t('ยกเลิก')}</button>
+        <button className="btn" disabled={busy} onClick={save}>{busy ? '...' : t('ตั้งรหัสนี้')}</button>
       </div>
     </div></div>
   );

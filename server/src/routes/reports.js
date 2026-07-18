@@ -44,11 +44,11 @@ router.get('/summary', wrap(async (req, res) => {
 router.get('/sales-activity', wrap(async (req, res) => {
   const c = cid(req); const staff = isStaff(req.user);
   const { from, to } = req.query;
-  // include ALL sales users (role not admin/manager, active) even with 0 activities
+  // include ALL users except admin (incl managers/Director), active, even with 0 activities
   const jc = ['a.assignee_user_id=u.id', 'a.company_id=$1']; const args = [c]; let i = 2;
   if (from) { jc.push(`a.activity_at::date >= $${i++}`); args.push(from); }
   if (to) { jc.push(`a.activity_at::date <= $${i++}`); args.push(to); }
-  const uc = ["u.company_id=$1", "u.is_active=true", "lower(u.role) NOT IN ('admin','manager')"];
+  const uc = ["u.company_id=$1", "u.is_active=true", "lower(u.role) NOT IN ('admin','executive')"];
   if (staff) { uc.push(`u.id=$${i++}`); args.push(req.user.id); }
   const totals = (await q(`SELECT u.id AS uid, u.display_name AS name, count(a.id)::int total
     FROM app_user u LEFT JOIN activity a ON ${jc.join(' AND ')}

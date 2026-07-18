@@ -2,10 +2,11 @@ const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const { q } = require('../db');
 const { wrap } = require('./_util');
+const { isAdmin } = require('./_scope');
 
 // เฉพาะ admin เท่านั้น
 router.use((req, res, next) => {
-  if (String(req.user.role || '').toLowerCase() !== 'admin') return res.status(403).json({ error: 'เฉพาะผู้ดูแลระบบ (admin) เท่านั้น' });
+  if (!isAdmin(req.user)) return res.status(403).json({ error: 'เฉพาะผู้ดูแลระบบ/ผู้บริหารเท่านั้น' });
   next();
 });
 
@@ -34,7 +35,7 @@ router.post('/', wrap(async (req, res) => {
 router.put('/:id', wrap(async (req, res) => {
   const b = req.body; const id = +req.params.id;
   if (id === req.user.id && b.is_active === false) return res.status(400).json({ error: 'ปิดใช้งานบัญชีตัวเองไม่ได้' });
-  if (id === req.user.id && b.role && b.role !== 'admin') return res.status(400).json({ error: 'ลดสิทธิ์ตัวเองไม่ได้' });
+  if (id === req.user.id && b.role && !['admin', 'executive'].includes(String(b.role).toLowerCase())) return res.status(400).json({ error: 'ลดสิทธิ์ตัวเองไม่ได้' });
   try {
     const r = await q(`UPDATE app_user SET user_code=$9, display_name=$3, email=$4, phone=$5, role=$6, team_id=$7, is_active=$8
       WHERE id=$1 AND company_id=$2 RETURNING id,user_code,display_name,email,phone,role,is_active,team_id`,

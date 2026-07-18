@@ -2,7 +2,7 @@ const router = require('express').Router();
 const { wrap } = require('./_util');
 const { rq, rateReady } = require('../rate-db');
 const { q } = require('../db');
-const { isStaff } = require('./_scope');
+const { isStaff, isAdmin } = require('./_scope');
 
 const ZMAP = { PK: 'pk', KL: 'kl', NoTransfer: 'notransfer' };
 const PAX = ['adult_thai', 'adult_fr', 'child_thai', 'child_fr', 'infant_thai', 'infant_fr'];
@@ -11,7 +11,7 @@ router.get('/status', (req, res) => res.json({ ready: rateReady() }));
 
 // admin-only: list all tables in operation_schemas that contain 'rate_type' — for schema discovery
 router.get('/schema-probe', wrap(async (req, res) => {
-  if (String(req.user.role || '').toLowerCase() !== 'admin') return res.status(403).json({ error: 'admin only' });
+  if (!isAdmin(req.user)) return res.status(403).json({ error: 'admin only' });
   const tables = (await rq(`SELECT table_name FROM information_schema.tables WHERE table_schema='operation_schemas' ORDER BY table_name`)).rows.map(r => r.table_name);
   const sample = {};
   for (const t of tables.filter(n => n.includes('rate_type'))) {
