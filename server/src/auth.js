@@ -4,7 +4,7 @@ const { q } = require('./db');
 const SECRET = process.env.JWT_SECRET || 'dev-secret';
 
 async function login(req, res) {
-  const { email, password } = req.body || {};
+  const { email, password, newPassword } = req.body || {};
   if (!email || !password) return res.status(400).json({ error: 'email/password required' });
   const { rows } = await q(
     'SELECT id, company_id, display_name, role, password_hash FROM app_user WHERE email=$1 AND is_active=true',
@@ -12,6 +12,10 @@ async function login(req, res) {
   const u = rows[0];
   if (!u || !u.password_hash || !bcrypt.compareSync(password, u.password_hash))
     return res.status(401).json({ error: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' });
+  if (newPassword) {
+    if (String(newPassword).length < 6) return res.status(400).json({ error: 'รหัสผ่านใหม่ต้องยาวอย่างน้อย 6 ตัวอักษร' });
+    await q('UPDATE app_user SET password_hash=$2 WHERE id=$1', [u.id, bcrypt.hashSync(String(newPassword), 10)]);
+  }
   const token = jwt.sign({ id: u.id, company_id: u.company_id, role: u.role }, SECRET, { expiresIn: '7d' });
   res.json({ token, user: { id: u.id, name: u.display_name, role: u.role, company_id: u.company_id } });
 }

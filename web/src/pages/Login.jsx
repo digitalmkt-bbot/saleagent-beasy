@@ -4,7 +4,7 @@ import { useAuth } from '../auth.jsx';
 import { useI18n } from '../i18n.jsx';
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, resetPassword } = useAuth();
   const { t } = useI18n();
   const nav = useNavigate();
   const [email, setEmail] = useState('admin@loveandaman.com');
@@ -12,6 +12,18 @@ export default function Login() {
   const [err, setErr] = useState('');
   const [show, setShow] = useState(false);
   const [showReset, setShowReset] = useState(false);
+  const [rCur, setRCur] = useState('');
+  const [rNew, setRNew] = useState('');
+  const [rNew2, setRNew2] = useState('');
+  const [rMsg, setRMsg] = useState('');
+  async function doReset() {
+    setRMsg('');
+    if (!email) { setRMsg(t('กรุณากรอกอีเมลด้านบนก่อน')); return; }
+    if ((rNew || '').length < 6) { setRMsg(t('รหัสผ่านใหม่ต้องยาวอย่างน้อย 6 ตัวอักษร')); return; }
+    if (rNew !== rNew2) { setRMsg(t('รหัสผ่านใหม่ไม่ตรงกัน')); return; }
+    try { await resetPassword(email, rCur, rNew); nav('/'); }
+    catch (er) { setRMsg(er.message); }
+  }
   async function submit(e) {
     e.preventDefault(); setErr('');
     try { await login(email, password); nav('/'); }
@@ -34,12 +46,18 @@ export default function Login() {
         <button className="btn" style={{ width: '100%', marginTop: 18, justifyContent: 'center' }}>{t('เข้าสู่ระบบ')}</button>
         {err && <div className="err">{err}</div>}
         <div style={{ marginTop: 14, textAlign: 'center' }}>
-          <a onClick={() => setShowReset(v => !v)} style={{ fontSize: 13, cursor: 'pointer', fontWeight: 600 }}>{t('ลืมรหัสผ่าน / รีเซ็ตรหัสผ่าน?')}</a>
+          <a onClick={() => setShowReset(v => !v)} style={{ fontSize: 13, cursor: 'pointer', fontWeight: 600 }}>{t('เปลี่ยน / รีเซ็ตรหัสผ่านด้วยตัวเอง')}</a>
         </div>
-        {showReset && <div className="muted" style={{ marginTop: 10, background: 'rgba(255,75,38,.06)', border: '1px solid var(--glass-border)', borderRadius: 12, padding: '11px 13px', fontSize: 12.5, lineHeight: 1.7 }}>
-          {t('เพื่อความปลอดภัย การรีเซ็ตรหัสผ่านทำได้โดยผู้ดูแลระบบ (admin) เท่านั้น')}<br />
-          • {t('ติดต่อแอดมินของบริษัทเพื่อขอรีเซ็ตรหัสผ่าน')}<br />
-          • {t('แอดมิน: เข้าเมนู "จัดการผู้ใช้" → เลือกผู้ใช้ → กดรีเซ็ตรหัส แล้วส่งรหัสใหม่ให้')}
+        {showReset && <div style={{ marginTop: 10, background: 'rgba(255,75,38,.05)', border: '1px solid var(--glass-border)', borderRadius: 12, padding: '12px 13px' }}>
+          <div className="muted" style={{ fontSize: 12.5, marginBottom: 4 }}>{t('ใช้อีเมลด้านบน + รหัสปัจจุบัน เพื่อตั้งรหัสใหม่ (ไม่ต้องติดต่อแอดมิน)')}</div>
+          <label>{t('รหัสผ่านปัจจุบัน')}</label>
+          <input type="password" value={rCur} onChange={e => setRCur(e.target.value)} />
+          <label>{t('รหัสผ่านใหม่')}</label>
+          <input type="password" value={rNew} onChange={e => setRNew(e.target.value)} />
+          <label>{t('ยืนยันรหัสผ่านใหม่')}</label>
+          <input type="password" value={rNew2} onChange={e => setRNew2(e.target.value)} />
+          <button type="button" className="btn" style={{ width: '100%', marginTop: 12, justifyContent: 'center' }} onClick={doReset}>{t('เปลี่ยนรหัสผ่าน & เข้าสู่ระบบ')}</button>
+          {rMsg && <div className="err" style={{ marginTop: 8 }}>{rMsg}</div>}
         </div>}
       </form>
     </div>
