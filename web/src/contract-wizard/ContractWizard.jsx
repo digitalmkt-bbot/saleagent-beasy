@@ -243,7 +243,7 @@ export default function ContractWizard({ agent, rateType, routes = [], addonDefs
 
                 {/* Navy sidebar */}
                 <aside style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: 56, background: navy, color: navySoft, display: 'flex', alignItems: 'center', justifyContent: 'center', writingMode: 'vertical-rl', textOrientation: 'mixed', flexShrink: 0 }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.22em', textTransform: 'uppercase', fontFamily: 'Manrope,system-ui,sans-serif', transform: 'rotate(180deg)', whiteSpace: 'nowrap', fontStyle: 'italic' }}>Your Experience, Our Passion</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.22em', textTransform: 'uppercase', fontFamily: "'Plus Jakarta Sans','IBM Plex Sans Thai',sans-serif", transform: 'rotate(180deg)', whiteSpace: 'nowrap', fontStyle: 'italic' }}>Your Experience, Our Passion</span>
                 </aside>
 
                 {/* Page header */}
