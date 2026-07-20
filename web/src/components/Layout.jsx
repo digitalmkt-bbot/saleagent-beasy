@@ -58,11 +58,34 @@ export default function Layout() {
     rd.readAsDataURL(f); e.target.value = '';
   }
   const Av = () => <span className="avatar" onClick={pickAvatar} title={t('เปลี่ยนรูปโปรไฟล์')} style={{ cursor: 'pointer', overflow: 'hidden' }}>{avatar ? <img src={avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initial}</span>;
+  const logoKey = 'brand_logo';
+  const [logo, setLogo] = useState(() => { try { return localStorage.getItem(logoKey) || ''; } catch (e) { return ''; } });
+  const logoRef = useRef(null);
+  function pickLogo() { if (logoRef.current) logoRef.current.click(); }
+  function onLogoFile(e) {
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const S = 128, c = document.createElement('canvas'); c.width = S; c.height = S;
+        const ctx = c.getContext('2d');
+        const scale = Math.min(S / img.width, S / img.height), w = img.width * scale, h = img.height * scale;
+        ctx.drawImage(img, (S - w) / 2, (S - h) / 2, w, h);
+        const data = c.toDataURL('image/png');
+        setLogo(data);
+        try { localStorage.setItem(logoKey, data); } catch (err) {}
+      };
+      img.src = rd.result;
+    };
+    rd.readAsDataURL(f); e.target.value = '';
+  }
   return (
     <div className="app">
       <input type="file" accept="image/*" ref={fileRef} onChange={onAvatarFile} style={{ display: 'none' }} />
+      <input type="file" accept="image/*" ref={logoRef} onChange={onLogoFile} style={{ display: 'none' }} />
       <aside className={'sidebar' + (menu ? ' open' : '')}>
-        <div className="brand"><span className="logo"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" strokeWidth="2" strokeLinejoin="round"><path d="M12 2l9 6-9 14L3 8z" /></svg></span><span className="bt">{(user && user.name) || t('ผู้ใช้')}<span className="dot">.</span>BeasyApp</span></div>
+        <div className="brand"><span className="logo" onClick={pickLogo} title={t('เปลี่ยนโลโก้บริษัท')} style={{ cursor: 'pointer', overflow: 'hidden' }}>{logo ? <img src={logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" strokeWidth="2" strokeLinejoin="round"><path d="M12 2l9 6-9 14L3 8z" /></svg>}</span><span className="bt">{(user && user.name) || t('ผู้ใช้')}<span className="dot">.</span>BeasyApp</span></div>
         {[...sections, ...(['admin', 'executive'].includes(String((user && user.role) || '').toLowerCase()) ? [['ผู้ดูแลระบบ', [['/users', 'จัดการผู้ใช้', 'shield']]]] : [])].map(([title, items]) => (
           <div key={title}>
             <div className="nav-section">{t(title)}</div>
