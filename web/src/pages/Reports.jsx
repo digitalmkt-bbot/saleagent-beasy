@@ -139,8 +139,8 @@ export default function Reports() {
   const [monthly, setMonthly] = useState(null);
 
   useEffect(() => { api('/reports/summary').then(setD).catch(() => {}); }, []);
-  function loadReports() {
-    const params = { from, to };
+  function loadReports(f = from, tt = to) {
+    const params = { from: f, to: tt };
     rtry(() => api('/reports/sales-activity', { params })).then(r => setSales(r.rows || [])).catch(() => setSales([]));
     rtry(() => api('/rates/report/agent-volume', { params })).then(r => { setAgentVol(r.rows || []); setRateErr(''); }).catch(e => { setAgentVol([]); setRateErr(e.message); });
     rtry(() => api('/rates/report/product-volume', { params })).then(r => setProducts(r.rows || [])).catch(() => setProducts([]));
@@ -150,6 +150,17 @@ export default function Reports() {
     setOpenUser(null); setDrill([]);
   }
   useEffect(() => { loadReports(); }, []); // eslint-disable-line
+  const isoLocal = (d) => { const z = new Date(d.getTime() - d.getTimezoneOffset() * 60000); return z.toISOString().slice(0, 10); };
+  function datePresets() {
+    const n = new Date(), t2 = isoLocal(n);
+    const yd = new Date(n); yd.setDate(yd.getDate() - 1);
+    const d7 = new Date(n); d7.setDate(d7.getDate() - 6);
+    const d30 = new Date(n); d30.setDate(d30.getDate() - 29);
+    const mS = isoLocal(new Date(n.getFullYear(), n.getMonth(), 1));
+    const lmS = isoLocal(new Date(n.getFullYear(), n.getMonth() - 1, 1));
+    const lmE = isoLocal(new Date(n.getFullYear(), n.getMonth(), 0));
+    return [['วันนี้', t2, t2], ['เมื่อวาน', isoLocal(yd), isoLocal(yd)], ['7 วัน', isoLocal(d7), t2], ['30 วัน', isoLocal(d30), t2], ['เดือนนี้', mS, t2], ['เดือนก่อน', lmS, lmE]];
+  }
   function toggleUser(u) {
     if (openUser === u.uid) { setOpenUser(null); return; }
     setOpenUser(u.uid);
@@ -181,6 +192,7 @@ export default function Reports() {
           <div style={seg}>📅 <input type="date" value={from} onChange={e => setFrom(e.target.value)} style={{ border: 'none', background: 'transparent', font: 'inherit', fontWeight: 700, width: 'auto', minWidth: 0, padding: 0, color: 'var(--ink)' }} /></div>
           <div style={seg}>→ <input type="date" value={to} onChange={e => setTo(e.target.value)} style={{ border: 'none', background: 'transparent', font: 'inherit', fontWeight: 700, width: 'auto', minWidth: 0, padding: 0, color: 'var(--ink)' }} /></div>
           <button className="btn" onClick={loadReports}>{t('ดูรายงาน')}</button>
+          {datePresets().map(([lb, f2, tt]) => { const on = from === f2 && to === tt; return <button key={lb} onClick={() => { setFrom(f2); setTo(tt); loadReports(f2, tt); }} style={{ padding: '7px 12px', borderRadius: 999, border: '1px solid var(--glass-border)', background: on ? 'var(--ink)' : 'var(--glass)', color: on ? '#fff' : 'var(--ink)', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>{t(lb)}</button>; })}
         </div>
       </div>
 
