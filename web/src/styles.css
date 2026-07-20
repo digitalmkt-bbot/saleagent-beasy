@@ -85,6 +85,7 @@ tr:hover td{background:#F7F7F9;}
 .btn.sm{padding:6px 11px;font-size:13px;box-shadow:none;}
 
 /* ---------- Forms ---------- */
+button,[role="button"]{font-family:inherit;}
 input,select,textarea{font-family:inherit;font-size:14px;padding:9px 11px;border:1px solid var(--glass-border);border-radius:12px;width:100%;min-width:0;max-width:100%;box-sizing:border-box;background:#F6F6F8;color:var(--ink);transition:border .15s,box-shadow .15s;}
 input[type="date"],input[type="time"],input[type="datetime-local"],input[type="month"]{-webkit-appearance:none;appearance:none;display:block;width:100%;min-width:0;}
 input[type="date"]::-webkit-date-and-time-value{text-align:left;margin:0;}
