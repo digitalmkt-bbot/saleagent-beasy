@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>InvestIQ · Financial Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F3F4F6;color:#1E293B;font-family:"Inter",system-ui,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5}
+.shell{display:flex;min-height:100vh}
+/* sidebar */
+.sb{width:250px;flex:none;background:#fff;border-right:1px solid #E2E8F0;padding:20px 16px;display:flex;flex-direction:column;justify-content:space-between}
+.sb-logo{display:flex;align-items:center;gap:10px;padding:0 8px;margin-bottom:20px}
+.sb-logo .mark{width:34px;height:34px;border-radius:99px;background:#10B981;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(16,185,129,.3)}
+.sb-logo b{font-size:19px;font-weight:800;letter-spacing:-.4px;color:#0F172A}
+.sb-ai{background:#ECFDF5;border:1px solid #D1FAE5;border-radius:14px;padding:13px;margin-bottom:22px}
+.sb-ai b{display:block;font-size:12px;font-weight:700;color:#065F46;margin-bottom:2px}
+.sb-ai p{margin:0 0 10px;font-size:11px;color:#059669}
+.sb-ai button{font:inherit;width:100%;font-size:11.5px;font-weight:700;color:#fff;background:#00D084;border:0;border-radius:999px;padding:8px 0;cursor:pointer}
+.sb-ai button:hover{filter:brightness(1.05)}
+.sb-sec{font-size:10px;font-weight:800;letter-spacing:.8px;color:#94A3B8;text-transform:uppercase;padding:0 10px;margin:14px 0 6px}
+.sb a{display:flex;align-items:center;gap:11px;font-size:12.5px;font-weight:600;color:#64748B;padding:9px 12px;border-radius:12px;cursor:pointer;text-decoration:none}
+.sb a:hover{background:#F1F5F9}
+.sb a.on{background:#00D084;color:#fff;box-shadow:0 3px 10px rgba(0,208,132,.3)}
+.sb a svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.sb-foot{border-top:1px solid #F1F5F9;padding-top:10px}
+.sb-theme{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;font-size:12.5px;font-weight:600;color:#64748B}
+.tog{width:42px;height:23px;border-radius:99px;background:#E2E8F0;padding:2.5px;cursor:pointer;border:0}
+.tog i{display:block;width:18px;height:18px;border-radius:99px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.sb-user{display:flex;align-items:center;justify-content:space-between;background:#F8FAFC;border:1px solid #F1F5F9;border-radius:16px;padding:9px 11px;margin-top:10px;cursor:pointer}
+.sb-user img{width:32px;height:32px;border-radius:99px;object-fit:cover}
+.sb-user .nm{font-size:12px;font-weight:700;color:#0F172A;line-height:1.2}
+.sb-user .em{font-size:10px;color:#94A3B8}
+/* main */
+.mn{flex:1;padding:24px 26px;max-width:1160px;margin:0 auto}
+.iq-hd{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.iq-hl{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.iq-hl h2{font-size:23px;font-weight:800;margin:0;letter-spacing:-.4px;color:#0F172A}
+.iq-aib{font-size:10px;font-weight:700;color:#059669;background:#ECFDF5;border:1px solid #A7F3D0;border-radius:999px;padding:3px 9px}
+.iq-cop{font:inherit;display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#fff;background:#00D084;border:0;border-radius:999px;padding:8px 15px;cursor:pointer;box-shadow:0 3px 10px rgba(0,208,132,.35)}
+.iq-cop:hover{filter:brightness(1.05)}
+.iq-hr{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.iq-srch{position:relative}
+.iq-srch input{font:inherit;font-size:12px;background:#fff;border:1px solid #E2E8F0;border-radius:14px;padding:8px 12px 8px 30px;width:160px}
+.iq-srch:before{content:'⌕';font-size:14px;position:absolute;left:10px;top:50%;transform:translateY(-52%);color:#94A3B8}
+.iq-ico{font:inherit;background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:7px 10px;cursor:pointer;font-size:13px}
+.iq-ico:hover{background:#F8FAFC}
+.iq-date{display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid #E2E8F0;border-radius:14px;padding:8px 13px;font-size:12px;font-weight:500;color:#334155}
+.card{background:#fff;border:1px solid #F1F5F9;border-radius:20px;box-shadow:0 1px 2px rgba(15,23,42,.04);padding:18px 20px;margin-bottom:16px}
+.cardhd{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.h{font-size:15px;font-weight:700;color:#0F172A;margin:0}
+.iq-grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-bottom:16px}
+.iq-mcard{background:#fff;border:1px solid #F1F5F9;border-radius:20px;padding:16px 18px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.iq-mhd{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.iq-mtl{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#0F172A}
+.iq-mico{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:99px;color:#fff;font-size:11px;font-weight:700;flex:none}
+.iq-tf{font-size:11px;font-weight:600;color:#94A3B8}
+.iq-spark{height:58px;margin:8px 0}
+.iq-spark svg{width:100%;height:100%;overflow:visible}
+.iq-mrow{display:flex;align-items:baseline;justify-content:space-between;margin-top:8px}
+.iq-val{font-size:23px;font-weight:800;letter-spacing:-.5px;color:#0F172A}
+.iq-sub{font-size:11px;font-weight:500;color:#94A3B8;margin-top:3px}
+.iq-pill{display:inline-flex;align-items:center;gap:2px;font-size:10.5px;font-weight:700;border-radius:999px;padding:2px 8px;font-style:normal}
+.iq-up{color:#059669;background:#ECFDF5}
+.iq-dn{color:#E11D48;background:#FFF1F2}
+.iq-ghost{font:inherit;font-size:11.5px;font-weight:600;color:#059669;background:#fff;border:1px solid #A7F3D0;border-radius:999px;padding:6px 12px;cursor:pointer}
+.iq-ghost:hover{background:#ECFDF5}
+.iq-cash{display:grid;grid-template-columns:1fr 290px;gap:24px;align-items:start}
+.iq-bwrap{position:relative;height:176px;margin-top:10px}
+.iq-yl{position:absolute;left:0;font-size:10px;font-weight:600;color:#94A3B8}
+.iq-gl{position:absolute;left:34px;right:0;border-top:1px dashed #E2E8F0}
+.iq-gl.iq-solid{border-top:1px solid #CBD5E1}
+.iq-bars{position:absolute;left:46px;right:12px;top:0;display:flex;justify-content:space-between}
+.iq-bcol{display:flex;flex-direction:column;align-items:center}
+.iq-bt{height:88px;display:flex;align-items:flex-end}
+.iq-bt i{display:block;width:14px;border-radius:99px;background:linear-gradient(to top,#10B981,#00D084)}
+.iq-bb{height:52px;margin-top:4px}
+.iq-bb i{display:block;width:14px;border-radius:99px;background:#1E293B}
+.iq-bcol span{font-size:11px;font-weight:700;color:#94A3B8;margin-top:8px}
+.iq-side{background:#F8FAFC;border:1px solid #EEF2F6;border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.iq-sel{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:9px 12px;cursor:pointer;font-size:12px;font-weight:700;color:#0F172A}
+.iq-sel>span:first-child{display:inline-flex;align-items:center;gap:8px}
+.iq-mbox{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid #E2E8F0;border-radius:14px;padding:13px 14px}
+.iq-ml{display:flex;align-items:center;gap:10px}
+.iq-mic{width:36px;height:36px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:15px;flex:none}
+.iq-mtx span{display:block;font-size:11px;font-weight:600;color:#94A3B8}
+.iq-mtx b{font-size:15px;font-weight:800;color:#0F172A}
+.iq-grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.iq-grid2 .card{margin-bottom:0}
+.iq-perf{position:relative;height:230px;padding:8px 0 24px 34px;margin-top:6px}
+.iq-py{position:absolute;left:0;top:8px;bottom:24px;display:flex;flex-direction:column;justify-content:space-between;font-size:10px;font-weight:600;color:#94A3B8}
+.iq-perf svg{width:100%;height:100%;overflow:visible}
+.iq-tip{position:absolute;top:19%;left:56%;transform:translateX(-50%);background:#fff;border:1px solid #E2E8F0;border-radius:999px;box-shadow:0 4px 12px rgba(15,23,42,.12);color:#059669;font-size:10px;font-weight:700;padding:3px 10px;z-index:2}
+.iq-dash{position:absolute;top:31%;left:56%;bottom:24px;border-left:1px dashed #CBD5E1}
+.iq-px{position:absolute;left:34px;right:0;bottom:0;display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:#94A3B8}
+.iq-frow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border-radius:14px}
+.iq-frow:hover{background:#F8FAFC}
+.iq-fc1{width:64px}
+.iq-fc1 b{display:block;font-size:12px;color:#0F172A}
+.iq-fc1 span{font-size:10px;color:#94A3B8}
+.iq-fc span{display:block;font-size:10px;color:#94A3B8;font-weight:500}
+.iq-fc b{font-size:12px;color:#0F172A;display:flex;align-items:center;gap:5px}
+.iq-fc.r{text-align:right}
+.iq-fc.r b{justify-content:flex-end}
+#iqtoast{position:fixed;top:18px;right:18px;z-index:99;background:#0F172A;color:#fff;font-size:12px;font-weight:600;padding:10px 14px;border-radius:12px;box-shadow:0 8px 24px rgba(15,23,42,.35);opacity:0;transform:translateY(-6px);transition:.2s;pointer-events:none}
+#iqtoast.show{opacity:1;transform:none}
+@media(max-width:1000px){.sb{display:none}}
+@media(max-width:860px){.iq-cash{grid-template-columns:1fr}.iq-grid2{grid-template-columns:1fr}}
+</style></head>
+<body>
+<div class="shell">
+ <aside class="sb">
+  <div>
+   <div class="sb-logo"><span class="mark"><svg viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="9" fill="none" stroke="#fff" stroke-width="2.5"/><path d="M12 3 A 9 9 0 0 1 21 12 L 12 12 Z" fill="#fff"/></svg></span><b>InvestIQ</b></div>
+   <div class="sb-ai"><b>✦ Live AI</b><p>Real-time market search &amp; audio briefings.</p><button onclick="iqToast('Copilot — demo')">Launch Copilot</button></div>
+   <div class="sb-sec">General</div>
+   <a class="on"><svg viewBox="0 0 24 24"><path d="M4 4h6v6H4z M14 4h6v6h-6z M14 14h6v6h-6z M4 14h6v6H4z"/></svg>Dashboard</a>
+   <a onclick="iqToast('Analysis — demo')"><svg viewBox="0 0 24 24"><path d="M3 20h18 M7 20v-5 M12 20V8 M17 20v-9"/></svg>Analysis</a>
+   <a onclick="iqToast('Transaction — demo')"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z M14 3v5h5 M9 13h6 M9 17h6"/></svg>Transaction</a>
+   <a onclick="iqToast('Card — demo')"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Card</a>
+   <div class="sb-sec">Support</div>
+   <a onclick="iqToast('About — demo')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4 M12 8h.01"/></svg>About</a>
+   <a onclick="iqToast('FAQ — demo')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3 M12 17h.01"/></svg>FAQ</a>
+   <a onclick="iqToast('Reports — demo')"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z M14 3v5h5"/></svg>Repots</a>
+   <a onclick="iqToast('Gift — demo')"><svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4"/><path d="M12 8v13 M5 12v9h14v-9 M12 8s-2-5-5-5-2 5 5 5 M12 8s2-5 5-5 2 5-5 5"/></svg>Gift</a>
+  </div>
+  <div class="sb-foot">
+   <a onclick="iqToast('Settings — demo')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+   <a onclick="iqToast('Help — demo')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3 M12 17h.01"/></svg>Help</a>
+   <div class="sb-theme"><span>Theme Mode</span><button class="tog" onclick="iqToast('Dark mode — demo')"><i></i></button></div>
+   <div class="sb-user"><span style="display:flex;align-items:center;gap:9px"><img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120" alt=""><span><span class="nm">Makai Pugh</span><br><span class="em">makaipugh@gmail.com</span></span></span><span style="color:#94A3B8">▾</span></div>
+  </div>
+ </aside>
+ <main class="mn" id="iqmain"></main>
+</div>
+<script>
+const IQ_MKT=[
+ {t:'S&P 500',l:'S',bg:'#FBBF24',tf:'Last 30 days',v:'$9.562,31',ch:'21%',pos:true,lp:'vs 8.734,00 Last Period',col:'#10B981',p:'M 0 35 Q 25 30 40 18 T 80 25 T 120 10 T 160 5 T 200 8',ex:200,ey:8},
+ {t:'Dow Jones',l:'D',bg:'#3B82F6',tf:'Last 30 days',v:'$6.229,00',ch:'18%',pos:true,lp:'vs 5.871,00 Last Period',col:'#10B981',p:'M 0 28 Q 30 20 60 25 T 110 18 T 160 12 T 200 6',ex:200,ey:6},
+ {t:'NASDAQ',l:'N',bg:'#EAB308',tf:'Last 30 days',v:'$3.670,09',ch:'14%',pos:false,lp:'vs 5.430,51 Last Period',col:'#EF4444',p:'M 0 10 Q 30 5 60 18 T 110 12 T 160 28 T 200 22',ex:200,ey:22}];
+const IQ_BARS=[['May',70,25],['Jun',35,30],['Jul',50,40],['Aug',45,20],['Sep',65,32],['Nov',58,28],['Des',40,35]];
+const IQ_FUND=[
+ ['P/E','Price to','$124.09','1.25','18%',true,'$2056.18'],
+ ['EPS','Earnings','$118.21','1.17','14%',true,'$1827.36'],
+ ['DVD','Dividend','$112.59','0.14','12%',true,'$1653.41'],
+ ['ROA','Return on','$109.48','0.8','8%',false,'$1034.21']];
+function iqToast(msg){let t=document.getElementById('iqtoast');if(!t){t=document.createElement('div');t.id='iqtoast';document.body.appendChild(t);}
+ t.textContent='✓ '+msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2200);}
+(function(){
+ const mk=IQ_MKT.map((m,i)=>{const gid='iqg'+i;
+  return '<div class="iq-mcard">'
+   +'<div class="iq-mhd"><span class="iq-mtl"><span class="iq-mico" style="background:'+m.bg+'">'+m.l+'</span>'+m.t+'</span><span class="iq-tf">'+m.tf+'</span></div>'
+   +'<div class="iq-spark"><svg viewBox="0 0 200 40" preserveAspectRatio="none"><defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+m.col+'" stop-opacity=".25"/><stop offset="100%" stop-color="'+m.col+'" stop-opacity="0"/></linearGradient></defs>'
+   +'<path d="'+m.p+' L 200 40 L 0 40 Z" fill="url(#'+gid+')"/>'
+   +'<path d="'+m.p+'" fill="none" stroke="'+m.col+'" stroke-width="2" stroke-linecap="round"/>'
+   +'<circle cx="'+m.ex+'" cy="'+m.ey+'" r="3.5" fill="'+m.col+'"/><circle cx="'+m.ex+'" cy="'+m.ey+'" r="6" fill="'+m.col+'" fill-opacity=".3"/></svg></div>'
+   +'<div class="iq-mrow"><span class="iq-val">'+m.v+'</span><span class="iq-pill '+(m.pos?'iq-up':'iq-dn')+'">'+(m.pos?'↗':'↘')+' '+m.ch+'</span></div>'
+   +'<div class="iq-sub">'+m.lp+'</div></div>';}).join('');
+ const bars=IQ_BARS.map(b=>'<div class="iq-bcol"><div class="iq-bt"><i style="height:'+b[1]+'px"></i></div><div class="iq-bb"><i style="height:'+b[2]+'px"></i></div><span>'+b[0]+'</span></div>').join('');
+ const fund=IQ_FUND.map(f=>'<div class="iq-frow" data-iqf="'+(f[0]+' '+f[1]).toLowerCase()+'">'
+  +'<div class="iq-fc1"><b>'+f[0]+'</b><span>'+f[1]+'</span></div>'
+  +'<div class="iq-fc"><span>Price</span><b>'+f[2]+'</b></div>'
+  +'<div class="iq-fc"><span>Change</span><b>'+f[3]+' <i class="iq-pill '+(f[5]?'iq-up':'iq-dn')+'">'+(f[5]?'↗':'↘')+' '+f[4]+'</i></b></div>'
+  +'<div class="iq-fc r"><span>Current Value</span><b>'+f[6]+'</b></div></div>').join('');
+ document.getElementById('iqmain').innerHTML=
+  '<div class="iq-hd"><div class="iq-hl"><h2>Dashboard</h2><span class="iq-aib">AI Powered</span><button class="iq-cop" onclick="iqToast(\'InvestIQ AI Copilot — demo\')">✦ InvestIQ AI Copilot</button></div>'
+  +'<div class="iq-hr"><span class="iq-srch"><input id="iqq" type="text" placeholder="Search metrics..."></span>'
+  +'<button class="iq-ico" onclick="iqToast(\'No new notifications\')">🔔</button><button class="iq-ico" onclick="iqToast(\'Messages inbox empty\')">✉️</button>'
+  +'<span class="iq-date">🗓 18 Dec 2024 - 18 Jan 2025 <span style="color:#94A3B8">▾</span></span></div></div>'
+  +'<div class="iq-grid3">'+mk+'</div>'
+  +'<div class="card"><div class="cardhd"><div class="h">Portfolio Cashflow</div><button class="iq-ghost" onclick="iqToast(\'AI Cashflow Advisory — demo\')">✦ AI Cashflow Advisory</button></div>'
+  +'<div class="iq-cash"><div class="iq-bwrap">'
+   +'<span class="iq-yl" style="top:-4px">$5k</span><span class="iq-yl" style="top:84px">$0k</span><span class="iq-yl" style="top:140px">$3k</span>'
+   +'<div class="iq-gl" style="top:2px"></div><div class="iq-gl iq-solid" style="top:90px"></div><div class="iq-gl" style="top:146px"></div>'
+   +'<div class="iq-bars">'+bars+'</div></div>'
+  +'<div class="iq-side"><div class="iq-sel" onclick="iqToast(\'Index selector — demo\')"><span><span class="iq-mico" style="background:#FBBF24;width:20px;height:20px;font-size:10px">S</span>S&P 500</span><span style="color:#94A3B8">▾</span></div>'
+  +'<div class="iq-mbox"><span class="iq-ml"><span class="iq-mic" style="background:#10B981">↗</span><span class="iq-mtx"><span>Income</span><b>$15.891,04</b></span></span><span class="iq-pill iq-up">↗ 21%</span></div>'
+  +'<div class="iq-mbox"><span class="iq-ml"><span class="iq-mic" style="background:#1E293B">↘</span><span class="iq-mtx"><span>Expense</span><b>$7.509,61</b></span></span><span class="iq-pill iq-dn">↘ 14%</span></div>'
+  +'</div></div></div>'
+  +'<div class="iq-grid2">'
+  +'<div class="card"><div class="h">Stock Performance</div>'
+  +'<div class="iq-perf"><div class="iq-py"><span>500k</span><span>100k</span><span>50k</span><span>0</span></div>'
+  +'<div class="iq-tip">$300</div><div class="iq-dash"></div>'
+  +'<svg viewBox="0 0 300 120" preserveAspectRatio="none"><path d="M 10 90 Q 50 60 90 85 T 180 80 T 270 100" fill="none" stroke="#1E293B" stroke-width="2.5" stroke-linecap="round"/><path d="M 10 75 Q 40 60 80 80 T 160 30 T 270 95" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round"/><circle cx="162" cy="30" r="4" fill="#10B981"/><circle cx="162" cy="30" r="7" fill="#10B981" fill-opacity=".25"/></svg>'
+  +'<div class="iq-px"><span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span></div></div></div>'
+  +'<div class="card"><div class="cardhd"><div class="h">Data fundamental</div><button class="iq-ghost" onclick="iqToast(\'AI Deep Audit — demo\')">✦ AI Deep Audit</button></div><div id="iqfund">'+fund+'</div></div>'
+  +'</div>';
+ document.getElementById('iqq').oninput=e=>{const q=e.target.value.toLowerCase();
+  document.querySelectorAll('#iqfund .iq-frow').forEach(r=>{r.style.display=r.dataset.iqf.includes(q)?'':'none';});};
+})();
+</script>
+</body></html>
