@@ -3,6 +3,7 @@ const { wrap } = require('./_util');
 const { rq, rateReady } = require('../rate-db');
 const { q } = require('../db');
 const { isStaff, isAdmin } = require('./_scope');
+const { rateScopeFor } = require('../rate-scope');
 
 const ZMAP = { PK: 'pk', KL: 'kl', NoTransfer: 'notransfer' };
 const PAX = ['adult_thai', 'adult_fr', 'child_thai', 'child_fr', 'infant_thai', 'infant_fr'];
@@ -22,20 +23,8 @@ router.get('/schema-probe', wrap(async (req, res) => {
   res.json({ tables, sample });
 }));
 
-// admin/manager -> {all:true}. staff -> match CRM email กับ sb_sales.email ได้ code เซลส์ (หรือ unmatched)
-async function scopeFor(req) {
-  if (!isStaff(req.user)) return { all: true };
-  const u = (await q('SELECT email, display_name, user_code FROM app_user WHERE id=$1', [req.user.id])).rows[0];
-  if (!u) return { all: false, code: null, name: '' };
-  const email = String(u.email || '').toLowerCase().trim();
-  const uc = String(u.user_code || '').trim();
-  // จับคู่กับเซลส์ในระบบ rate ด้วย "อีเมล" หรือ "user_code" (= id / code / name ของ sb_sales)
-  const s = (await rq(`SELECT id, name, fullname FROM operation_schemas.sb_sales
-    WHERE ($1 <> '' AND lower(email) = $1)
-       OR ($2 <> '' AND (id = $2 OR lower(code) = lower($2) OR lower(name) = lower($2)))
-    LIMIT 1`, [email, uc])).rows[0];
-  return s ? { all: false, code: s.id, name: s.name || s.fullname } : { all: false, code: null, name: null, email: u.email, user_code: uc };
-}
+// admin/manager -> {all:true}. staff -> จับคู่กับ sb_sales (อีเมล/user_code) ได้ id เซลส์ (หรือ unmatched)
+const scopeFor = (req) => rateScopeFor(req.user);
 
 router.get('/routes', wrap(async (req, res) => {
   const rows = (await rq(`SELECT id, name, islands, pier, sort FROM operation_schemas.routes ORDER BY sort NULLS LAST, id`)).rows;
@@ -98,10 +87,16 @@ router.post('/import-agents', wrap(async (req, res) => {
       agentsignatory_name, agentsignatory_designation, agentsignatory_tel,
       bookingchannel_method, bookingchannel_cutoff, bookingchannel_cancelpolicy, bookingchannel_email, bookingchannel_phone
     FROM operation_schemas.sb_agents WHERE name IS NOT NULL AND name <> '' ORDER BY name`)).rows;
-  const sales = (await rq(`SELECT id, email FROM operation_schemas.sb_sales`)).rows;
-  const salesEmail = {}; sales.forEach(x => { if (x.email) salesEmail[x.id] = String(x.email).toLowerCase().trim(); });
-  const users = (await q('SELECT id, lower(email) AS email FROM app_user WHERE company_id=$1', [cid])).rows;
-  const userByEmail = {}; users.forEach(u => { userByEmail[u.email] = u.id; });
+  // map เซลส์ระบบ rate -> ผู้ใช้ CRM ด้วย "อีเมล" หรือ "user_code" (= id / code / name ของ sb_sales) — กติกาเดียวกับ rateScopeFor
+  const sales = (await rq(`SELECT id, code, name, email FROM operation_schemas.sb_sales`)).rows;
+  const users = (await q('SELECT id, lower(email) AS email, lower(trim(coalesce(user_code,\'\'))) AS user_code FROM app_user WHERE company_id=$1', [cid])).rows;
+  const ownerBySales = {};
+  for (const s of sales) {
+    const se = String(s.email || '').toLowerCase().trim();
+    const keys = [s.id, s.code, s.name].map(x => String(x || '').toLowerCase().trim()).filter(Boolean);
+    const u = users.find(u => (se && u.email === se) || (u.user_code && keys.includes(u.user_code)));
+    if (u) ownerBySales[s.id] = u.id;
+  }
 
   function buildNote(a) {
     const lines = [];
@@ -127,7 +122,7 @@ router.post('/import-agents', wrap(async (req, res) => {
   let created = 0, updated = 0;
   for (const a of agents) {
     const code = (a.code || a.id || '').toString().trim() || null;
-    const owner = userByEmail[salesEmail[a.sales]] || null;
+    const owner = ownerBySales[a.sales] || null;
     const note = buildNote(a);
     const existing = code ? (await q('SELECT id FROM customer WHERE company_id=$1 AND ref_code=$2 LIMIT 1', [cid, code])).rows[0] : null;
     let custId;

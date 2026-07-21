@@ -2,13 +2,19 @@ const router = require('express').Router();
 const { q, tx } = require('../db');
 const { wrap, num } = require('./_util');
 const { isStaff } = require('./_scope');
+const { assignedRefCodes } = require('../rate-scope');
 
 router.get('/', wrap(async (req, res) => {
   const cid = req.user.company_id;
   const page = num(req.query.page, 1), limit = num(req.query.limit, 50);
   const off = (page - 1) * limit;
   const where = ['c.company_id = $1']; const args = [cid]; let i = 2;
-  if (isStaff(req.user)) { where.push(`c.owner_user_id = $${i++}`); args.push(req.user.id); }
+  if (isStaff(req.user)) {
+    // เซลส์เห็นเอเจ้นท์ตาม master setting ในระบบ rate (sb_agents.sales) + เอเจ้นท์ที่ตัวเองเป็นเจ้าของใน CRM
+    const codes = await assignedRefCodes(req.user);
+    if (codes && codes.length) { where.push(`(c.owner_user_id = $${i} OR c.ref_code = ANY($${i + 1}))`); args.push(req.user.id, codes); i += 2; }
+    else { where.push(`c.owner_user_id = $${i++}`); args.push(req.user.id); }
+  }
   if (req.query.search) { where.push(`(c.name ILIKE $${i} OR c.tax_id ILIKE $${i} OR EXISTS(SELECT 1 FROM contact ct WHERE ct.customer_id=c.id AND ct.name ILIKE $${i}))`); args.push('%' + req.query.search + '%'); i++; }
   if (req.query.followed === 'true') where.push('c.is_followed = true');
   if (req.query.followed === 'false') where.push('c.is_followed = false');
@@ -50,7 +56,12 @@ router.get('/:id', wrap(async (req, res) => {
     FROM customer c LEFT JOIN app_user u ON u.id=c.owner_user_id LEFT JOIN team tm ON tm.id=c.owner_team_id
     LEFT JOIN priority pr ON pr.id=c.priority_id WHERE c.id=$1 AND c.company_id=$2`, [req.params.id, cid]);
   if (!c.rows[0]) return res.status(404).json({ error: 'not found' });
-  if (isStaff(req.user) && c.rows[0].owner_user_id !== req.user.id) return res.status(403).json({ error: 'ไม่มีสิทธิ์เข้าถึงเอเจ้นท์รายนี้' });
+  if (isStaff(req.user) && c.rows[0].owner_user_id !== req.user.id) {
+    // ยังเข้าถึงได้ถ้า master setting ในระบบ rate ระบุว่าเอเจ้นท์รายนี้เป็นของเซลส์คนนี้
+    const codes = await assignedRefCodes(req.user);
+    const ok = codes && c.rows[0].ref_code && codes.includes(String(c.rows[0].ref_code).trim());
+    if (!ok) return res.status(403).json({ error: 'ไม่มีสิทธิ์เข้าถึงเอเจ้นท์รายนี้' });
+  }
   const [contacts, branches, tags, projects, activities] = await Promise.all([
     q('SELECT * FROM contact WHERE customer_id=$1 ORDER BY is_primary DESC, id', [req.params.id]),
     q('SELECT * FROM customer_branch WHERE customer_id=$1 ORDER BY id', [req.params.id]),
