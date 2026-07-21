@@ -78,4 +78,48 @@ router.get('/sales-activity/:userId', wrap(async (req, res) => {
   res.json({ rows });
 }));
 
+// รายงาน 3: ข้อมูล trip-line สำหรับ B2B dashboard (อ่านจาก DB ระบบ rate ผ่าน RATE_DATABASE_URL)
+// รูปแบบตรงกับ RAW ใน love_andaman_b2b_dashboard.html: {cols, rows}
+const { rq } = require('../rate-db');
+const B2B_SQL = `
+  SELECT COALESCE(NULLIF(b.bookingdate,''), substr(b.bookedat,1,10), b.createdat) AS bd,
+         t.date AS td, COALESCE(r.name,'') AS route,
+         b.agentid AS agid, COALESCE(a.name, b.agentid) AS ag, COALESCE(a.code,'') AS code,
+         COALESCE(NULLIF(s.name,''), 'House') AS own,
+         COALESCE(m.name, ms.name, '—') AS mkt,
+         COALESCE(b.total,0)::numeric AS total, COALESCE(t.subtotal,0)::numeric AS sub,
+         SUM(COALESCE(t.subtotal,0)) OVER (PARTITION BY b.id) AS sumsub,
+         COUNT(*) OVER (PARTITION BY b.id) AS nlines,
+         (COALESCE(t.pax_ad_fr,0)+COALESCE(t.pax_chd_fr,0)+COALESCE(t.pax_ad_th,0)+COALESCE(t.pax_chd_th,0))::int AS pax
+  FROM operation_schemas.sb_bookings b
+  JOIN operation_schemas.sb_bookings__trips t ON t.sb_bookings_id = b.id
+  LEFT JOIN operation_schemas.routes r ON r.id = t.routeid
+  LEFT JOIN operation_schemas.sb_agents a ON a.id = b.agentid
+  LEFT JOIN operation_schemas.sb_sales s ON s.id = a.sales
+  LEFT JOIN operation_schemas.sb_markets m ON m.id = a.market
+  LEFT JOIN operation_schemas.sb_markets ms ON ms.id = b.marketsnapshot_market
+  WHERE b.status = 'confirmed'`;
+const famOf = (n) => /phi ?phi/i.test(n) ? 'Phi Phi' : /similan/i.test(n) ? 'Similan'
+  : /surin/i.test(n) ? 'Surin' : /krabi/i.test(n) ? 'Krabi' : 'อื่นๆ';
+let b2bCache = null; // {at, data} — กันยิง DB ระบบ rate ถี่เกิน
+router.get('/b2b-dashboard', wrap(async (req, res) => {
+  if (b2bCache && Date.now() - b2bCache.at < 60_000) return res.json(b2bCache.data);
+  const { rows } = await rq(B2B_SQL);
+  const isoDate = /^\d{4}-\d{2}-\d{2}$/;
+  const out = rows
+    .filter(r => isoDate.test(r.bd || '') && isoDate.test(r.td || '')) // ตัด booking ทดสอบที่วันที่ไม่ใช่ ISO
+    .map(r => {
+      const total = +r.total, sub = +r.sub, sumsub = +r.sumsub, n = +r.nlines;
+      const rev = n === 1 ? total : sumsub > 0 ? total * sub / sumsub : total / n;
+      return [r.bd, r.td, famOf(r.route), r.ag, r.agid, r.code, r.own, r.mkt, Math.round(rev), r.pax];
+    });
+  const data = {
+    cols: ['bd', 'td', 'fam', 'ag', 'agid', 'code', 'own', 'mkt', 'rev', 'pax'],
+    rows: out,
+    meta: { lines: out.length, at: new Date().toISOString() },
+  };
+  b2bCache = { at: Date.now(), data };
+  res.json(data);
+}));
+
 module.exports = router;
