@@ -98,6 +98,11 @@ async function runMigrations() {
     await q("ALTER TABLE app_user ADD COLUMN IF NOT EXISTS user_code VARCHAR(50)");
     await q("CREATE UNIQUE INDEX IF NOT EXISTS ux_app_user_code ON app_user(company_id, user_code) WHERE user_code IS NOT NULL");
     log('migration: app_user.user_code ensured');
+    // ข้อมูลจากระบบ rate ยาวกว่าที่คอลัมน์เดิมรองรับ (เช่น เบอร์โทรหลายเบอร์, เลขภาษีมีวงเล็บสาขา)
+    await q("ALTER TABLE customer ALTER COLUMN phone TYPE TEXT");
+    await q("ALTER TABLE customer ALTER COLUMN tax_id TYPE VARCHAR(120)");
+    await q("ALTER TABLE contact ALTER COLUMN phone TYPE TEXT");
+    log('migration: widen customer.phone/tax_id + contact.phone');
   } catch (e) { log('migration skipped/failed: ' + e.message); }
 }
 
