@@ -76,9 +76,12 @@ router.get('/agent/:id', wrap(async (req, res) => {
   });
 }));
 
-// นำเข้าเอเจ้นท์จากระบบ rate (sb_agents) มาเป็นเอเจ้นท์ใน CRM + map เจ้าของตามเซลส์ (อีเมล)  [admin]
+// นำเข้าเอเจ้นท์จากระบบ rate (sb_agents) มาเป็นเอเจ้นท์ใน CRM + map เจ้าของตามเซลส์
+// admin/manager นำเข้าทั้งหมด, เซลส์นำเข้าเฉพาะเอเจ้นท์ที่ master setting ระบุให้ตัวเอง
 router.post('/import-agents', wrap(async (req, res) => {
   const cid = req.user.company_id;
+  const sc = await scopeFor(req);
+  if (!sc.all && !sc.code) return res.status(400).json({ error: 'จับคู่บัญชีเซลส์ในระบบ rate ไม่ได้ (ตรวจสอบอีเมล/รหัสผู้ใช้กับผู้ดูแลระบบ)' });
   const agents = (await rq(`
     SELECT id, code, name, sales, email, phone,
       companyinfo_taxid, companyinfo_address, companyinfo_legalname, companyinfo_tatlicense,
@@ -86,7 +89,8 @@ router.post('/import-agents', wrap(async (req, res) => {
       market, paytype, creditdays, creditlimit, contractstart, contractend, contractversion,
       agentsignatory_name, agentsignatory_designation, agentsignatory_tel,
       bookingchannel_method, bookingchannel_cutoff, bookingchannel_cancelpolicy, bookingchannel_email, bookingchannel_phone
-    FROM operation_schemas.sb_agents WHERE name IS NOT NULL AND name <> '' ORDER BY name`)).rows;
+    FROM operation_schemas.sb_agents WHERE name IS NOT NULL AND name <> ''${sc.all ? '' : ' AND sales = $1'}
+    ORDER BY name`, sc.all ? [] : [sc.code])).rows;
   // map เซลส์ระบบ rate -> ผู้ใช้ CRM ด้วย "อีเมล" หรือ "user_code" (= id / code / name ของ sb_sales) — กติกาเดียวกับ rateScopeFor
   const sales = (await rq(`SELECT id, code, name, email FROM operation_schemas.sb_sales`)).rows;
   const users = (await q('SELECT id, lower(email) AS email, lower(trim(coalesce(user_code,\'\'))) AS user_code FROM app_user WHERE company_id=$1', [cid])).rows;
