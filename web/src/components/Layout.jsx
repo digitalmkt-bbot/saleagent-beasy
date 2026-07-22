@@ -23,8 +23,7 @@ const Ic = ({ d }) => <span className="ico"><svg viewBox="0 0 24 24"><path d={d}
 const sections = [
   ['เมนูหลัก', [['/', 'แผงบริหาร', 'dashboard'], ['/activities', 'งานติดตาม', 'checklist'], ['/checkin', 'เช็คอินเอเจ้นท์', 'pin'], ['/customers', 'เอเจ้นท์', 'users'], ['/projects', 'กลุ่มเป้าหมาย', 'briefcase']]],
   ['เอกสาร & รายงาน', [['/rates', 'สัญญา', 'file'], ['/reports', 'รายงาน', 'chart'], ['/settings', 'ตั้งค่า', 'sliders']]],
-  // ลิงก์เปิดแท็บใหม่ (ไฟล์ static ใน web/public — ไม่ใช่ route ของ React)
-  ['แดชบอร์ด', [['/b2b-dashboard.html', 'B2B Dashboard', 'chart', true], ['/investiq.html', 'InvestIQ', 'dashboard', true]]],
+  ['แดชบอร์ด', [['/b2b-dashboard', 'B2B Dashboard', 'chart'], ['/investiq', 'InvestIQ', 'dashboard']]],
 ];
 
 export default function Layout() {
@@ -91,10 +90,8 @@ export default function Layout() {
         {[...sections, ...(['admin', 'executive'].includes(String((user && user.role) || '').toLowerCase()) ? [['ผู้ดูแลระบบ', [['/users', 'จัดการผู้ใช้', 'shield']]]] : [])].map(([title, items]) => (
           <div key={title}>
             <div className="nav-section">{t(title)}</div>
-            <nav className="nav">{items.map(([to, label, icon, ext]) =>
-              ext
-                ? <a key={to} href={to} target="_blank" rel="noreferrer" onClick={() => setMenu(false)}><Ic d={I[icon]} />{t(label)} ↗</a>
-                : <NavLink key={to} to={to} end={to === '/'} onClick={() => setMenu(false)}><Ic d={I[icon]} />{t(label)}</NavLink>)}</nav>
+            <nav className="nav">{items.map(([to, label, icon]) =>
+              <NavLink key={to} to={to} end={to === '/'} onClick={() => setMenu(false)}><Ic d={I[icon]} />{t(label)}</NavLink>)}</nav>
           </div>
         ))}
         <div className="side-foot">
