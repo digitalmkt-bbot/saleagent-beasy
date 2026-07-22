@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../api.js';
 
 const CSS = `
-.iq2{max-width:1160px;margin:0 auto;color:#1E293B;font-family:"Inter","Noto Sans Thai",system-ui,sans-serif}
+.iq2{width:100%;color:#1E293B;font-family:"Inter","Noto Sans Thai",system-ui,sans-serif}
 .iq2 .hdr{display:flex;align-items:center;gap:12px;margin-bottom:4px}
 .iq2 .hdr .bar{width:7px;height:30px;border-radius:4px;background:#FF6138}
 .iq2 .hdr h2{font-size:22px;font-weight:800;letter-spacing:-.4px;margin:0;color:#0F172A}
@@ -13,7 +13,7 @@ const CSS = `
 .iq2 .seg{display:inline-flex;background:#F1F5F9;border-radius:999px;padding:3px;gap:2px}
 .iq2 .seg button{font:inherit;border:0;background:none;font-size:12px;font-weight:600;color:#64748B;padding:6px 14px;border-radius:999px;cursor:pointer}
 .iq2 .seg button.on{background:#FF6138;color:#fff;box-shadow:0 2px 8px rgba(255,97,56,.35)}
-.iq2 select,.iq2 input[type=date],.iq2 input[type=number]{font:inherit;font-size:12.5px;color:#1E293B;background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:7px 10px}
+.iq2 select,.iq2 input[type=date],.iq2 input[type=number]{font:inherit;font-size:12.5px;color:#1E293B;background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:7px 10px;width:auto}
 .iq2 .thr input{width:54px;text-align:center}
 .iq2 .lblx{font-size:12px;color:#94A3B8;font-weight:600}
 .iq2 .exp{font:inherit;font-size:12px;font-weight:700;color:#fff;background:#FF6138;border:0;border-radius:999px;padding:8px 15px;cursor:pointer;box-shadow:0 3px 10px rgba(255,97,56,.35)}
