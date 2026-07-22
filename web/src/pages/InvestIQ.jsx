@@ -162,8 +162,8 @@ export default function InvestIQ() {
       .catch((e) => setErr(e.message));
   }, []);
 
-  const go = (s) => { setStack((st) => [...st, screen]); setScreen(s); window.scrollTo({ top: 0, behavior: 'smooth' }); };
-  const back = () => { setStack((st) => { if (!st.length) return st; setScreen(st[st.length - 1]); return st.slice(0, -1); }); };
+  const go = (s) => { setStack((st) => [...st, screen]); setScreen(s); setTimeout(() => { const el = document.querySelector('.iq2'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 30); };
+  const back = () => { setStack((st) => { if (!st.length) return st; setScreen(st[st.length - 1]); return st.slice(0, -1); }); setTimeout(() => { const el = document.querySelector('.iq2'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 30); };
   const setTab = (t) => { setStack([]); setScreen({ kind: 'tab', tab: t }); };
 
   const M = useMemo(() => {
