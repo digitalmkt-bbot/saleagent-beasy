@@ -6,17 +6,17 @@ import { api } from '../api.js';
 const CSS = `
 .iq2{max-width:1160px;margin:0 auto;color:#1E293B;font-family:"Inter","Noto Sans Thai",system-ui,sans-serif}
 .iq2 .hdr{display:flex;align-items:center;gap:12px;margin-bottom:4px}
-.iq2 .hdr .bar{width:7px;height:30px;border-radius:4px;background:#FF6138}
+.iq2 .hdr .bar{width:7px;height:30px;border-radius:4px;background:#00D084}
 .iq2 .hdr h2{font-size:22px;font-weight:800;letter-spacing:-.4px;margin:0;color:#0F172A}
 .iq2 .sub{font-size:12px;color:#94A3B8;margin:0 0 16px 19px}
 .iq2 .ctl{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:#fff;border:1px solid #F1F5F9;border-radius:18px;padding:11px 14px;box-shadow:0 1px 2px rgba(15,23,42,.04);margin-bottom:16px}
 .iq2 .seg{display:inline-flex;background:#F1F5F9;border-radius:999px;padding:3px;gap:2px}
 .iq2 .seg button{font:inherit;border:0;background:none;font-size:12px;font-weight:600;color:#64748B;padding:6px 14px;border-radius:999px;cursor:pointer}
-.iq2 .seg button.on{background:#FF6138;color:#fff;box-shadow:0 2px 8px rgba(255,97,56,.35)}
+.iq2 .seg button.on{background:#00D084;color:#fff;box-shadow:0 2px 8px rgba(0,208,132,.35)}
 .iq2 select,.iq2 input[type=date],.iq2 input[type=number]{font:inherit;font-size:12.5px;color:#1E293B;background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:7px 10px}
 .iq2 .thr input{width:54px;text-align:center}
 .iq2 .lblx{font-size:12px;color:#94A3B8;font-weight:600}
-.iq2 .exp{font:inherit;font-size:12px;font-weight:700;color:#fff;background:#FF6138;border:0;border-radius:999px;padding:8px 15px;cursor:pointer;box-shadow:0 3px 10px rgba(255,97,56,.35)}
+.iq2 .exp{font:inherit;font-size:12px;font-weight:700;color:#fff;background:#00D084;border:0;border-radius:999px;padding:8px 15px;cursor:pointer;box-shadow:0 3px 10px rgba(0,208,132,.35)}
 .iq2 .exp:hover{filter:brightness(1.05)}
 .iq2 .win{font-size:11.5px;color:#94A3B8;margin-left:auto}
 .iq2 .win b{color:#475569;font-weight:600}
@@ -41,7 +41,7 @@ const CSS = `
 .iq2 .p-c{color:#B45309;background:#FEF3C7}
 .iq2 .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
 .iq2 .tabs button{font:inherit;border:1px solid #E2E8F0;background:#fff;font-size:12.5px;font-weight:600;color:#64748B;padding:8px 16px;border-radius:999px;cursor:pointer}
-.iq2 .tabs button.on{background:#FF6138;border-color:#FF6138;color:#fff;box-shadow:0 3px 10px rgba(255,97,56,.35)}
+.iq2 .tabs button.on{background:#00D084;border-color:#00D084;color:#fff;box-shadow:0 3px 10px rgba(0,208,132,.35)}
 .iq2 .card{background:#fff;border:1px solid #F1F5F9;border-radius:20px;box-shadow:0 1px 2px rgba(15,23,42,.04);padding:18px 20px;margin-bottom:16px}
 .iq2 .cardhd{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
 .iq2 .h{font-size:14.5px;font-weight:700;color:#0F172A;margin:0}
@@ -51,7 +51,7 @@ const CSS = `
 .iq2 tr:last-child td{border-bottom:0}
 .iq2 td.r,.iq2 th.r{text-align:right}
 .iq2 tbody tr:hover{background:#F8FAFC}
-.iq2 .lnk{color:#FF6138;cursor:pointer;font-weight:600}
+.iq2 .lnk{color:#059669;cursor:pointer;font-weight:600}
 .iq2 .lnk:hover{text-decoration:underline}
 .iq2 .lnk2{color:#7C3AED;cursor:pointer;font-weight:600}
 .iq2 .lnk3{color:#0369A1;cursor:pointer;font-weight:600}
@@ -73,9 +73,9 @@ const CSS = `
 .iq2 .gsllbl{font-size:10.5px;color:#94A3B8;margin-top:4px;white-space:nowrap}
 .iq2 .chips{display:inline-flex;gap:6px;flex-wrap:wrap}
 .iq2 .chips button{font:inherit;border:1px solid #E2E8F0;background:#fff;font-size:12px;font-weight:600;color:#64748B;padding:7px 14px;border-radius:999px;cursor:pointer}
-.iq2 .chips button.on{background:#FF6138;border-color:#FF6138;color:#fff}
+.iq2 .chips button.on{background:#00D084;border-color:#00D084;color:#fff}
 .iq2 .chips button span{opacity:.65;font-weight:500}
-.iq2 .back{font-size:12.5px;color:#FF6138;cursor:pointer;display:inline-flex;gap:5px;margin-bottom:12px;font-weight:700}
+.iq2 .back{font-size:12.5px;color:#059669;cursor:pointer;display:inline-flex;gap:5px;margin-bottom:12px;font-weight:700}
 .iq2 .back:hover{text-decoration:underline}
 .iq2 .minis{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
 .iq2 .mini{flex:1;min-width:130px;background:#F8FAFC;border-radius:14px;padding:11px 13px}
@@ -96,7 +96,7 @@ const CSS = `
 @media(max-width:760px){.iq2 .win{margin-left:0;width:100%}.iq2 .bridge{overflow-x:auto}}
 `;
 
-const OWNER_COLORS = ['#FF6138', '#F59E0B', '#3B82F6', '#8B5CF6', '#10B981', '#F43F5E', '#EAB308', '#64748B', '#EF4444'];
+const OWNER_COLORS = ['#00D084', '#F59E0B', '#3B82F6', '#8B5CF6', '#10B981', '#F43F5E', '#EAB308', '#64748B', '#EF4444'];
 const ROLE = { Sopit: 'Director of Sales', SOPIT: 'Director of Sales', House: 'walk-in / no owner' };
 const MODES = [
   ['week', 'Week (WoW)'], ['month', 'Month (MoM)'], ['yoyweek', 'Same week LY'],
@@ -245,7 +245,7 @@ export default function InvestIQ() {
       <div className="mchart" style={{ height: 150 }}>
         {months.map((m) => (
           <div className="mcol" key={m}>
-            <div style={{ width: '70%', maxWidth: 24, height: (mm[m].rev / max) * 130 + 4, background: '#FF6138', borderRadius: 6 }} title={fmtF(mm[m].rev)} />
+            <div style={{ width: '70%', maxWidth: 24, height: (mm[m].rev / max) * 130 + 4, background: '#00D084', borderRadius: 6 }} title={fmtF(mm[m].rev)} />
             <span>{mlab(m)}</span>
           </div>
         ))}
@@ -258,7 +258,7 @@ export default function InvestIQ() {
   const avg = nA ? curTot / nA : 0, avgP = nP ? prevTot / nP : 0, dn = nA - nP;
   const avgD = M.revD.map((v, i) => (M.agD[i] ? v / M.agD[i] : 0));
   const KPI = [
-    { t: 'B2B revenue', l: 'R', bg: '#FF6138', v: fmtC(curTot), d: pct(curTot, prevTot), sub: 'vs ' + fmtC(prevTot) + ' last period', s: M.revD },
+    { t: 'B2B revenue', l: 'R', bg: '#10B981', v: fmtC(curTot), d: pct(curTot, prevTot), sub: 'vs ' + fmtC(prevTot) + ' last period', s: M.revD },
     { t: 'Active agents', l: 'A', bg: '#3B82F6', v: String(nA), d: nP ? (dn / nP) * 100 : null, dTxt: (dn >= 0 ? '+' : '−') + Math.abs(dn), sub: 'vs ' + nP + ' last period', s: M.agD },
     { t: 'Pax', l: 'P', bg: '#F59E0B', v: curPax.toLocaleString(), d: pct(curPax, prevPax), sub: 'vs ' + prevPax.toLocaleString() + ' last period', s: M.paxD },
     { t: 'Avg / agent', l: 'B', bg: '#8B5CF6', v: fmtC(avg), d: pct(avg, avgP), sub: 'vs ' + fmtC(avgP) + ' last period', s: avgD },
@@ -287,8 +287,8 @@ export default function InvestIQ() {
     const P = prevTot;
     const seq = [
       ['Prev', 0, P, '#CBD5E1', fmtC(P)],
-      ['+Growth', P, P + gD, '#FF6138', fmtC(gD)],
-      ['+New', P + gD, P + gD + nD, '#FF6138', fmtC(nD)],
+      ['+Growth', P, P + gD, '#00D084', fmtC(gD)],
+      ['+New', P + gD, P + gD + nD, '#00D084', fmtC(nD)],
       ['±Stable', P + gD + nD + Math.min(sD, 0), P + gD + nD + Math.max(sD, 0), '#94A3B8', fmtC(sD)],
       ['−Loss', P + gD + nD + sD - lD, P + gD + nD + sD, '#1E293B', '−' + fmtC(lD)],
       ['−Churn', P + gD + nD + sD - lD - cD, P + gD + nD + sD - lD, '#1E293B', '−' + fmtC(cD)],
@@ -565,10 +565,10 @@ export default function InvestIQ() {
             <div className="khd"><span className="ktl"><span className="kico" style={{ background: k.bg }}>{k.l}</span>{k.t}</span><span className="ktf">{TF_LABEL[mode]}</span></div>
             <div className="kspark">
               <svg viewBox="0 0 200 44" preserveAspectRatio="none">
-                <defs><linearGradient id={'kg' + k.l} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#FF6138" stopOpacity=".22" /><stop offset="100%" stopColor="#FF6138" stopOpacity="0" /></linearGradient></defs>
+                <defs><linearGradient id={'kg' + k.l} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#00D084" stopOpacity=".22" /><stop offset="100%" stopColor="#00D084" stopOpacity="0" /></linearGradient></defs>
                 <path d={sparkPath(k.s) + ' L 200 44 L 0 44 Z'} fill={'url(#kg' + k.l + ')'} />
-                <path d={sparkPath(k.s)} fill="none" stroke="#FF6138" strokeWidth="2" strokeLinecap="round" />
-                <circle cx="200" cy={(() => { const m = Math.max(...k.s, 1); return 40 - (k.s[k.s.length - 1] / m) * 34; })()} r="3.5" fill="#FF6138" />
+                <path d={sparkPath(k.s)} fill="none" stroke="#00D084" strokeWidth="2" strokeLinecap="round" />
+                <circle cx="200" cy={(() => { const m = Math.max(...k.s, 1); return 40 - (k.s[k.s.length - 1] / m) * 34; })()} r="3.5" fill="#00D084" />
               </svg>
             </div>
             <div className="krow">
