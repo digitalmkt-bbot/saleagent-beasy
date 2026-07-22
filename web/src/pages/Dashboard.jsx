@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import { useI18n } from '../i18n.jsx';
+import InvestIQ from './InvestIQ.jsx';
 
 const rtry = (fn, n = 3, ms = 1200) => new Promise((res, rej) => {
   const go = (i) => fn().then(res).catch(e => i >= n ? rej(e) : setTimeout(() => go(i + 1), ms));
@@ -299,6 +300,11 @@ export default function Dashboard() {
             <td className="muted">{(c.last_activity_date || '').slice(0, 10) || '-'}</td>
             <td><span style={{ color: rl[1], fontWeight: 700, fontSize: 12.5 }}>{rl[0]}</span></td></tr>); }) : <tr><td colSpan="5" className="empty">{t('ยังไม่มีข้อมูล')}</td></tr>}</tbody>
         </table>
+      </div>
+
+      {/* InvestIQ — B2B Sales Dashboard (ข้อมูลสดจากระบบ rate) ต่อท้ายแผงบริหาร */}
+      <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid rgba(26,25,29,.08)' }}>
+        <InvestIQ />
       </div>
     </div>
   );
