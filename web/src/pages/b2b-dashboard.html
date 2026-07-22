@@ -90,7 +90,7 @@ tr.clk{cursor:pointer}
  <div class="ctl">
   <div><label>วันที่</label><span class="seg" id="basis"><button data-v="bd" class="on">วันจอง</button><button data-v="td">วันเดินทาง</button></span></div>
   <div><label>เทียบ</label><select id="mode"><option value="week">สัปดาห์ (WoW)</option><option value="month" selected>เดือน (MoM)</option><option value="yoyweek">สัปดาห์เดียวกันปีก่อน</option><option value="yoymonth">เดือนเดียวกันปีก่อน</option><option value="roll12">Rolling 12 เดือน</option></select></div>
-  <div><label>ณ วันที่</label><input type="date" id="ref" value="2026-07-17"></div>
+  <div><label>ณ วันที่</label><input type="date" id="ref"></div>
   <div class="thr"><label style="margin:0">เกณฑ์ ±</label><input type="number" id="thr" value="10" min="1" max="50" step="1"><span style="font-size:12px;color:var(--muted)">%</span></div>
   <button class="btn" id="exp">⬇ Export CSV</button>
   <div class="winlab" id="win"></div>
@@ -126,7 +126,7 @@ const SALES_SYS_URL = ''; // set later e.g. 'https://sales.loveandaman.app/agent
 const TH_M=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const ROLE={'Sopit':'Director of Sales','House':'ไม่มีเจ้าของ / walk-in'};
 const OPAL=['#0E7C7B','#E08A3C','#3B6FB0','#8E5AA8','#3B9E5E','#C0506B','#B79A2E','#5E6E6C','#B0453E'];
-const state={basis:'bd',mode:'month',ref:'2026-07-17',thr:10,trip:null,screen:{kind:'tab',tab:'ov'},stack:[]};
+const state={basis:'bd',mode:'month',ref:new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10),thr:10,trip:null,screen:{kind:'tab',tab:'ov'},stack:[]};try{document.getElementById('ref').value=state.ref;}catch(e){}
 let charts=[];
 function clearCharts(){charts.forEach(c=>{try{c.destroy()}catch(e){}});charts=[];}
 function D(s){return s?new Date(s+'T00:00:00'):null;}

@@ -158,7 +158,7 @@ export default function InvestIQ() {
 
   useEffect(() => {
     api('/reports/b2b-dashboard')
-      .then((d) => { const rr = d.rows.map((r) => { const o = {}; d.cols.forEach((c, i) => { o[c] = r[i]; }); return o; }); setRows(rr); const mx = rr.reduce((m, r) => (r.bd && r.bd > m ? r.bd : m), ''); if (mx) setRef(mx); })
+      .then((d) => setRows(d.rows.map((r) => { const o = {}; d.cols.forEach((c, i) => { o[c] = r[i]; }); return o; })))
       .catch((e) => setErr(e.message));
   }, []);
 
