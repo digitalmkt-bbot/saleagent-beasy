@@ -62,7 +62,7 @@ const CSS = `
 .iq2 .bridge{display:flex;align-items:stretch;gap:6px;margin-top:8px}
 .iq2 .bcol{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0}
 .iq2 .bzone{position:relative;height:220px;width:100%;}
-.iq2 .bzone i{position:absolute;left:50%;transform:translateX(-50%);width:52px;max-width:70%;border-radius:7px 7px 3px 3px;min-height:8px}.bzone .btip{position:absolute;left:50%;top:6px;transform:translateX(-50%);background:#18181B;color:#fff;font-size:11px;font-weight:700;line-height:1.35;padding:6px 10px;border-radius:9px;white-space:nowrap;text-align:center;opacity:0;pointer-events:none;transition:opacity .15s;z-index:30;box-shadow:0 6px 16px rgba(0,0,0,.22)}.bzone .btip b{color:#94A3B8;font-weight:700}.bcol:hover .btip{opacity:1}.bcol:hover i{filter:brightness(1.08)}
+.iq2 .bzone i{position:absolute;left:50%;transform:translateX(-50%);width:52px;max-width:70%;border-radius:7px 7px 3px 3px;min-height:8px}.bzone .btip{position:absolute;left:50%;top:6px;transform:translateX(-50%);background:#18181B;color:#fff;font-size:11px;font-weight:700;line-height:1.35;padding:6px 10px;border-radius:9px;white-space:nowrap;text-align:center;opacity:0;pointer-events:none;transition:opacity .15s;z-index:30;box-shadow:0 6px 16px rgba(0,0,0,.22)}.bzone .btip b{color:#94A3B8;font-weight:700}.bcol:hover .btip{opacity:1}.bcol:hover i{filter:brightness(1.08)}.brcards{display:flex;gap:12px;margin:12px 0 10px;flex-wrap:wrap}.brc{flex:1;min-width:150px;background:#F5F8F7;border-radius:14px;padding:13px 16px}.brc-k{font-size:12px;color:#6B7C7B;font-weight:600}.brc-v{font-size:22px;font-weight:800;margin-top:3px;color:#18181B;font-variant-numeric:tabular-nums}
 .iq2 .blab{font-size:10.5px;font-weight:700;color:#94A3B8;margin-top:8px;text-align:center;white-space:nowrap}
 .iq2 .bval{font-size:11px;font-weight:700;color:#334155;font-variant-numeric:tabular-nums}
 .iq2 .gline{border-top:1px dashed #E2E8F0;position:absolute;left:0;right:0}
@@ -299,6 +299,7 @@ export default function InvestIQ() {
     return (<>
       <div className="card">
         <div className="h">Revenue bridge — who drove the change</div>
+        <div className="brcards"><div className="brc"><div className="brc-k">Gained</div><div className="brc-v" style={{ color: '#0F7B55' }}>+{fmtC(gD + nD)}</div></div><div className="brc"><div className="brc-k">Lost</div><div className="brc-v" style={{ color: '#C0392B' }}>−{fmtC(lD + cD)}</div></div><div className="brc"><div className="brc-k">Net</div><div className="brc-v" style={{ color: curTot - P >= 0 ? '#0F7B55' : '#C0392B' }}>{(curTot - P >= 0 ? '+' : '−') + fmtC(Math.abs(curTot - P))}</div></div></div>
         <div className="bridge">
           {seq.map((s) => {
             const bot = (Math.min(s[1], s[2]) / max) * 210, ht = Math.max((Math.abs(s[2] - s[1]) / max) * 210, 8);
@@ -312,7 +313,7 @@ export default function InvestIQ() {
               </div>);
           })}
         </div>
-        <div className="sumline">Gained <span className="pos">{fmtC(gD + nD)}</span> · Lost <span className="neg">−{fmtC(lD + cD)}</span> · Net <span className={curTot - P >= 0 ? 'pos' : 'neg'}>{(curTot - P >= 0 ? '' : '−') + fmtC(Math.abs(curTot - P))}</span></div>
+        
         {warn}
       </div>
       <div className="card">
