@@ -62,7 +62,7 @@ const CSS = `
 .iq2 .bridge{display:flex;align-items:stretch;gap:6px;margin-top:8px}
 .iq2 .bcol{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0}
 .iq2 .bzone{position:relative;height:220px;width:100%;}
-.iq2 .bzone i{position:absolute;left:50%;transform:translateX(-50%);width:52px;max-width:70%;border-radius:7px 7px 3px 3px;min-height:8px}
+.iq2 .bzone i{position:absolute;left:50%;transform:translateX(-50%);width:52px;max-width:70%;border-radius:7px 7px 3px 3px;min-height:8px}.bzone .btip{position:absolute;left:50%;top:6px;transform:translateX(-50%);background:#18181B;color:#fff;font-size:11px;font-weight:700;line-height:1.35;padding:6px 10px;border-radius:9px;white-space:nowrap;text-align:center;opacity:0;pointer-events:none;transition:opacity .15s;z-index:30;box-shadow:0 6px 16px rgba(0,0,0,.22)}.bzone .btip b{color:#94A3B8;font-weight:700}.bcol:hover .btip{opacity:1}.bcol:hover i{filter:brightness(1.08)}
 .iq2 .blab{font-size:10.5px;font-weight:700;color:#94A3B8;margin-top:8px;text-align:center;white-space:nowrap}
 .iq2 .bval{font-size:11px;font-weight:700;color:#334155;font-variant-numeric:tabular-nums}
 .iq2 .gline{border-top:1px dashed #E2E8F0;position:absolute;left:0;right:0}
@@ -306,7 +306,7 @@ export default function InvestIQ() {
               <div className="bcol" key={s[0]}>
                 <div className="bzone">
                   {[0.25, 0.5, 0.75].map((f) => <div className="gline" key={f} style={{ top: 220 * f }} />)}
-                  <i style={{ bottom: bot, height: ht, ...(/Prev|Stable/.test(s[0]) ? { backgroundColor: '#F1EFF3', backgroundImage: `repeating-linear-gradient(45deg, ${s[3]} 0 3px, transparent 3px 9px)` } : { background: s[3] }) }} />
+                  <i style={{ bottom: bot, height: ht, ...(/Prev|Stable/.test(s[0]) ? { backgroundColor: '#F1EFF3', backgroundImage: `repeating-linear-gradient(45deg, ${s[3]} 0 3px, transparent 3px 9px)` } : { background: s[3] }) }} /><div className="btip"><b>{s[0]}</b><br />{s[4]}</div>
                 </div>
                 <div className="blab">{s[0]}<br /><span className="bval">{s[4]}</span></div>
               </div>);
