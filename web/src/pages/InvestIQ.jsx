@@ -62,7 +62,7 @@ const CSS = `
 .iq2 .bridge{display:flex;align-items:stretch;gap:6px;margin-top:8px}
 .iq2 .bcol{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0}
 .iq2 .bzone{position:relative;height:220px;width:100%;}
-.iq2 .bzone i{position:absolute;left:50%;transform:translateX(-50%);width:14px;border-radius:999px;min-height:8px}
+.iq2 .bzone i{position:absolute;left:50%;transform:translateX(-50%);width:16px;border-radius:6px 6px 3px 3px;min-height:8px}
 .iq2 .blab{font-size:10.5px;font-weight:700;color:#94A3B8;margin-top:8px;text-align:center;white-space:nowrap}
 .iq2 .bval{font-size:11px;font-weight:700;color:#334155;font-variant-numeric:tabular-nums}
 .iq2 .gline{border-top:1px dashed #E2E8F0;position:absolute;left:0;right:0}
@@ -286,13 +286,13 @@ export default function InvestIQ() {
     const gD = S(gr, (r) => r.d), nD = S(nw, (r) => r.cur), sD = S(st, (r) => r.d), lD = S(ls, (r) => r.prev - r.cur), cD = S(ch, (r) => r.prev);
     const P = prevTot;
     const seq = [
-      ['Prev', 0, P, '#CBD5E1', fmtC(P)],
-      ['+Growth', P, P + gD, '#FF6138', fmtC(gD)],
-      ['+New', P + gD, P + gD + nD, '#FF6138', fmtC(nD)],
-      ['±Stable', P + gD + nD + Math.min(sD, 0), P + gD + nD + Math.max(sD, 0), '#94A3B8', fmtC(sD)],
-      ['−Loss', P + gD + nD + sD - lD, P + gD + nD + sD, '#1E293B', '−' + fmtC(lD)],
-      ['−Churn', P + gD + nD + sD - lD - cD, P + gD + nD + sD - lD, '#1E293B', '−' + fmtC(cD)],
-      ['Now', 0, curTot, '#475569', fmtC(curTot)],
+      ['Prev', 0, P, '#A1A1AA', fmtC(P)],
+      ['+Growth', P, P + gD, '#FF4D1D', fmtC(gD)],
+      ['+New', P + gD, P + gD + nD, '#FF4D1D', fmtC(nD)],
+      ['±Stable', P + gD + nD + Math.min(sD, 0), P + gD + nD + Math.max(sD, 0), '#D4D4D8', fmtC(sD)],
+      ['−Loss', P + gD + nD + sD - lD, P + gD + nD + sD, '#18181B', '−' + fmtC(lD)],
+      ['−Churn', P + gD + nD + sD - lD - cD, P + gD + nD + sD - lD, '#18181B', '−' + fmtC(cD)],
+      ['Now', 0, curTot, '#18181B', fmtC(curTot)],
     ];
     const max = Math.max(...seq.map((s) => Math.max(s[1], s[2])), 1);
     const watch = [...ls, ...ch].sort((a, b) => (b.prev - b.cur) - (a.prev - a.cur)).slice(0, 10);
@@ -306,7 +306,7 @@ export default function InvestIQ() {
               <div className="bcol" key={s[0]}>
                 <div className="bzone">
                   {[0.25, 0.5, 0.75].map((f) => <div className="gline" key={f} style={{ top: 220 * f }} />)}
-                  <i style={{ bottom: bot, height: ht, background: s[3] }} />
+                  <i style={{ bottom: bot, height: ht, ...(/Prev|Stable/.test(s[0]) ? { backgroundColor: '#F1EFF3', backgroundImage: `repeating-linear-gradient(45deg, ${s[3]} 0 2px, transparent 2px 6px)` } : { background: s[3] }) }} />
                 </div>
                 <div className="blab">{s[0]}<br /><span className="bval">{s[4]}</span></div>
               </div>);
