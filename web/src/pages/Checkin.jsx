@@ -69,7 +69,6 @@ export default function Checkin() {
   const [outD, setOutD] = useState(dPart(new Date())); const [outT, setOutT] = useState(tPart(new Date()));
   // แก้ไขรายการเก่า
   const [edit, setEdit] = useState(null);
-  const [importing, setImporting] = useState(false);
   async function delCheckin(id) {
     if (!confirm(t('ลบเช็คอินนี้?'))) return;
     try { await api('/checkins/' + id, { method: 'DELETE' }); loadAll(); }
@@ -84,24 +83,13 @@ export default function Checkin() {
     }).catch(() => {});
     api('/checkins', { params: { mine: 1 } }).then(d => setHistory(d.rows || [])).catch(() => {});
   }
-  const loadCustomers = () => api('/customers', { params: { limit: 300 } }).then(d => setCustomers(d.rows || [])).catch(() => {});
   useEffect(() => {
-    loadCustomers();
-    api('/projects', { params: { limit: 1000 } }).then(d => setProjects(d.rows || [])).catch(() => {});
+    api('/customers', { params: { limit: 5000 } }).then(d => setCustomers(d.rows || [])).catch(() => {});
+    api('/projects', { params: { limit: 2000 } }).then(d => setProjects(d.rows || [])).catch(() => {});
     loadAll();
     const id = setInterval(() => tick(x => x + 1), 30000);
     return () => clearInterval(id);
   }, []);
-
-  // ดึงเอเจ้นท์ของตัวเองจากระบบ rate (เซลส์ได้เฉพาะที่ master setting ระบุ) แล้วรีเฟรชรายการ
-  async function importAgents() {
-    setImporting(true); setMsg('');
-    try {
-      const r = await api('/rates/import-agents', { method: 'POST' });
-      setMsg(`${t('นำเข้าเสร็จ')} — ${t('สร้างใหม่')} ${r.created}, ${t('อัปเดต')} ${r.updated}`);
-      loadCustomers();
-    } catch (e) { setMsg(e.message); } finally { setImporting(false); }
-  }
 
   async function checkIn() {
     if (!cid) { setMsg(t('เลือกเอเจ้นท์ก่อน')); return; }
@@ -176,10 +164,7 @@ export default function Checkin() {
         )
       ) : (
         <div className="card">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <label>{t('เลือกเอเจ้นท์')}</label>
-            <a onClick={importing ? undefined : importAgents} style={{ fontSize: 13, cursor: importing ? 'default' : 'pointer', opacity: importing ? 0.5 : 1 }}>{importing ? '...' : '⤓ ' + t('ดึงจากระบบ Rate')}</a>
-          </div>
+          <label>{t('เลือกเอเจ้นท์')}</label>
           <select value={cid} onChange={e => setCid(e.target.value)}>
             <option value="">{t('- เลือกเอเจ้นท์ -')}</option>
             {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
