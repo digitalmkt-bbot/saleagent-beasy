@@ -82,6 +82,73 @@ function RSegBar({ won, open }) {
     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, fontWeight: 700, marginTop: 8, color: 'rgba(255,255,255,.9)' }}><span>● ปิดได้ {won}</span><span>● เปิดอยู่ {open}</span></div>
   </div>;
 }
+function RevenueBridge() {
+  const [data, setData] = useState(null);
+  const [hv, setHv] = useState(null);
+  useEffect(() => { api('/reports/b2b-dashboard').then(setData).catch(() => setData(null)); }, []);
+  const fmtC = (v) => { v = Math.round(v); const a = Math.abs(v); if (a >= 1e6) return '฿' + (v / 1e6).toFixed(2) + 'M'; if (a >= 1e4) return '฿' + Math.round(v / 1e3) + 'K'; return '฿' + v.toLocaleString(); };
+  const bridge = useMemo(() => {
+    if (!data || !data.rows) return null;
+    const idx = {}; (data.cols || []).forEach((c, i) => { idx[c] = i; });
+    const ref = new Date(); ref.setMinutes(ref.getMinutes() - ref.getTimezoneOffset());
+    const refD = new Date(ref.toISOString().slice(0, 10) + 'T00:00:00');
+    const shift = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+    const len = 30, ce = refD, cs = shift(refD, -(len - 1)), pe = shift(cs, -1), ps = shift(pe, -(len - 1));
+    const D = (x) => x ? new Date(x + 'T00:00:00') : null;
+    const cur = {}, prev = {};
+    for (const r of data.rows) {
+      const bd = r[idx.bd]; const rev = +r[idx.rev] || 0; const k = r[idx.agid] == null ? 'null' : r[idx.agid];
+      const d = D(bd); if (!d) continue;
+      if (d >= cs && d <= ce) cur[k] = (cur[k] || 0) + rev;
+      if (d >= ps && d <= pe) prev[k] = (prev[k] || 0) + rev;
+    }
+    const T = 10; let gD = 0, nD = 0, sD = 0, lD = 0, cD = 0, curTot = 0, prevTot = 0;
+    new Set([...Object.keys(cur), ...Object.keys(prev)]).forEach(k => {
+      const c = cur[k] || 0, pv = prev[k] || 0; curTot += c; prevTot += pv;
+      const g = pv ? (c - pv) / pv * 100 : null;
+      let cls;
+      if (pv <= 0 && c > 0) cls = 'new'; else if (c <= 0 && pv > 0) cls = 'churn';
+      else if (g === null) cls = 'stable'; else if (g > T) cls = 'growth'; else if (g < -T) cls = 'loss'; else cls = 'stable';
+      if (cls === 'growth') gD += (c - pv); else if (cls === 'new') nD += c; else if (cls === 'stable') sD += (c - pv); else if (cls === 'loss') lD += (pv - c); else if (cls === 'churn') cD += pv;
+    });
+    const P = prevTot;
+    const seq = [
+      ['Prev', 0, P, '#8A9997'],
+      ['Growth', P, P + gD, '#3B9E5E'],
+      ['New', P + gD, P + gD + nD, '#3B9E5E'],
+      ['Stable', P + gD + nD, P + gD + nD + sD, '#7FA8AE'],
+      ['Loss', P + gD + nD + sD - lD, P + gD + nD + sD, '#D14B3E'],
+      ['Churn', P + gD + nD + sD - lD - cD, P + gD + nD + sD - lD, '#D14B3E'],
+      ['Now', 0, curTot, '#0E7C7B'],
+    ];
+    return { seq, gD, nD, sD, lD, cD, curTot, P };
+  }, [data]);
+  if (!data) return <div className="empty">{'กำลังโหลด...'}</div>;
+  if (!bridge) return <div className="empty">—</div>;
+  const { seq, gD, nD, lD, cD, curTot, P } = bridge;
+  const maxY = Math.max(1, ...seq.map(s => s[2]));
+  const net = curTot - P;
+  const Mini = ({ k, v, c }) => <div style={{ flex: 1, minWidth: 120, background: '#F5F8F7', borderRadius: 10, padding: '10px 13px' }}><div style={{ fontSize: 11.5, color: 'var(--muted)' }}>{k}</div><div style={{ fontSize: 18, fontWeight: 700, marginTop: 2, color: c }}>{v}</div></div>;
+  return <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+    <div style={{ display: 'flex', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
+      <Mini k={'ได้เพิ่ม'} v={'+' + fmtC(gD + nD)} c="#2E7D46" />
+      <Mini k={'เสียไป'} v={'−' + fmtC(lD + cD)} c="#C0392B" />
+      <Mini k={'สุทธิ'} v={(net >= 0 ? '+' : '−') + fmtC(Math.abs(net))} c={net >= 0 ? '#2E7D46' : '#C0392B'} />
+    </div>
+    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 6, flex: 1, minHeight: 210, borderBottom: '2px solid #ECEAEF' }}>
+      {seq.map(([lb, st, en, col], i) => { const botOff = st / maxY * 100, barH = (en - st) / maxY * 100, on = hv === i, delta = en - st;
+        return <div key={i} onMouseEnter={() => setHv(i)} onMouseLeave={() => setHv(null)} style={{ flex: '1 1 0', minWidth: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', cursor: 'pointer', position: 'relative' }}>
+          {on && <div style={{ position: 'absolute', top: -6, left: '50%', transform: 'translateX(-50%)', background: '#1A191D', color: '#fff', fontSize: 11, fontWeight: 700, padding: '5px 9px', borderRadius: 9, whiteSpace: 'nowrap', zIndex: 5, boxShadow: '0 4px 12px rgba(0,0,0,.18)' }}>{(delta < 0 ? '−' : '') + fmtC(Math.abs(delta))}</div>}
+          <div style={{ width: '100%', maxWidth: 48, height: barH + '%', minHeight: 3, background: col, borderRadius: '3px 3px 0 0', transition: 'height .2s' }} />
+          <div style={{ width: '100%', height: botOff + '%' }} />
+        </div>; })}
+    </div>
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6, marginTop: 8 }}>
+      {seq.map((s, i) => <span key={i} style={{ flex: '1 1 0', minWidth: 0, textAlign: 'center', fontSize: 10.5, color: '#6B7C7B', fontWeight: 600 }}>{s[0]}</span>)}
+    </div>
+  </div>;
+}
+
 function RStriped({ rows }) {
   const [hv, setHv] = useState(null);
   const data = (rows || []).slice(-12);
@@ -255,8 +322,8 @@ export default function Dashboard() {
       </div>
       <div className="grid-2-1" style={{ marginBottom: 16 }}>
         <div className="panel" style={{ display: 'flex', flexDirection: 'column' }}>
-          <div className="panel-head"><h3>{t('ยอดรายเดือน')}</h3><span style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)' }}><span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: '#1A191D', marginRight: 5 }} />{t('ยอดขายจริง')}</span></div>
-          <RStriped rows={chartSeries} />
+          <div className="panel-head"><h3>{t('Revenue bridge — ที่มาของการเปลี่ยนแปลง')}</h3><span style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)' }}>{t('30 วันล่าสุด vs ก่อนหน้า')}</span></div>
+          <RevenueBridge />
         </div>
         <div className="panel">
           <div className="panel-head"><h3>{t('ยอดตามผู้รับผิดชอบ')}</h3></div>
