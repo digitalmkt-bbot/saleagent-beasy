@@ -173,7 +173,8 @@ function kMini(k,v,d,c){return '<div class="m"><div class="k">'+k+'</div><div cl
 function barOpts(){return{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtC(c.raw)}}},scales:{x:{grid:{display:false},ticks:{font:{size:11},color:'#6B7C7B'}},y:{ticks:{callback:v=>fmtC(v),font:{size:11},color:'#6B7C7B'},grid:{color:'#EDF1F0'},beginAtZero:true}}};}
 function tbl(head,rows,rAlign,rank){let h='<table><thead><tr>'+head.map((x,i)=>'<th class="'+(rAlign[i]?'r':'')+(rank&&i===0?' rk':'')+'">'+x+'</th>').join('')+'</tr></thead><tbody>';
  h+=rows.map(row=>'<tr>'+row.map((c,i)=>'<td class="'+(rAlign[i]?'r':'')+(rank&&i===0?' rk':'')+'">'+c+'</td>').join('')+'</tr>').join('');return h+'</tbody></table>';}
-function waterfall(id,seq){charts.push(new Chart(document.getElementById(id),{type:'bar',data:{labels:seq.map(s=>s[0]),datasets:[{data:seq.map(s=>[s[1],s[2]]),backgroundColor:seq.map(s=>s[3]),borderRadius:3,barPercentage:.7}]},
+function stripe(col){const cv=document.createElement('canvas');cv.width=cv.height=7;const x=cv.getContext('2d');x.fillStyle='#F1EFF3';x.fillRect(0,0,7,7);x.strokeStyle=col;x.lineWidth=2;x.beginPath();x.moveTo(0,7);x.lineTo(7,0);x.moveTo(-2,2);x.lineTo(2,-2);x.moveTo(5,9);x.lineTo(9,5);x.stroke();return x.createPattern(cv,'repeat');}
+function waterfall(id,seq){charts.push(new Chart(document.getElementById(id),{type:'bar',data:{labels:seq.map(s=>s[0]),datasets:[{data:seq.map(s=>[s[1],s[2]]),backgroundColor:seq.map(s=>['Prev','Stable'].includes(s[0])?stripe(s[3]):s[3]),borderRadius:5,barPercentage:.5,categoryPercentage:.72}]},
   options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const v=c.raw,d=v[1]-v[0];return (d<0?'−':'')+fmtC(Math.abs(d));}}}},
    scales:{x:{ticks:{autoSkip:false,font:{size:12,family:'Inter'},color:'#6B7C7B'},grid:{display:false}},y:{ticks:{callback:v=>fmtC(v),font:{size:11},color:'#6B7C7B'},grid:{color:'#EDF1F0'},beginAtZero:true}}}}));}
 
@@ -213,7 +214,7 @@ function ovTab(cls,warn){const c=window._tot,P=c.prevTot;
  const gr=cls.filter(r=>r.cls==='growth'),nw=cls.filter(r=>r.cls==='new'),st=cls.filter(r=>r.cls==='stable'),ls=cls.filter(r=>r.cls==='loss'),ch=cls.filter(r=>r.cls==='churn');
  const S=(a,f)=>a.reduce((s,r)=>s+f(r),0);
  const gD=S(gr,r=>r.d),nD=S(nw,r=>r.cur),sD=S(st,r=>r.d),lD=S(ls,r=>r.prev-r.cur),cD=S(ch,r=>r.prev);
- const seq=[['Prev',0,P,'#8A9997'],['Growth',P,P+gD,'#3B9E5E'],['New',P+gD,P+gD+nD,'#3B9E5E'],['Stable',P+gD+nD,P+gD+nD+sD,'#7FA8AE'],['Loss',P+gD+nD+sD-lD,P+gD+nD+sD,'#D14B3E'],['Churn',P+gD+nD+sD-lD-cD,P+gD+nD+sD-lD,'#D14B3E'],['Now',0,c.curTot,'#0E7C7B']];
+ const seq=[['Prev',0,P,'#A1A1AA'],['Growth',P,P+gD,'#18181B'],['New',P+gD,P+gD+nD,'#18181B'],['Stable',P+gD+nD,P+gD+nD+sD,'#D4D4D8'],['Loss',P+gD+nD+sD-lD,P+gD+nD+sD,'#FF4D1D'],['Churn',P+gD+nD+sD-lD-cD,P+gD+nD+sD-lD,'#FF4D1D'],['Now',0,c.curTot,'#18181B']];
  const watch=[...ls,...ch].sort((a,b)=>(b.prev-b.cur)-(a.prev-a.cur)).slice(0,10);
  document.getElementById('body').innerHTML='<div class="panel">'
   +'<div class="card"><div class="h">Revenue bridge — ที่มาของการเปลี่ยนแปลง</div><div class="mini">'
