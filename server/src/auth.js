@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { q } = require('./db');
+const { syncAgentsOnLogin } = require('./agent-import');
 const SECRET = process.env.JWT_SECRET || 'dev-secret';
 
 async function login(req, res) {
@@ -23,6 +24,8 @@ async function login(req, res) {
     }
   }
   const token = jwt.sign({ id: u.id, company_id: u.company_id, role: u.role }, SECRET, { expiresIn: '7d' });
+  // ดึงจากระบบ Rate อัตโนมัติทุกครั้งที่ล็อกอิน — ทำงานเบื้องหลัง ไม่หน่วงการตอบกลับ
+  syncAgentsOnLogin({ id: u.id, company_id: u.company_id, role: u.role });
   res.json({ token, user: { id: u.id, name: u.display_name, role: u.role, company_id: u.company_id } });
 }
 
