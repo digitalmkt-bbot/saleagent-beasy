@@ -1,4 +1,3 @@
-// revert Revenue bridge → monthly chart (build 1784694347)
 
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -222,7 +221,7 @@ export default function Dashboard() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <div style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', borderRadius: 12, padding: '7px 11px', fontSize: 12.5, fontWeight: 600, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', gap: 6 }}>📅 <input type="date" value={from} onChange={e => setFrom(e.target.value)} style={{ border: 'none', background: 'transparent', font: 'inherit', fontWeight: 700, width: 'auto', minWidth: 0, padding: 0, color: 'var(--ink)' }} /></div>
           <div style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', borderRadius: 12, padding: '7px 11px', fontSize: 12.5, fontWeight: 600, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', gap: 6 }}>→ <input type="date" value={to} onChange={e => setTo(e.target.value)} style={{ border: 'none', background: 'transparent', font: 'inherit', fontWeight: 700, width: 'auto', minWidth: 0, padding: 0, color: 'var(--ink)' }} /></div>
-          <button className="btn" onClick={loadRate}>{t('ดูข้อมูล')}</button>
+          <button className="btn" onClick={() => loadRate()}>{t('ดูข้อมูล')}</button>
           {datePresets().map(([lb, f2, tt]) => { const on = from === f2 && to === tt; return <button key={lb} onClick={() => { setFrom(f2); setTo(tt); loadRate(f2, tt); }} style={{ padding: '7px 12px', borderRadius: 999, border: '1px solid var(--glass-border)', background: on ? 'var(--ink)' : 'var(--glass)', color: on ? '#fff' : 'var(--ink)', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>{t(lb)}</button>; })}
         </div>
       </div>

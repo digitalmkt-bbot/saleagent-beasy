@@ -191,7 +191,7 @@ export default function Reports() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <div style={seg}>📅 <input type="date" value={from} onChange={e => setFrom(e.target.value)} style={{ border: 'none', background: 'transparent', font: 'inherit', fontWeight: 700, width: 'auto', minWidth: 0, padding: 0, color: 'var(--ink)' }} /></div>
           <div style={seg}>→ <input type="date" value={to} onChange={e => setTo(e.target.value)} style={{ border: 'none', background: 'transparent', font: 'inherit', fontWeight: 700, width: 'auto', minWidth: 0, padding: 0, color: 'var(--ink)' }} /></div>
-          <button className="btn" onClick={loadReports}>{t('ดูรายงาน')}</button>
+          <button className="btn" onClick={() => loadReports()}>{t('ดูรายงาน')}</button>
           {datePresets().map(([lb, f2, tt]) => { const on = from === f2 && to === tt; return <button key={lb} onClick={() => { setFrom(f2); setTo(tt); loadReports(f2, tt); }} style={{ padding: '7px 12px', borderRadius: 999, border: '1px solid var(--glass-border)', background: on ? 'var(--ink)' : 'var(--glass)', color: on ? '#fff' : 'var(--ink)', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>{t(lb)}</button>; })}
         </div>
       </div>
