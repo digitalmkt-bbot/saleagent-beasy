@@ -175,8 +175,10 @@ export default function Checkin() {
               onFocus={() => setAgentOpen(true)} onBlur={() => setTimeout(() => setAgentOpen(false), 160)} />
             {agentOpen && (() => {
               const q = agentQ.trim().toLowerCase();
-              const matches = customers.filter(c => !q || (c.name || '').toLowerCase().includes(q) || String(c.code || '').toLowerCase().includes(q)).slice(0, 60);
-              return <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 40, background: '#fff', border: '1px solid var(--glass-border)', borderRadius: 12, marginTop: 4, maxHeight: 300, overflowY: 'auto', boxShadow: '0 12px 32px rgba(0,0,0,.14)' }}>
+              const all = customers.filter(c => !q || (c.name || '').toLowerCase().includes(q) || String(c.code || '').toLowerCase().includes(q));
+              const matches = all.slice(0, 800);
+              return <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 40, background: '#fff', border: '1px solid var(--glass-border)', borderRadius: 12, marginTop: 4, maxHeight: 320, overflowY: 'auto', boxShadow: '0 12px 32px rgba(0,0,0,.14)' }}>
+                <div style={{ padding: '6px 12px', fontSize: 11.5, color: 'var(--muted)', borderBottom: '1px solid #F0EEF1', position: 'sticky', top: 0, background: '#fff' }}>{all.length} {t('เอเจ้นท์')}{q ? '' : ' — ' + t('พิมพ์เพื่อค้นหา')}</div>
                 {matches.length ? matches.map(c => (
                   <div key={c.id} onMouseDown={() => { setCid(String(c.id)); setAgentQ(c.name); setAgentOpen(false); }}
                     style={{ padding: '10px 12px', cursor: 'pointer', fontSize: 14, borderBottom: '1px solid #F3F1F5', background: String(cid) === String(c.id) ? 'var(--brand-tint)' : '#fff' }}
