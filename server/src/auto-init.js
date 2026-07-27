@@ -88,6 +88,7 @@ async function runMigrations() {
     await q("ALTER TABLE checkin ADD COLUMN IF NOT EXISTS activity_id BIGINT");
     await q("ALTER TABLE checkin ADD COLUMN IF NOT EXISTS image_url TEXT");
     await q("ALTER TABLE checkin ADD COLUMN IF NOT EXISTS checkout_note TEXT");
+    await q("ALTER TABLE checkin ADD COLUMN IF NOT EXISTS contact_method VARCHAR(20)");
     await q("UPDATE pipeline_stage SET name = replace(name, 'ลูกค้า', 'เอเจ้นท์') WHERE name LIKE '%ลูกค้า%'");
     log('migration: rename ลูกค้า -> เอเจ้นท์ in pipeline_stage');
     await q("UPDATE pipeline_stage SET name = replace(name, 'ใบเสนอราคา', 'สัญญา') WHERE name LIKE '%ใบเสนอราคา%'");

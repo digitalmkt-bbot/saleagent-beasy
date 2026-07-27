@@ -56,6 +56,7 @@ export default function Checkin() {
   const [cid, setCid] = useState('');
   const [agentQ, setAgentQ] = useState('');
   const [agentOpen, setAgentOpen] = useState(false);
+  const [contact, setContact] = useState('');
   const [pid, setPid] = useState('');
   const [note, setNote] = useState('');
   const [image, setImage] = useState(null);
@@ -95,15 +96,16 @@ export default function Checkin() {
 
   async function checkIn() {
     if (!cid) { setMsg(t('เลือกเอเจ้นท์ก่อน')); return; }
+    if (!contact) { setMsg('Please select a contact method'); return; }
     setBusy(true); setMsg(backIn ? '' : t('กำลังขอตำแหน่ง...'));
     const g = backIn ? null : await getGeo();
     try {
       await api('/checkins', { method: 'POST', body: {
-        customer_id: cid, project_id: pid || null, note, image_url: image,
+        customer_id: cid, project_id: pid || null, contact_method: contact, note, image_url: image,
         check_in_at: backIn ? mkISO(inD, inT) : null,
         lat: g && g.lat, lng: g && g.lng,
       } });
-      setNote(''); setCid(''); setPid(''); setImage(null); setBackIn(false); setMsg('');
+      setNote(''); setCid(''); setPid(''); setContact(''); setAgentQ(''); setImage(null); setBackIn(false); setMsg('');
       loadAll();
     } catch (e) { setMsg(e.message); } finally { setBusy(false); }
   }
@@ -170,8 +172,7 @@ export default function Checkin() {
           <div style={{ position: 'relative' }}>
             <input type="text" value={agentQ} placeholder={t('พิมพ์ชื่อ/รหัสเพื่อค้นหา หรือแตะเพื่อเลือก...')}
               onChange={e => { setAgentQ(e.target.value); setAgentOpen(true); if (!e.target.value) setCid(''); }}
-              onFocus={() => setAgentOpen(true)}
-              onBlur={() => setTimeout(() => setAgentOpen(false), 160)} />
+              onFocus={() => setAgentOpen(true)} onBlur={() => setTimeout(() => setAgentOpen(false), 160)} />
             {agentOpen && (() => {
               const q = agentQ.trim().toLowerCase();
               const matches = customers.filter(c => !q || (c.name || '').toLowerCase().includes(q) || String(c.code || '').toLowerCase().includes(q)).slice(0, 60);
@@ -187,11 +188,8 @@ export default function Checkin() {
               </div>;
             })()}
           </div>
-          <label style={{ marginTop: 10, display: 'block' }}>{t('กลุ่มเป้าหมายที่คุย')} ({t('ถ้ามี')})</label>
-          <select value={pid} onChange={e => setPid(e.target.value)}>
-            <option value="">{t('- ไม่ระบุ -')}</option>
-            {projects.filter(p => !cid || String(p.customer_id) === String(cid)).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
+          <label style={{ marginTop: 10, display: 'block' }}>Contact method <span style={{ color: '#F2637E' }}>*</span></label>
+          <select value={contact} onChange={e => setContact(e.target.value)}><option value="">- select method -</option><option value="Tel">Tel</option><option value="Visit">Visit</option><option value="E-mail">E-mail</option><option value="Meet Online">Meet Online</option></select>
           <label style={{ marginTop: 10, display: 'block' }}>{t('หมายเหตุ')}</label>
           <textarea rows="2" value={note} onChange={e => setNote(e.target.value)} placeholder={t('เช่น นัดคุยเรื่องแพ็กเกจทัวร์')} />
 
@@ -250,6 +248,7 @@ function EditModal({ row, projects, onClose, onSaved }) {
   const [outD, setOutD] = useState(dPart(row.check_out_at || row.check_in_at));
   const [outT, setOutT] = useState(tPart(row.check_out_at || row.check_in_at));
   const [pid, setPid] = useState(row.project_id || '');
+  const [contact, setContact] = useState(row.contact_method || '');
   const [note, setNote] = useState(row.note || '');
   const [outNote, setOutNote] = useState(row.checkout_note || '');
   const [image, setImage] = useState(row.image_url || null);
@@ -266,7 +265,7 @@ function EditModal({ row, projects, onClose, onSaved }) {
       await api('/checkins/' + row.id, { method: 'PUT', body: {
         check_in_at: mkISO(inD, inT),
         check_out_at: hasOut ? mkISO(outD, outT) : null,
-        project_id: pid || null, note, image_url: image, checkout_note: outNote,
+        project_id: pid || null, contact_method: contact, note, image_url: image, checkout_note: outNote,
       } });
       onSaved();
     } catch (e) { setErr(e.message); setBusy(false); }
@@ -294,11 +293,8 @@ function EditModal({ row, projects, onClose, onSaved }) {
         <div><label>{t('เวลาออก')}</label><input type="time" value={outT} onChange={e => setOutT(e.target.value)} /></div>
       </div>}
 
-      <label style={{ marginTop: 10, display: 'block' }}>{t('กลุ่มเป้าหมายที่คุย')}</label>
-      <select value={pid} onChange={e => setPid(e.target.value)}>
-        <option value="">{t('- ไม่ระบุ -')}</option>
-        {projects.filter(p => String(p.customer_id) === String(row.customer_id)).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-      </select>
+      <label style={{ marginTop: 10, display: 'block' }}>Contact method <span style={{ color: '#F2637E' }}>*</span></label>
+      <select value={contact} onChange={e => setContact(e.target.value)}><option value="">- select method -</option><option value="Tel">Tel</option><option value="Visit">Visit</option><option value="E-mail">E-mail</option><option value="Meet Online">Meet Online</option></select>
 
       <label style={{ marginTop: 10, display: 'block' }}>{t('หมายเหตุ')} ({t('ตอนเช็คอิน')})</label>
       <textarea rows="2" value={note} onChange={e => setNote(e.target.value)} />

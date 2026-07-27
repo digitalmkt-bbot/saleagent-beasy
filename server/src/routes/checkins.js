@@ -48,10 +48,10 @@ router.get('/active', wrap(async (req, res) => {
 // เช็คอิน (ระบุ check_in_at เพื่อเช็คอินย้อนหลังได้)
 router.post('/', wrap(async (req, res) => {
   const b = req.body; const cid = req.user.company_id; const uid = req.user.id;
-  const ck = (await q(`INSERT INTO checkin (company_id,customer_id,project_id,user_id,check_in_at,check_in_lat,check_in_lng,note,image_url)
-    VALUES ($1,$2,$3,$4,COALESCE($5::timestamptz, now()),$6,$7,$8,$9) RETURNING *`,
+  const ck = (await q(`INSERT INTO checkin (company_id,customer_id,project_id,user_id,check_in_at,check_in_lat,check_in_lng,note,image_url,contact_method)
+    VALUES ($1,$2,$3,$4,COALESCE($5::timestamptz, now()),$6,$7,$8,$9,$10) RETURNING *`,
     [cid, b.customer_id || null, b.project_id || null, uid, b.check_in_at || null,
-     b.lat ?? null, b.lng ?? null, b.note || null, b.image_url || null])).rows[0];
+     b.lat ?? null, b.lng ?? null, b.note || null, b.image_url || null, b.contact_method || null])).rows[0];
   const detail = '📍 เช็คอิน' + (b.note ? (' — ' + b.note) : '');
   const act = (await q(`INSERT INTO activity (company_id,customer_id,project_id,direction,activity_at,activity_time,detail,status,assignee_user_id,created_by,image_url)
     VALUES ($1,$2,$3,'inbound',$4,$5,$6,'done',$7,$7,$8) RETURNING id`,
@@ -81,10 +81,11 @@ router.put('/:id', wrap(async (req, res) => {
       note          = $5,
       image_url     = $6,
       project_id    = $7,
-      checkout_note = $8
+      checkout_note = $8,
+      contact_method = $9
     WHERE id=$1 AND company_id=$2 RETURNING *`,
     [req.params.id, cid, b.check_in_at || null, b.check_out_at || null,
-     b.note || null, b.image_url || null, b.project_id || null, b.checkout_note || null])).rows[0];
+     b.note || null, b.image_url || null, b.project_id || null, b.checkout_note || null, b.contact_method || null])).rows[0];
   if (!ck) return res.status(404).json({ error: 'not found' });
   await syncActivity(cid, ck);
   res.json(ck);
