@@ -54,6 +54,8 @@ export default function Checkin() {
   const [outId, setOutId] = useState('');
   const [history, setHistory] = useState([]);
   const [cid, setCid] = useState('');
+  const [agentQ, setAgentQ] = useState('');
+  const [agentOpen, setAgentOpen] = useState(false);
   const [pid, setPid] = useState('');
   const [note, setNote] = useState('');
   const [image, setImage] = useState(null);
@@ -165,10 +167,26 @@ export default function Checkin() {
       ) : (
         <div className="card">
           <label>{t('เลือกเอเจ้นท์')}</label>
-          <select value={cid} onChange={e => setCid(e.target.value)}>
-            <option value="">{t('- เลือกเอเจ้นท์ -')}</option>
-            {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
+          <div style={{ position: 'relative' }}>
+            <input type="text" value={agentQ} placeholder={t('พิมพ์ชื่อ/รหัสเพื่อค้นหา หรือแตะเพื่อเลือก...')}
+              onChange={e => { setAgentQ(e.target.value); setAgentOpen(true); if (!e.target.value) setCid(''); }}
+              onFocus={() => setAgentOpen(true)}
+              onBlur={() => setTimeout(() => setAgentOpen(false), 160)} />
+            {agentOpen && (() => {
+              const q = agentQ.trim().toLowerCase();
+              const matches = customers.filter(c => !q || (c.name || '').toLowerCase().includes(q) || String(c.code || '').toLowerCase().includes(q)).slice(0, 60);
+              return <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 40, background: '#fff', border: '1px solid var(--glass-border)', borderRadius: 12, marginTop: 4, maxHeight: 300, overflowY: 'auto', boxShadow: '0 12px 32px rgba(0,0,0,.14)' }}>
+                {matches.length ? matches.map(c => (
+                  <div key={c.id} onMouseDown={() => { setCid(String(c.id)); setAgentQ(c.name); setAgentOpen(false); }}
+                    style={{ padding: '10px 12px', cursor: 'pointer', fontSize: 14, borderBottom: '1px solid #F3F1F5', background: String(cid) === String(c.id) ? 'var(--brand-tint)' : '#fff' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#F6F6F8'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = String(cid) === String(c.id) ? 'var(--brand-tint)' : '#fff'; }}>
+                    {c.name}{c.code ? <span style={{ color: 'var(--muted)', marginLeft: 6, fontSize: 12 }}>· {c.code}</span> : null}
+                  </div>
+                )) : <div style={{ padding: '11px 12px', color: 'var(--muted)', fontSize: 13 }}>{t('ไม่พบเอเจ้นท์ที่ตรงกับคำค้น')}</div>}
+              </div>;
+            })()}
+          </div>
           <label style={{ marginTop: 10, display: 'block' }}>{t('กลุ่มเป้าหมายที่คุย')} ({t('ถ้ามี')})</label>
           <select value={pid} onChange={e => setPid(e.target.value)}>
             <option value="">{t('- ไม่ระบุ -')}</option>
