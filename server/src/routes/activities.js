@@ -28,7 +28,7 @@ router.get('/', wrap(async (req, res) => {
   if (req.query.bucket === 'today') where.push('a.due_at::date = CURRENT_DATE');
   if (req.query.bucket === 'upcoming') where.push('a.due_at::date > CURRENT_DATE');
   if (req.query.bucket === 'overdue') where.push("a.due_at::date < CURRENT_DATE AND a.status='pending'");
-  const order = req.query.sort === 'priority' ? 'a.priority_id DESC NULLS LAST' : 'COALESCE(a.due_at,a.activity_at) ASC';
+  const order = req.query.sort === 'priority' ? 'a.priority_id DESC NULLS LAST' : 'COALESCE(a.due_at,a.activity_at) DESC NULLS LAST';
   const rows = await q(`${SELECT} WHERE ${where.join(' AND ')} ORDER BY ${order} LIMIT ${num(req.query.limit, 200)}`, args);
   const buckets = await q(
     `SELECT count(*) FILTER (WHERE due_at::date=CURRENT_DATE)::int today,
