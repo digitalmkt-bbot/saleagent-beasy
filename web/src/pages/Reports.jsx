@@ -191,7 +191,7 @@ export default function Reports() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <div style={seg}>📅 <input type="date" value={from} onChange={e => setFrom(e.target.value)} style={{ border: 'none', background: 'transparent', font: 'inherit', fontWeight: 700, width: 'auto', minWidth: 0, padding: 0, color: 'var(--ink)' }} /></div>
           <div style={seg}>→ <input type="date" value={to} onChange={e => setTo(e.target.value)} style={{ border: 'none', background: 'transparent', font: 'inherit', fontWeight: 700, width: 'auto', minWidth: 0, padding: 0, color: 'var(--ink)' }} /></div>
-          <button className="btn" onClick={() => loadReports()}>{t('ดูรายงาน')}</button>
+          <button className="btn" onClick={loadReports}>{t('ดูรายงาน')}</button>
           {datePresets().map(([lb, f2, tt]) => { const on = from === f2 && to === tt; return <button key={lb} onClick={() => { setFrom(f2); setTo(tt); loadReports(f2, tt); }} style={{ padding: '7px 12px', borderRadius: 999, border: '1px solid var(--glass-border)', background: on ? 'var(--ink)' : 'var(--glass)', color: on ? '#fff' : 'var(--ink)', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>{t(lb)}</button>; })}
         </div>
       </div>
@@ -264,7 +264,7 @@ export default function Reports() {
           {/* activity table */}
           <div className="card">
             <Head title={t('งานติดตามตามพนักงาน')} />
-            <table><thead><tr><th>{t('พนักงาน')}</th><th style={{ textAlign: 'right' }}>{t('เสร็จ')}</th><th style={{ textAlign: 'right' }}>{t('รอ')}</th><th style={{ textAlign: 'right' }}>{t('เกิน')}</th></tr></thead><tbody>{d.activityByUser.map((u, i) => <tr key={i}><td>{u.name}</td><td style={{ textAlign: 'right' }}>{u.done}</td><td style={{ textAlign: 'right' }}>{u.pending}</td><td style={{ textAlign: 'right', color: u.overdue ? '#E11D48' : '' }}>{u.overdue}</td></tr>)}</tbody></table>
+            <table><thead><tr><th>{t('พนักงาน')}</th><th style={{ textAlign: 'right' }}>{t('เสร็จ')}</th><th style={{ textAlign: 'right' }}>{t('รอ')}</th><th style={{ textAlign: 'right' }}>{t('เกิน')}</th></tr></thead><tbody>{d.activityByUser.map((u, i) => <tr key={i} style={{ cursor: 'pointer' }} onClick={() => api('/activities', { params: { assignee: u.uid, limit: 100 } }).then(r => setModal({ title: t('งานติดตามของ') + ' ' + u.name, cols: [t('กำหนด'), t('เอเจ้นท์'), t('รายละเอียด'), t('สถานะ')], rows: (r.rows || []).map(x => [(x.due_at || x.activity_at || '').slice(0, 10), x.customer_name || '-', (x.detail || '').slice(0, 60), x.status === 'done' ? t('เสร็จ') : t('รอ')]) })).catch(() => {})}><td style={{ color: 'var(--brand)', fontWeight: 600 }}>{u.name}</td><td style={{ textAlign: 'right' }}>{u.done}</td><td style={{ textAlign: 'right' }}>{u.pending}</td><td style={{ textAlign: 'right', color: u.overdue ? '#E11D48' : '' }}>{u.overdue}</td></tr>)}</tbody></table>
           </div>
         </div>
       </div>

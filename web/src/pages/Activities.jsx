@@ -8,15 +8,15 @@ export default function Activities() {
   const nav = useNavigate();
   const { t } = useI18n();
   const [data, setData] = useState({ rows: [], buckets: {} });
-  const [f, setF] = useState({ bucket: 'all', status: '', type: '', team: '', assignee: '', search: '', sort: 'due' });
+  const [f, setF] = useState({ bucket: 'all', status: '', type: '', team: '', assignee: '', search: '', sort: 'due', from: '', to: '' });
   const [meta, setMeta] = useState({ users: [], teams: [], stages: [], methods: [], types: [], customers: [], projects: [], atags: [] });
   const [targets, setTargets] = useState([]);
   const [modal, setModal] = useState(null);
   const set = (k, v) => setF(p => ({ ...p, [k]: v }));
   const fmtDT = (iso) => iso ? new Date(iso).toLocaleString('th-TH', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
 
-  function load() { api('/activities', { params: { bucket: f.bucket, status: f.status, type: f.type, team: f.team, assignee: f.assignee, search: f.search, sort: f.sort, limit: 200 } }).then(setData).catch(() => {}); }
-  useEffect(() => { load(); }, [f.bucket, f.status, f.type, f.team, f.assignee, f.sort]);
+  function load() { api('/activities', { params: { bucket: f.bucket, status: f.status, type: f.type, team: f.team, assignee: f.assignee, search: f.search, sort: f.sort, from: f.from, to: f.to, limit: 200 } }).then(setData).catch(() => {}); }
+  useEffect(() => { load(); }, [f.bucket, f.status, f.type, f.team, f.assignee, f.sort, f.from, f.to]);
   useEffect(() => {
     Promise.all([api('/meta/users'), api('/meta/teams'), api('/meta/pipeline-stages'), api('/meta/lookups'),
       api('/customers', { params: { limit: 300 } }), api('/projects', { params: { limit: 300 } }), api('/tags', { params: { scope: 'activity' } }), api('/meta/targets')])
@@ -53,6 +53,9 @@ export default function Activities() {
         <select value={f.status} onChange={e => set('status', e.target.value)}><option value="">{t('สถานะ: ทั้งหมด')}</option><option value="pending">{t('รอดำเนินการ')}</option><option value="done">{t('เสร็จสิ้น')}</option></select>
         <select value={f.type} onChange={e => set('type', e.target.value)}><option value="">{t('ประเภท: ทั้งหมด')}</option>{meta.types.map((x, i) => <option key={i} value={i}>{x}</option>)}</select>
         <select value={f.sort} onChange={e => set('sort', e.target.value)}><option value="due">{t('เรียง: กำหนดเวลา')}</option><option value="priority">{t('เรียง: ความสำคัญ')}</option></select>
+        <input type="date" value={f.from} onChange={e => set('from', e.target.value)} title={t('ตั้งแต่วันที่')} style={{ width: 'auto' }} />
+        <input type="date" value={f.to} onChange={e => set('to', e.target.value)} title={t('ถึงวันที่')} style={{ width: 'auto' }} />
+        {(f.from || f.to) && <button className="btn" style={{ background: 'var(--glass)', color: 'var(--ink)', border: '1px solid var(--glass-border)' }} onClick={() => setF(p => ({ ...p, from: '', to: '' }))}>{t('ล้างวันที่')}</button>}
       </div>
       <div className="tabs">
         {[['all', 'ทั้งหมด', b.all], ['today', 'วันนี้', b.today], ['upcoming', 'เร็วๆนี้', b.upcoming], ['overdue', 'เกินกำหนด', b.overdue]].map(([k, l, n]) => (

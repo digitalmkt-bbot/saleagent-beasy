@@ -25,6 +25,8 @@ router.get('/', wrap(async (req, res) => {
   if (req.query.team) { where.push(`a.assignee_user_id IN (SELECT id FROM app_user WHERE team_id=$${i++})`); args.push(+req.query.team); }
   if (req.query.type !== undefined && req.query.type !== '') { where.push(`a.activity_type=$${i++}`); args.push(+req.query.type); }
   if (req.query.search) { where.push(`(a.detail ILIKE $${i} OR c.name ILIKE $${i} OR p.name ILIKE $${i})`); args.push('%' + req.query.search + '%'); i++; }
+  if (req.query.from) { where.push(`COALESCE(a.due_at,a.activity_at)::date >= $${i++}`); args.push(req.query.from); }
+  if (req.query.to) { where.push(`COALESCE(a.due_at,a.activity_at)::date <= $${i++}`); args.push(req.query.to); }
   if (req.query.bucket === 'today') where.push('a.due_at::date = CURRENT_DATE');
   if (req.query.bucket === 'upcoming') where.push('a.due_at::date > CURRENT_DATE');
   if (req.query.bucket === 'overdue') where.push("a.due_at::date < CURRENT_DATE AND a.status='pending'");

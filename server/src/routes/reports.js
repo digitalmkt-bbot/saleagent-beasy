@@ -23,12 +23,12 @@ router.get('/summary', wrap(async (req, res) => {
        WHERE u.company_id=$1 ${staff ? 'AND u.id=$2' : ''} GROUP BY u.display_name ORDER BY won_value DESC`, A),
     q(`SELECT t.name, count(p.id)::int deals, COALESCE(sum(p.estimated_value),0) value
        FROM team t LEFT JOIN project p ON p.owner_team_id=t.id ${PJ} WHERE t.company_id=$1 GROUP BY t.name ORDER BY value DESC`, A),
-    q(`SELECT u.display_name AS name,
+    q(`SELECT u.display_name AS name, u.id AS uid,
          count(a.id) FILTER (WHERE a.status='done')::int done,
          count(a.id) FILTER (WHERE a.status='pending')::int pending,
          count(a.id) FILTER (WHERE a.status='pending' AND a.due_at::date<CURRENT_DATE)::int overdue
        FROM app_user u LEFT JOIN activity a ON a.assignee_user_id=u.id ${staff ? `AND (a.assignee_user_id=$2 OR a.customer_id IN ${OWNED})` : ''}
-       WHERE u.company_id=$1 ${staff ? 'AND u.id=$2' : ''} GROUP BY u.display_name ORDER BY done DESC`, A),
+       WHERE u.company_id=$1 ${staff ? 'AND u.id=$2' : ''} GROUP BY u.display_name, u.id ORDER BY done DESC`, A),
     q(`SELECT count(*) FILTER (WHERE NOT is_open)::int won, count(*) FILTER (WHERE is_open)::int open,
          COALESCE(sum(estimated_value) FILTER (WHERE NOT is_open),0) won_value,
          COALESCE(sum(estimated_value) FILTER (WHERE is_open),0) open_value FROM project WHERE company_id=$1 ${PW}`, A),
