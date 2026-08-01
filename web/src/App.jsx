@@ -14,6 +14,8 @@ import ProjectDetail from './pages/ProjectDetail.jsx';
 import Quotations from './pages/Quotations.jsx';
 import Reports from './pages/Reports.jsx';
 import Settings from './pages/Settings.jsx';
+import SalesPlans from './pages/SalesPlans.jsx';
+import SalesPlanDetail from './pages/SalesPlanDetail.jsx';
 
 function Private({ children }) { const { user } = useAuth(); return user ? children : <Navigate to="/login" replace />; }
 
@@ -31,6 +33,8 @@ export default function App() {
         <Route path="/users" element={<Users />} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/projects/:id" element={<ProjectDetail />} />
+        <Route path="/sales-plans" element={<SalesPlans />} />
+        <Route path="/sales-plans/:id" element={<SalesPlanDetail />} />
         <Route path="/quotations" element={<Quotations />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/settings" element={<Settings />} />

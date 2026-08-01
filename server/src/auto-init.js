@@ -105,6 +105,10 @@ async function runMigrations() {
     await q("ALTER TABLE contact ALTER COLUMN phone TYPE TEXT");
     log('migration: widen customer.phone/tax_id + contact.phone');
   } catch (e) { log('migration skipped/failed: ' + e.message); }
+  // โมดูล Sales Plan — สร้างตาราง + ข้อมูลตั้งต้น (idempotent)
+  try {
+    await require('./sales-plan-init').ensureSalesPlan();
+  } catch (e) { log('sales-plan-init skipped/failed: ' + e.message); }
 }
 
 async function autoInit() {

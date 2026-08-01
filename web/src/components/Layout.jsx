@@ -17,11 +17,12 @@ const I = {
   shield: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z M9 12l2 2 4-4',
   price: 'M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z M7 7h.01',
   pin: 'M12 21s-7-6.5-7-11a7 7 0 0 1 14 0c0 4.5-7 11-7 11z M12 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4z',
+  calendar: 'M3 4h18v18H3z M3 10h18 M8 2v4 M16 2v4 M8 14h.01 M12 14h.01 M16 14h.01 M8 18h.01 M12 18h.01',
 };
 const Ic = ({ d }) => <span className="ico"><svg viewBox="0 0 24 24"><path d={d} /></svg></span>;
 
 const sections = [
-  ['เมนูหลัก', [['/', 'แผงบริหาร', 'dashboard'], ['/activities', 'งานติดตาม', 'checklist'], ['/checkin', 'เช็คอินเอเจ้นท์', 'pin'], ['/customers', 'เอเจ้นท์', 'users'], ['/projects', 'กลุ่มเป้าหมาย', 'briefcase']]],
+  ['เมนูหลัก', [['/', 'แผงบริหาร', 'dashboard'], ['/sales-plans', 'แผนการขาย', 'calendar'], ['/activities', 'งานติดตาม', 'checklist'], ['/checkin', 'เช็คอินเอเจ้นท์', 'pin'], ['/customers', 'เอเจ้นท์', 'users'], ['/projects', 'กลุ่มเป้าหมาย', 'briefcase']]],
   ['เอกสาร & รายงาน', [['/rates', 'สัญญา', 'file'], ['/reports', 'รายงาน', 'chart'], ['/settings', 'ตั้งค่า', 'sliders']]],
 ];
 
