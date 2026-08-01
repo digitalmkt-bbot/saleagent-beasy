@@ -2,6 +2,7 @@ const router = require('express').Router();
 const { q, tx } = require('../db');
 const { wrap } = require('./_util');
 const { recalc } = require('./sales-plan-kpi');
+const { dispatch } = require('../notify');
 
 const DOW = { 0: 7, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6 };
 
@@ -85,6 +86,9 @@ router.post('/:activityId/result', wrap(async (req, res) => {
      b.next_action || null, b.next_follow_up_at || null, b.estimated_deal_value, b.estimated_pax, b.closing_probability || null,
      b.quotation_id || null, b.proposal_id || null, b.booking_id || null, b.internal_note || null, b.status || 'completed']);
   await recalc(a.plan_id);
+  const rt = String(b.result_type || '');
+  if (rt === 'Booking Closed') dispatch(a.company_id, 'sales_plan.booking_closed', { plan_id: a.plan_id, activity_id: a.id, title: 'ปิด Booking สำเร็จ', body: (a.client_name || a.customer_name || '') + ' · ' + (b.estimated_deal_value || 0), level: 'success' });
+  else if (rt === 'Proposal Sent') dispatch(a.company_id, 'sales_plan.proposal_sent', { plan_id: a.plan_id, activity_id: a.id, title: 'ส่ง Proposal', body: a.client_name || a.customer_name || '' });
   res.json(r.rows[0]);
 }));
 
@@ -139,6 +143,7 @@ router.post('/:activityId/create-prospect', wrap(async (req, res) => {
     return c.rows[0];
   });
   await recalc(a.plan_id);
+  dispatch(a.company_id, 'sales_plan.prospect_created', { plan_id: a.plan_id, activity_id: a.id, title: 'สร้าง Prospect ใหม่', body: out.name });
   res.status(201).json(out);
 }));
 

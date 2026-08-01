@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { api } from '../api.js';
+import { api, getToken } from '../api.js';
 import { useI18n } from '../i18n.jsx';
 import { useAuth } from '../auth.jsx';
 import { PLAN_STATUS } from './SalesPlans.jsx';
@@ -68,6 +68,36 @@ export default function SalesPlanDetail() {
     const blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = plan.plan_number + '.csv'; a.click();
   }
+  async function exportXls() {
+    try {
+      const BASE = import.meta.env.VITE_API_URL || '/api';
+      const res = await fetch(BASE + '/sales-plans/' + id + '/export.xls', { headers: { Authorization: 'Bearer ' + getToken() } });
+      if (!res.ok) throw new Error('export failed');
+      const blob = await res.blob();
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = plan.plan_number + '.xls'; a.click();
+    } catch (e) { alert(e.message); }
+  }
+  function printPdf() {
+    const days = DAYS.map(([dow, th]) => {
+      const rows = plan.activities.filter(a => a.day_of_week === dow).map(a =>
+        `<tr><td>${a.start_time || ''}</td><td>${a.customer_name || a.client_name || '-'}</td><td>${a.segment_name || ''}</td><td>${a.market_code || ''}</td><td>${a.activity_type_name || ''}</td><td>${a.objective_name || a.objective_detail || ''}</td><td>${a.expected_result || ''}</td><td>${a.actual_result || ''}</td><td>${a.status}</td></tr>`).join('');
+      return `<tr><td colspan="9" style="background:#f3f4f6;font-weight:700">${th} — ${addDays(plan.start_date, dow - 1)}</td></tr>${rows || '<tr><td colspan=9 style="color:#999">-</td></tr>'}`;
+    }).join('');
+    const tgt = plan.targets.map(t => `<tr><td>${t.target_type}</td><td>${Math.round(t.minimum_target)}–${Math.round(t.full_target)}</td><td>${Math.round(t.actual_value)}</td><td>${Math.round(t.achievement_percentage)}%</td><td>${t.target_status}</td></tr>`).join('');
+    const w = window.open('', '_blank');
+    w.document.write(`<html><head><title>${plan.plan_number}</title><meta charset="utf-8"><style>
+      body{font-family:Tahoma,sans-serif;font-size:12px;padding:24px;color:#111}
+      h1{font-size:18px;margin:0 0 4px} h2{font-size:14px;margin:18px 0 6px}
+      table{width:100%;border-collapse:collapse;margin-bottom:8px} th,td{border:1px solid #ccc;padding:4px 6px;text-align:left;font-size:11px}
+      th{background:#FF6B35;color:#fff} .meta{color:#555;margin-bottom:10px}</style></head><body>
+      <h1>Weekly Sales Activity Plan — ${plan.plan_number}</h1>
+      <div class="meta">${plan.user_name || ''} · ${plan.team_name || ''} · W${plan.week_number}/${plan.year} · ${dstr(plan.start_date)} → ${dstr(plan.end_date)}</div>
+      <h2>Weekly Target</h2><table><tr><th>KPI</th><th>Min–Full</th><th>Actual</th><th>%</th><th>Status</th></tr>${tgt}</table>
+      <h2>Weekly Activities</h2><table><tr><th>Time</th><th>Client</th><th>Segment</th><th>Market</th><th>Activity</th><th>Objective</th><th>Expected</th><th>Actual</th><th>Status</th></tr>${days}</table>
+      <h2>Summary</h2><div>${(plan.summary || '-')}</div>
+      </body></html>`);
+    w.document.close(); setTimeout(() => { w.focus(); w.print(); }, 300);
+  }
 
   return (
     <div>
@@ -94,7 +124,9 @@ export default function SalesPlanDetail() {
           {['approved', 'in_progress'].includes(plan.status) && <button className="btn" onClick={() => act('/sales-plans/' + id + '/complete')}>{t('ปิดสรุปสัปดาห์')}</button>}
           {plan.status === 'completed' && isManager && <button className="btn" onClick={() => act('/sales-plans/' + id + '/close')}>{t('ปิดแผน')}</button>}
           <button className="btn ghost" onClick={() => act('/sales-plans/' + id + '/duplicate')}>{t('ทำซ้ำสัปดาห์ถัดไป')}</button>
-          <button className="btn ghost" onClick={exportCsv}>{t('ส่งออก CSV')}</button>
+          <button className="btn ghost" onClick={exportXls}>{t('ส่งออก Excel')}</button>
+          <button className="btn ghost" onClick={printPdf}>{t('พิมพ์ / PDF')}</button>
+          <button className="btn ghost" onClick={exportCsv}>CSV</button>
         </div>
       </div>
 

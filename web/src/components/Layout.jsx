@@ -30,11 +30,13 @@ export default function Layout() {
   const { user, logout } = useAuth();
   const { t, lang, toggle } = useI18n();
   const [notif, setNotif] = useState({ rows: [], count: 0 });
+  const [spAlerts, setSpAlerts] = useState({ rows: [], count: 0 });
   const [open, setOpen] = useState(false);
   const [menu, setMenu] = useState(false);
   const [dark, setDark] = useState(() => { try { return localStorage.getItem('theme') === 'dark'; } catch (e) { return false; } });
   useEffect(() => { document.body.classList.toggle('dark', dark); try { localStorage.setItem('theme', dark ? 'dark' : 'light'); } catch (e) {} }, [dark]);
   useEffect(() => { api('/meta/notifications').then(setNotif).catch(() => {}); }, []);
+  useEffect(() => { api('/sales-plans/alerts').then(setSpAlerts).catch(() => {}); }, []);
   const initial = (user?.name || 'A').trim().charAt(0).toUpperCase();
   const avKey = 'avatar_' + ((user && (user.id || user.email)) || '');
   const [avatar, setAvatar] = useState(() => { try { return localStorage.getItem(avKey) || ''; } catch (e) { return ''; } });
@@ -87,7 +89,7 @@ export default function Layout() {
       <input type="file" accept="image/*" ref={logoRef} onChange={onLogoFile} style={{ display: 'none' }} />
       <aside className={'sidebar' + (menu ? ' open' : '')}>
         <div className="brand"><span className="logo" onClick={pickLogo} title={t('เปลี่ยนโลโก้บริษัท')} style={{ cursor: 'pointer', overflow: 'hidden' }}>{logo ? <img src={logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" strokeWidth="2" strokeLinejoin="round"><path d="M12 2l9 6-9 14L3 8z" /></svg>}</span><span className="bt">{(user && user.name) || t('ผู้ใช้')}<span className="dot">.</span>BeasyApp</span></div>
-        {[...sections, ...(['admin', 'executive'].includes(String((user && user.role) || '').toLowerCase()) ? [['ผู้ดูแลระบบ', [['/users', 'จัดการผู้ใช้', 'shield']]]] : [])].map(([title, items]) => (
+        {[...sections, ...(['admin', 'executive'].includes(String((user && user.role) || '').toLowerCase()) ? [['ผู้ดูแลระบบ', [['/users', 'จัดการผู้ใช้', 'shield'], ['/sales-plan-settings', 'ตั้งค่า Sales Plan', 'sliders']]]] : [])].map(([title, items]) => (
           <div key={title}>
             <div className="nav-section">{t(title)}</div>
             <nav className="nav">{items.map(([to, label, icon]) =>
@@ -122,17 +124,22 @@ export default function Layout() {
             </span>
             <span className="bell" onClick={() => setOpen(o => !o)}>
               <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={I.bell} /></svg>
-              {notif.count ? <span className="badge">{notif.count}</span> : null}
+              {(notif.count + spAlerts.count) ? <span className="badge">{notif.count + spAlerts.count}</span> : null}
             </span>
             <span className="userbox"><Av />{user?.name} · <a onClick={logout}>{t('ออกจากระบบ')}</a></span>
           </div>
         </div>
         {open && (
           <div className="notif">
-            {notif.rows.length ? notif.rows.map(n => (
+            {spAlerts.rows.map((a, i) => (
+              <div className="item" key={'sp' + i}><b>{t('แผนการขาย')}</b> — {a.title}
+                <div className="muted">{a.level === 'warning' ? <span className="pill red">!</span> : <span className="pill blue">i</span>} {a.body}</div></div>
+            ))}
+            {notif.rows.map(n => (
               <div className="item" key={n.id}><b>{n.customer_name}</b> — {n.detail}
                 <div className="muted">{n.overdue ? <span className="pill red">{t('เกินกำหนด')}</span> : <span className="pill orange">{t('วันนี้')}</span>} {(n.due_at || '').slice(0, 10)} · {n.assignee_name}</div></div>
-            )) : <div className="item muted">{t('ไม่มีงานแจ้งเตือน')}</div>}
+            ))}
+            {(!notif.rows.length && !spAlerts.rows.length) && <div className="item muted">{t('ไม่มีงานแจ้งเตือน')}</div>}
           </div>
         )}
         <div className="content"><Outlet /></div>

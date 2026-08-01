@@ -16,6 +16,7 @@ export default function SalesPlans() {
   const [f, setF] = useState({ search: '', status: '', user_id: '', team_id: '', month: '', year: '' });
   const [meta, setMeta] = useState({ users: [], teams: [] });
   const [show, setShow] = useState(false);
+  const [view, setView] = useState('list');
   const set = (k, v) => setF(p => ({ ...p, [k]: v }));
   function load() { api('/sales-plans', { params: { ...f, limit: 200 } }).then(d => setRows(d.rows)).catch(() => {}); }
   useEffect(() => { load(); }, [f.status, f.user_id, f.team_id, f.month, f.year]);
@@ -41,6 +42,13 @@ export default function SalesPlans() {
         <div className="card"><div className="label">{t('ต้องแก้ไข')}</div><div className="value">{kpi.revision}</div></div>
         <div className="card"><div className="label">{t('ความสำเร็จเฉลี่ย')}</div><div className="value">{kpi.avg}%</div></div>
       </div>
+      <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 10, flexWrap: 'wrap' }}>
+        <span className="tabs" style={{ margin: 0, border: 'none' }}>
+          {[['list', 'รายการ'], ['kanban', 'Kanban'], ['calendar', 'ปฏิทิน']].map(([k, l]) =>
+            <span key={k} className={'tab' + (view === k ? ' active' : '')} onClick={() => setView(k)}>{t(l)}</span>)}
+        </span>
+        <button className="btn ghost sm" style={{ marginLeft: 'auto' }} onClick={() => nav('/sales-plan-reports')}>{t('📊 รายงาน')}</button>
+      </div>
       <div className="toolbar">
         <input placeholder={t('ค้นหา เลขที่แผน/พนักงาน')} value={f.search} onChange={e => set('search', e.target.value)} onKeyDown={e => e.key === 'Enter' && load()} />
         <select value={f.status} onChange={e => set('status', e.target.value)}><option value="">{t('สถานะ: ทั้งหมด')}</option>{Object.entries(PLAN_STATUS).map(([k, v]) => <option key={k} value={k}>{t(v[0])}</option>)}</select>
@@ -50,25 +58,106 @@ export default function SalesPlans() {
         <select value={f.year} onChange={e => set('year', e.target.value)}><option value="">{t('ปี: ทั้งหมด')}</option>{years.map(y => <option key={y} value={y}>{y}</option>)}</select>
         <button className="btn green" style={{ marginLeft: 'auto' }} onClick={() => setShow(true)}>{t('+ สร้างแผนสัปดาห์')}</button>
       </div>
-      <div className="panel">
-        <table><thead><tr>
-          <th>{t('เลขที่แผน')}</th><th>{t('พนักงาน')}</th><th>{t('ทีม')}</th><th>{t('สัปดาห์')}</th><th>{t('ช่วงวันที่')}</th>
-          <th>{t('วางแผน')}</th><th>{t('ทำแล้ว')}</th><th>{t('สำเร็จ')}</th><th>{t('ลูกค้าใหม่')}</th><th>{t('Proposal')}</th><th>{t('Booking')}</th><th>{t('สถานะ')}</th>
-        </tr></thead>
-        <tbody>{rows.map(p => (
-          <tr key={p.id}>
-            <td><a onClick={() => nav('/sales-plans/' + p.id)}><b>{p.plan_number}</b></a></td>
-            <td>{p.user_name}</td><td>{p.team_name}</td><td>W{p.week_number}/{p.year}</td>
-            <td className="muted">{(p.start_date || '').slice(0, 10)} → {(p.end_date || '').slice(0, 10)}</td>
-            <td>{p.planned_count}</td><td>{p.done_count}</td>
-            <td><b>{p.completion_pct}%</b></td>
-            <td>{p.new_customer_count}</td><td>{p.proposal_count}</td><td>{p.booking_count}</td>
-            <td><span className={'pill ' + (PLAN_STATUS[p.status]?.[1] || 'gray')}>{t(PLAN_STATUS[p.status]?.[0] || p.status)}</span></td>
-          </tr>))}
-          {!rows.length && <tr><td colSpan="12" className="muted">{t('ยังไม่มีแผนการขาย')}</td></tr>}
-        </tbody></table>
-      </div>
+      {view === 'list' && (
+        <div className="panel">
+          <table><thead><tr>
+            <th>{t('เลขที่แผน')}</th><th>{t('พนักงาน')}</th><th>{t('ทีม')}</th><th>{t('สัปดาห์')}</th><th>{t('ช่วงวันที่')}</th>
+            <th>{t('วางแผน')}</th><th>{t('ทำแล้ว')}</th><th>{t('สำเร็จ')}</th><th>{t('ลูกค้าใหม่')}</th><th>{t('Proposal')}</th><th>{t('Booking')}</th><th>{t('สถานะ')}</th>
+          </tr></thead>
+          <tbody>{rows.map(p => (
+            <tr key={p.id}>
+              <td><a onClick={() => nav('/sales-plans/' + p.id)}><b>{p.plan_number}</b></a></td>
+              <td>{p.user_name}</td><td>{p.team_name}</td><td>W{p.week_number}/{p.year}</td>
+              <td className="muted">{(p.start_date || '').slice(0, 10)} → {(p.end_date || '').slice(0, 10)}</td>
+              <td>{p.planned_count}</td><td>{p.done_count}</td>
+              <td><b>{p.completion_pct}%</b></td>
+              <td>{p.new_customer_count}</td><td>{p.proposal_count}</td><td>{p.booking_count}</td>
+              <td><span className={'pill ' + (PLAN_STATUS[p.status]?.[1] || 'gray')}>{t(PLAN_STATUS[p.status]?.[0] || p.status)}</span></td>
+            </tr>))}
+            {!rows.length && <tr><td colSpan="12" className="muted">{t('ยังไม่มีแผนการขาย')}</td></tr>}
+          </tbody></table>
+        </div>
+      )}
+      {view === 'kanban' && <Kanban rows={rows} t={t} nav={nav} />}
+      {view === 'calendar' && <CalendarView t={t} nav={nav} />}
       {show && <CreateModal meta={meta} t={t} onClose={() => setShow(false)} onSaved={(id) => { setShow(false); nav('/sales-plans/' + id); }} />}
+    </div>
+  );
+}
+
+function Kanban({ rows, t, nav }) {
+  const cols = Object.keys(PLAN_STATUS);
+  return (
+    <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8 }}>
+      {cols.map(st => {
+        const items = rows.filter(r => r.status === st);
+        const c = PLAN_STATUS[st];
+        return (
+          <div key={st} style={{ minWidth: 220, flex: '0 0 220px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <span className={'pill ' + c[1]}>{t(c[0])}</span><span className="muted">{items.length}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {items.map(p => (
+                <div key={p.id} className="panel" style={{ padding: 12, cursor: 'pointer' }} onClick={() => nav('/sales-plans/' + p.id)}>
+                  <b>{p.plan_number}</b>
+                  <div className="muted" style={{ fontSize: 12, margin: '2px 0' }}>{p.user_name} · W{p.week_number}</div>
+                  <div className="bartrack" style={{ marginTop: 4 }}><div className="bar" style={{ width: (p.completion_pct || 0) + '%' }} /></div>
+                  <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>{p.done_count}/{p.planned_count} · {p.completion_pct}%</div>
+                </div>
+              ))}
+              {!items.length && <div className="muted" style={{ fontSize: 12, padding: 8 }}>—</div>}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function CalendarView({ t, nav }) {
+  const [cur, setCur] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; });
+  const [acts, setActs] = useState([]);
+  const first = new Date(cur.y, cur.m, 1);
+  const last = new Date(cur.y, cur.m + 1, 0);
+  useEffect(() => {
+    api('/sales-plans/calendar', { params: { from: first.toISOString().slice(0, 10), to: last.toISOString().slice(0, 10), limit: 500 } })
+      .then(d => setActs(d.rows)).catch(() => {});
+  }, [cur.y, cur.m]);
+  const byDay = {};
+  for (const a of acts) { const k = (a.activity_date || '').slice(0, 10); (byDay[k] = byDay[k] || []).push(a); }
+  const startPad = (first.getDay() + 6) % 7; // Monday-first
+  const cells = [];
+  for (let i = 0; i < startPad; i++) cells.push(null);
+  for (let d = 1; d <= last.getDate(); d++) cells.push(new Date(cur.y, cur.m, d));
+  const MON = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+  const DOWH = ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา'];
+  const shift = (n) => setCur(c => { const d = new Date(c.y, c.m + n, 1); return { y: d.getFullYear(), m: d.getMonth() }; });
+  return (
+    <div className="panel" style={{ padding: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+        <button className="btn sm ghost" onClick={() => shift(-1)}>◀</button>
+        <b>{MON[cur.m]} {cur.y + 543}</b>
+        <button className="btn sm ghost" onClick={() => shift(1)}>▶</button>
+        <span className="muted" style={{ marginLeft: 'auto' }}>{acts.length} {t('กิจกรรม')}</span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4 }}>
+        {DOWH.map(d => <div key={d} className="muted" style={{ textAlign: 'center', fontSize: 12, fontWeight: 700 }}>{d}</div>)}
+        {cells.map((d, i) => (
+          <div key={i} style={{ minHeight: 84, border: '1px solid var(--line)', borderRadius: 8, padding: 4, background: d ? 'transparent' : 'transparent', opacity: d ? 1 : 0.3 }}>
+            {d && <>
+              <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 2 }}>{d.getDate()}</div>
+              {(byDay[d.toISOString().slice(0, 10)] || []).slice(0, 4).map(a => (
+                <div key={a.id} onClick={() => nav('/sales-plans/' + a.plan_id)} title={(a.customer_name || a.client_name || '') + ' · ' + (a.activity_type_name || '')}
+                  style={{ fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', background: 'rgba(99,102,241,.10)', borderRadius: 4, padding: '1px 4px', marginBottom: 2 }}>
+                  {a.start_time ? a.start_time + ' ' : ''}{a.customer_name || a.client_name || '-'}
+                </div>
+              ))}
+              {(byDay[d.toISOString().slice(0, 10)] || []).length > 4 && <div className="muted" style={{ fontSize: 10 }}>+{byDay[d.toISOString().slice(0, 10)].length - 4}</div>}
+            </>}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

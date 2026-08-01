@@ -3,6 +3,16 @@ const { q, tx } = require('../db');
 const { wrap, num } = require('./_util');
 const { isStaff, isAdmin } = require('./_scope');
 const { recalc } = require('./sales-plan-kpi');
+const { dispatch } = require('../notify');
+const { buildWorkbook } = require('../xls');
+
+const EVENT_MAP = {
+  submit: ['sales_plan.submitted', 'ส่งแผนให้ตรวจสอบ', 'manager'],
+  approve: ['sales_plan.approved', 'แผนได้รับอนุมัติ', 'user'],
+  request_revision: ['sales_plan.revision_requested', 'แผนถูกส่งกลับให้แก้ไข', 'user'],
+  complete: ['sales_plan.completed', 'ปิดสรุปสัปดาห์', 'manager'],
+  close: ['sales_plan.closed', 'ปิดแผน', 'user'],
+};
 
 // ---- helpers ----
 function isoWeek(d) {
@@ -150,6 +160,12 @@ async function transition(req, res, action, allowed, next, extra = {}) {
   const r = await q(`UPDATE sales_plan SET ${sets.join(',')} WHERE id=$1 AND company_id=$2 RETURNING *`, args);
   await q(`INSERT INTO sales_plan_review (sales_plan_id,reviewer_id,action,comment,previous_status,new_status) VALUES ($1,$2,$3,$4,$5,$6)`,
     [req.params.id, req.user.id, action, (req.body && req.body.comment) || null, prev, next]);
+  const ev = EVENT_MAP[action];
+  if (ev) {
+    const plan = r.rows[0];
+    const notifyUser = ev[2] === 'manager' ? plan.manager_id : plan.user_id;
+    dispatch(cid, ev[0], { user_id: notifyUser, plan_id: plan.id, title: `${ev[1]} · ${plan.plan_number}`, body: (req.body && req.body.comment) || null, level: action === 'request_revision' ? 'warning' : 'info' });
+  }
   return r.rows[0];
 }
 
@@ -245,6 +261,38 @@ router.post('/:id/duplicate', wrap(async (req, res) => {
   });
   await recalc(out.id);
   res.status(201).json(out);
+}));
+
+// ---- EXPORT EXCEL (Weekly Activity + Target) ----
+const DAY_EN = { 1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat', 7: 'Sun' };
+router.get('/:id/export.xls', wrap(async (req, res) => {
+  const cid = req.user.company_id;
+  const p = await q('SELECT sp.*, u.display_name AS user_name, tm.name AS team_name FROM sales_plan sp LEFT JOIN app_user u ON u.id=sp.user_id LEFT JOIN team tm ON tm.id=sp.team_id WHERE sp.id=$1 AND sp.company_id=$2', [req.params.id, cid]);
+  if (!p.rows[0]) return res.status(404).json({ error: 'not found' });
+  const plan = p.rows[0];
+  const acts = await q(
+    `SELECT a.*, seg.name_en AS segment_name, mk.market_code, at.name_en AS activity_type_name, ob.name_en AS objective_name, cu.name AS customer_name
+     FROM sales_plan_activity a LEFT JOIN sales_segment seg ON seg.id=a.primary_segment_id LEFT JOIN market mk ON mk.id=a.primary_market_id
+       LEFT JOIN sales_plan_activity_type at ON at.id=a.activity_type_id LEFT JOIN sales_objective ob ON ob.id=a.objective_type_id
+       LEFT JOIN customer cu ON cu.id=a.customer_id WHERE a.sales_plan_id=$1 ORDER BY a.activity_date NULLS LAST, a.start_time NULLS LAST`, [req.params.id]);
+  const targets = await q('SELECT * FROM sales_plan_target WHERE sales_plan_id=$1 ORDER BY id', [req.params.id]);
+  const actSheet = {
+    name: 'Weekly Activity', title: `Weekly Sales Activity Plan — ${plan.plan_number} (${plan.user_name})`,
+    headers: ['Day', 'Date', 'Time', 'Client/Company', 'Segment', 'Market', 'Activity', 'Objective', 'Expected', 'Actual', 'Result', 'Status', 'Next Action'],
+    rows: acts.rows.map(a => [DAY_EN[a.day_of_week] || '', (a.activity_date || '').toString().slice(0, 10), a.start_time || '',
+      a.customer_name || a.client_name || '', a.segment_name || '', a.market_code || '', a.activity_type_name || '',
+      a.objective_name || a.objective_detail || '', a.expected_result || '', a.actual_result || '', a.result_type || '', a.status, a.next_action || '']),
+  };
+  const tgtSheet = {
+    name: 'Weekly Target', title: `Weekly Target — ${plan.plan_number}`,
+    headers: ['KPI', 'Minimum', 'Full', 'Planned', 'Actual', 'Achievement %', 'Weight %', 'Weighted Score', 'Status'],
+    rows: targets.rows.map(t => [t.target_type, +t.minimum_target, +t.full_target, +t.planned_value, +t.actual_value,
+      +t.achievement_percentage, +t.weight_percentage, +t.weighted_score, t.target_status]),
+  };
+  const xml = buildWorkbook([actSheet, tgtSheet]);
+  res.setHeader('Content-Type', 'application/vnd.ms-excel; charset=UTF-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${plan.plan_number.replace(/[^\w.-]/g, '_')}.xls"`);
+  res.send('﻿' + xml);
 }));
 
 // ---- ACTIVITIES (nested) ----

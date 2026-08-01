@@ -293,6 +293,22 @@ async function ensureTables() {
   )`);
   await q(`CREATE INDEX IF NOT EXISTS idx_spr_plan ON sales_plan_review(sales_plan_id)`);
 
+  await q(`CREATE TABLE IF NOT EXISTS sales_plan_notification (
+    id BIGSERIAL PRIMARY KEY,
+    company_id BIGINT NOT NULL REFERENCES company(id),
+    user_id BIGINT REFERENCES app_user(id),
+    sales_plan_id BIGINT REFERENCES sales_plan(id) ON DELETE CASCADE,
+    sales_plan_activity_id BIGINT REFERENCES sales_plan_activity(id) ON DELETE CASCADE,
+    event VARCHAR(60) NOT NULL,
+    title VARCHAR(255),
+    body TEXT,
+    level VARCHAR(20) DEFAULT 'info',
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT now()
+  )`);
+  await q(`CREATE INDEX IF NOT EXISTS idx_spn_company ON sales_plan_notification(company_id)`);
+  await q(`CREATE INDEX IF NOT EXISTS idx_spn_user ON sales_plan_notification(user_id, is_read)`);
+
   await q(`CREATE TABLE IF NOT EXISTS sales_plan_attachment (
     id BIGSERIAL PRIMARY KEY,
     sales_plan_id BIGINT REFERENCES sales_plan(id) ON DELETE CASCADE,
