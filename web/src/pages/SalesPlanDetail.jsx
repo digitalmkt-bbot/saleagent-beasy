@@ -127,6 +127,9 @@ export default function SalesPlanDetail() {
           <button className="btn ghost" onClick={exportXls}>{t('ส่งออก Excel')}</button>
           <button className="btn ghost" onClick={printPdf}>{t('พิมพ์ / PDF')}</button>
           <button className="btn ghost" onClick={exportCsv}>CSV</button>
+          {(isManager || canEdit) && <button className="btn ghost" style={{ marginLeft: 'auto', color: '#dc2626' }}
+            onClick={async () => { if (confirm(t('ลบแผน') + ' ' + plan.plan_number + ' ?\n' + t('การลบจะลบกิจกรรมและข้อมูลทั้งหมดของแผนนี้ด้วย'))) { try { await api('/sales-plans/' + id, { method: 'DELETE' }); nav('/sales-plans'); } catch (e) { alert(e.message); } } }}>
+            {t('ลบแผน')}</button>}
         </div>
       </div>
 

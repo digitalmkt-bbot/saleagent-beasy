@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import { useI18n } from '../i18n.jsx';
+import { useAuth } from '../auth.jsx';
 
 export const PLAN_STATUS = {
   draft: ['ร่าง', 'gray'], submitted: ['ส่งแล้ว', 'blue'], pending_review: ['รอตรวจสอบ', 'orange'],
@@ -12,6 +13,8 @@ export const PLAN_STATUS = {
 export default function SalesPlans() {
   const nav = useNavigate();
   const { t } = useI18n();
+  const { user } = useAuth();
+  const isAdmin = ['admin', 'manager', 'executive'].includes(String(user?.role || '').toLowerCase());
   const [rows, setRows] = useState([]);
   const [f, setF] = useState({ search: '', status: '', user_id: '', team_id: '', month: '', year: '' });
   const [meta, setMeta] = useState({ users: [], teams: [] });
@@ -19,6 +22,13 @@ export default function SalesPlans() {
   const [view, setView] = useState('list');
   const set = (k, v) => setF(p => ({ ...p, [k]: v }));
   function load() { api('/sales-plans', { params: { ...f, limit: 200 } }).then(d => setRows(d.rows)).catch(() => {}); }
+  async function del(p, e) {
+    e.stopPropagation();
+    if (!confirm(t('ลบแผน') + ' ' + p.plan_number + ' ?\n' + t('การลบจะลบกิจกรรมและข้อมูลทั้งหมดของแผนนี้ด้วย'))) return;
+    try { await api('/sales-plans/' + p.id, { method: 'DELETE' }); load(); }
+    catch (err) { alert(err.message); }
+  }
+  const canDelete = (p) => isAdmin || ['draft', 'revision_required'].includes(p.status);
   useEffect(() => { load(); }, [f.status, f.user_id, f.team_id, f.month, f.year]);
   useEffect(() => { Promise.all([api('/meta/users'), api('/meta/teams')]).then(([u, tm]) => setMeta({ users: u.rows, teams: tm.rows })).catch(() => {}); }, []);
 
@@ -62,7 +72,7 @@ export default function SalesPlans() {
         <div className="panel">
           <table><thead><tr>
             <th>{t('เลขที่แผน')}</th><th>{t('พนักงาน')}</th><th>{t('ทีม')}</th><th>{t('สัปดาห์')}</th><th>{t('ช่วงวันที่')}</th>
-            <th>{t('วางแผน')}</th><th>{t('ทำแล้ว')}</th><th>{t('สำเร็จ')}</th><th>{t('ลูกค้าใหม่')}</th><th>{t('Proposal')}</th><th>{t('Booking')}</th><th>{t('สถานะ')}</th>
+            <th>{t('วางแผน')}</th><th>{t('ทำแล้ว')}</th><th>{t('สำเร็จ')}</th><th>{t('ลูกค้าใหม่')}</th><th>{t('Proposal')}</th><th>{t('Booking')}</th><th>{t('สถานะ')}</th><th></th>
           </tr></thead>
           <tbody>{rows.map(p => (
             <tr key={p.id}>
@@ -73,8 +83,9 @@ export default function SalesPlans() {
               <td><b>{p.completion_pct}%</b></td>
               <td>{p.new_customer_count}</td><td>{p.proposal_count}</td><td>{p.booking_count}</td>
               <td><span className={'pill ' + (PLAN_STATUS[p.status]?.[1] || 'gray')}>{t(PLAN_STATUS[p.status]?.[0] || p.status)}</span></td>
+              <td>{canDelete(p) && <button className="btn sm ghost" title={t('ลบ')} onClick={(e) => del(p, e)}>🗑</button>}</td>
             </tr>))}
-            {!rows.length && <tr><td colSpan="12" className="muted">{t('ยังไม่มีแผนการขาย')}</td></tr>}
+            {!rows.length && <tr><td colSpan="13" className="muted">{t('ยังไม่มีแผนการขาย')}</td></tr>}
           </tbody></table>
         </div>
       )}
