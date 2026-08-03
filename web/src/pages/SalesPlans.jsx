@@ -91,7 +91,7 @@ export default function SalesPlans() {
       )}
       {view === 'kanban' && <Kanban rows={rows} t={t} nav={nav} />}
       {view === 'calendar' && <CalendarView t={t} nav={nav} />}
-      {show && <CreateModal meta={meta} t={t} onClose={() => setShow(false)} onSaved={(id) => { setShow(false); nav('/sales-plans/' + id); }} />}
+      {show && <CreateModal meta={meta} t={t} isAdmin={isAdmin} onClose={() => setShow(false)} onSaved={(id) => { setShow(false); nav('/sales-plans/' + id); }} />}
     </div>
   );
 }
@@ -178,19 +178,25 @@ function mondayOf(dateStr) {
   const day = d.getDay() || 7; d.setDate(d.getDate() - (day - 1));
   return d.toISOString().slice(0, 10);
 }
-function CreateModal({ meta, t, onClose, onSaved }) {
-  const [f, setF] = useState({ start_date: mondayOf(), manager_id: '', team_id: '', note: '' });
+function CreateModal({ meta, t, isAdmin, onClose, onSaved }) {
+  const [f, setF] = useState({ start_date: mondayOf(), user_id: '', manager_id: '', team_id: '', note: '' });
   const [err, setErr] = useState('');
   const set = (k, v) => setF(p => ({ ...p, [k]: v }));
+  function pickUser(uid) {
+    const u = meta.users.find(x => String(x.id) === String(uid));
+    setF(p => ({ ...p, user_id: uid, team_id: u && u.team_id ? String(u.team_id) : p.team_id }));
+  }
   async function save() {
     try {
-      const r = await api('/sales-plans', { method: 'POST', body: { ...f, manager_id: f.manager_id || null, team_id: f.team_id || null } });
+      const r = await api('/sales-plans', { method: 'POST', body: { ...f, user_id: f.user_id || null, manager_id: f.manager_id || null, team_id: f.team_id || null } });
       onSaved(r.id);
     } catch (e) { setErr(e.message); }
   }
   return (
     <div className="modal-bg" onClick={onClose}><div className="modal" onClick={e => e.stopPropagation()}>
       <h3 style={{ marginTop: 0 }}>{t('สร้างแผนการขายรายสัปดาห์')}</h3>
+      {isAdmin && <><label>{t('พนักงาน (เจ้าของแผน)')}</label>
+        <select value={f.user_id} onChange={e => pickUser(e.target.value)}><option value="">{t('— ตัวฉันเอง —')}</option>{meta.users.map(u => <option key={u.id} value={u.id}>{u.display_name}{u.email ? ' · ' + u.email : ''}</option>)}</select></>}
       <label>{t('วันเริ่มต้นสัปดาห์ (จันทร์)')}</label><input type="date" value={f.start_date} onChange={e => set('start_date', mondayOf(e.target.value))} />
       <div className="row">
         <div><label>{t('ทีม')}</label><select value={f.team_id} onChange={e => set('team_id', e.target.value)}><option value="">-</option>{meta.teams.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}</select></div>
