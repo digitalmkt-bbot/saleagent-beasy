@@ -198,10 +198,7 @@ function CreateModal({ meta, t, isAdmin, onClose, onSaved }) {
       {isAdmin && <><label>{t('พนักงาน (เจ้าของแผน)')}</label>
         <select value={f.user_id} onChange={e => pickUser(e.target.value)}><option value="">{t('— ตัวฉันเอง —')}</option>{meta.users.map(u => <option key={u.id} value={u.id}>{u.display_name}{u.email ? ' · ' + u.email : ''}</option>)}</select></>}
       <label>{t('วันเริ่มต้นสัปดาห์ (จันทร์)')}</label><input type="date" value={f.start_date} onChange={e => set('start_date', mondayOf(e.target.value))} />
-      <div className="row">
-        <div><label>{t('ทีม')}</label><select value={f.team_id} onChange={e => set('team_id', e.target.value)}><option value="">-</option>{meta.teams.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}</select></div>
-        <div><label>{t('ผู้จัดการ (ผู้ตรวจสอบ)')}</label><select value={f.manager_id} onChange={e => set('manager_id', e.target.value)}><option value="">-</option>{meta.users.filter(u => ['admin', 'manager', 'executive'].includes(String(u.role).toLowerCase())).map(u => <option key={u.id} value={u.id}>{u.display_name}</option>)}</select></div>
-      </div>
+      <label>{t('ผู้จัดการ (ผู้ตรวจสอบ)')}</label><select value={f.manager_id} onChange={e => set('manager_id', e.target.value)}><option value="">-</option>{meta.users.filter(u => ['admin', 'manager', 'executive'].includes(String(u.role).toLowerCase())).map(u => <option key={u.id} value={u.id}>{u.display_name}</option>)}</select>
       <label>{t('หมายเหตุประจำสัปดาห์')}</label><textarea rows="2" value={f.note} onChange={e => set('note', e.target.value)} />
       {err && <div className="err">{err}</div>}
       <div style={{ marginTop: 18, display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
