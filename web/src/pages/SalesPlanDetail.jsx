@@ -19,7 +19,7 @@ const RESULT_TYPES = ['No Contact', 'Contacted', 'Interested', 'Not Interested',
   'Site Inspection Scheduled', 'Booking Created', 'Booking Closed', 'Lost', 'Cancelled', 'Other'];
 const INTEREST = ['High', 'Medium', 'Low'];
 const TARGET_LABEL = {
-  sales_calls: 'Sales Calls (โทร)', sales_visits: 'Sales Visits (เข้าพบ)', new_prospect: 'New Prospect (ลูกค้าใหม่)',
+  sales_calls: 'Sales Calls', sales_visits: 'Sales Visits', new_prospect: 'New Prospect',
   proposal_sent: 'Proposal Sent', site_inspection: 'Site Inspection', booking_closed: 'Booking Closed',
 };
 const TSTATUS = {
@@ -149,7 +149,7 @@ export default function SalesPlanDetail() {
               <div className="bartrack"><div className="bar" style={{ width: pct + '%' }} /></div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 12 }}>
                 <span className={'pill ' + ts[1]}>{t(ts[0])}</span>
-                <span className="muted">{Math.round(tg.achievement_percentage || 0)}% · น้ำหนัก {Math.round(tg.weight_percentage)}%</span>
+                <span className="muted">{Math.round(tg.achievement_percentage || 0)}% · {t('น้ำหนัก')} {Math.round(tg.weight_percentage)}%</span>
               </div>
             </div>
           );
@@ -329,7 +329,7 @@ function ResultModal({ activity, t, onClose, onSaved }) {
       onSaved();
     } catch (e) { setErr(e.message); }
   }
-  async function quick(url, body) { try { const r = await api(url, { method: 'POST', body: body || {} }); alert(t('สำเร็จ')); onSaved(); } catch (e) { alert(e.message); } }
+  async function quick(url, body) { try { await api(url, { method: 'POST', body: body || {} }); alert(t('ทำรายการสำเร็จ')); onSaved(); } catch (e) { alert(e.message); } }
   return (
     <div className="modal-bg" onClick={onClose}><div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 600 }}>
       <h3 style={{ marginTop: 0 }}>{t('บันทึกผลกิจกรรม')} — {a.customer_name || a.client_name}</h3>
@@ -357,7 +357,7 @@ function ResultModal({ activity, t, onClose, onSaved }) {
         <button className="btn sm ghost" onClick={() => quick('/sales-plan-activities/' + a.id + '/create-task')}>{t('+ สร้าง Task ติดตาม')}</button>
       </div>
       <div style={{ marginTop: 14, display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-        <button className="btn ghost" onClick={onClose}>{t('ปิด')}</button><button className="btn green" onClick={save}>{t('บันทึกผล')}</button>
+        <button className="btn ghost" onClick={onClose}>{t('ปิดหน้าต่าง')}</button><button className="btn green" onClick={save}>{t('บันทึกผล')}</button>
       </div>
     </div></div>
   );

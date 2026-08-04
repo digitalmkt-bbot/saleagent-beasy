@@ -127,6 +127,7 @@ function Kanban({ rows, t, nav }) {
 }
 
 function CalendarView({ t, nav }) {
+  const { lang } = useI18n();
   const [cur, setCur] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; });
   const [acts, setActs] = useState([]);
   const first = new Date(cur.y, cur.m, 1);
@@ -141,14 +142,17 @@ function CalendarView({ t, nav }) {
   const cells = [];
   for (let i = 0; i < startPad; i++) cells.push(null);
   for (let d = 1; d <= last.getDate(); d++) cells.push(new Date(cur.y, cur.m, d));
-  const MON = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-  const DOWH = ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา'];
+  const MON = lang === 'en'
+    ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    : ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+  const DOWH = lang === 'en' ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] : ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา'];
+  const yearLabel = lang === 'en' ? cur.y : cur.y + 543;
   const shift = (n) => setCur(c => { const d = new Date(c.y, c.m + n, 1); return { y: d.getFullYear(), m: d.getMonth() }; });
   return (
     <div className="panel" style={{ padding: 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
         <button className="btn sm ghost" onClick={() => shift(-1)}>◀</button>
-        <b>{MON[cur.m]} {cur.y + 543}</b>
+        <b>{MON[cur.m]} {yearLabel}</b>
         <button className="btn sm ghost" onClick={() => shift(1)}>▶</button>
         <span className="muted" style={{ marginLeft: 'auto' }}>{acts.length} {t('กิจกรรม')}</span>
       </div>

@@ -24,7 +24,7 @@ export default function SalesPlanReports() {
 
   const fn = rep.funnel || {};
   const maxFn = Math.max(fn.total || 0, 1);
-  const funnelRows = [['ทั้งหมด', fn.total], ['ติดต่อได้', fn.contacted], ['สนใจ', fn.interested], ['ส่ง Proposal', fn.proposal], ['ปิด Booking', fn.booking]];
+  const funnelRows = [['รวมทั้งหมด', fn.total], ['ติดต่อได้', fn.contacted], ['สนใจ', fn.interested], ['ส่ง Proposal', fn.proposal], ['ปิด Booking', fn.booking]];
 
   return (
     <div>
