@@ -88,7 +88,8 @@ async function runMigrations() {
     await q("ALTER TABLE checkin ADD COLUMN IF NOT EXISTS activity_id BIGINT");
     await q("ALTER TABLE checkin ADD COLUMN IF NOT EXISTS image_url TEXT");
     await q("ALTER TABLE checkin ADD COLUMN IF NOT EXISTS checkout_note TEXT");
-    await q("ALTER TABLE checkin ADD COLUMN IF NOT EXISTS contact_method VARCHAR(20)");
+    await q("ALTER TABLE customer ADD COLUMN IF NOT EXISTS rate_agent_id VARCHAR(60)");
+    await q("CREATE INDEX IF NOT EXISTS idx_customer_rateagent ON customer(company_id, rate_agent_id)");
     await q("UPDATE pipeline_stage SET name = replace(name, 'ลูกค้า', 'เอเจ้นท์') WHERE name LIKE '%ลูกค้า%'");
     log('migration: rename ลูกค้า -> เอเจ้นท์ in pipeline_stage');
     await q("UPDATE pipeline_stage SET name = replace(name, 'ใบเสนอราคา', 'สัญญา') WHERE name LIKE '%ใบเสนอราคา%'");
@@ -105,10 +106,6 @@ async function runMigrations() {
     await q("ALTER TABLE contact ALTER COLUMN phone TYPE TEXT");
     log('migration: widen customer.phone/tax_id + contact.phone');
   } catch (e) { log('migration skipped/failed: ' + e.message); }
-  // โมดูล Sales Plan — สร้างตาราง + ข้อมูลตั้งต้น (idempotent)
-  try {
-    await require('./sales-plan-init').ensureSalesPlan();
-  } catch (e) { log('sales-plan-init skipped/failed: ' + e.message); }
 }
 
 async function autoInit() {

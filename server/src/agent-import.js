@@ -54,19 +54,20 @@ async function importAgentsFor(user) {
   let created = 0, updated = 0;
   for (const a of agents) {
     const code = (a.code || a.id || '').toString().trim() || null;
+    const aid = (a.id || '').toString().trim() || null;
     const owner = ownerBySales[a.sales] || null;
     const note = buildNote(a);
-    const existing = code ? (await q('SELECT id FROM customer WHERE company_id=$1 AND ref_code=$2 LIMIT 1', [cid, code])).rows[0] : null;
+    const existing = (await q('SELECT id FROM customer WHERE company_id=$1 AND (($2 IS NOT NULL AND rate_agent_id=$2) OR (rate_agent_id IS NULL AND $3 IS NOT NULL AND ref_code=$3)) LIMIT 1', [cid, aid, code])).rows[0];
     let custId;
     if (existing) {
       custId = existing.id;
-      await q(`UPDATE customer SET name=$2, phone=COALESCE($3,phone), email=COALESCE($4,email), owner_user_id=COALESCE($5,owner_user_id), tax_id=COALESCE($6,tax_id), address=COALESCE($7,address), note=COALESCE($8,note), updated_at=now() WHERE id=$1`,
-        [custId, a.name, a.phone || null, a.email || null, owner, a.companyinfo_taxid || null, a.companyinfo_address || null, note]);
+      await q(`UPDATE customer SET name=$2, phone=COALESCE($3,phone), email=COALESCE($4,email), owner_user_id=COALESCE($5,owner_user_id), tax_id=COALESCE($6,tax_id), address=COALESCE($7,address), note=COALESCE($8,note), rate_agent_id=COALESCE($9,rate_agent_id), updated_at=now() WHERE id=$1`,
+        [custId, a.name, a.phone || null, a.email || null, owner, a.companyinfo_taxid || null, a.companyinfo_address || null, note, aid]);
       updated++;
     } else {
-      const r = await q(`INSERT INTO customer (company_id,name,ref_code,phone,email,tax_id,address,note,priority_id,owner_user_id,lifecycle_stage,is_followed,created_by)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,3,$9,'regular',true,$10) RETURNING id`,
-        [cid, a.name, code, a.phone || null, a.email || null, a.companyinfo_taxid || null, a.companyinfo_address || null, note, owner, user.id]);
+      const r = await q(`INSERT INTO customer (company_id,name,ref_code,rate_agent_id,phone,email,tax_id,address,note,priority_id,owner_user_id,lifecycle_stage,is_followed,created_by)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,3,$10,'regular',true,$11) RETURNING id`,
+        [cid, a.name, code, aid, a.phone || null, a.email || null, a.companyinfo_taxid || null, a.companyinfo_address || null, note, owner, user.id]);
       custId = r.rows[0].id;
       created++;
     }
