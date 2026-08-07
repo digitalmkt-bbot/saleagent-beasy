@@ -57,7 +57,7 @@ async function importAgentsFor(user) {
     const aid = (a.id || '').toString().trim() || null;
     const owner = ownerBySales[a.sales] || null;
     const note = buildNote(a);
-    const existing = (await q('SELECT id FROM customer WHERE company_id=$1 AND (($2 IS NOT NULL AND rate_agent_id=$2) OR (rate_agent_id IS NULL AND $3 IS NOT NULL AND ref_code=$3)) LIMIT 1', [cid, aid, code])).rows[0];
+    const existing = (await q('SELECT id FROM customer WHERE company_id=$1 AND (rate_agent_id = $2::varchar OR (rate_agent_id IS NULL AND ref_code = $3::varchar)) LIMIT 1', [cid, aid, code])).rows[0];
     let custId;
     if (existing) {
       custId = existing.id;
