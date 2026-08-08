@@ -277,17 +277,10 @@ function ActivityModal({ ctx, planId, meta, t, onClose, onSaved }) {
       <h3 style={{ marginTop: 0 }}>{a.id ? t('แก้ไขกิจกรรม') : t('เพิ่มกิจกรรม')}</h3>
       <div className="row">
         <div><label>{t('วันที่')}</label><input type="date" value={f.activity_date} onChange={e => set('activity_date', e.target.value)} /></div>
-        <div><label>{t('เวลาเริ่ม')}</label><input type="time" value={f.start_time} onChange={e => set('start_time', e.target.value)} /></div>
-        <div><label>{t('เวลาสิ้นสุด')}</label><input type="time" value={f.end_time} onChange={e => set('end_time', e.target.value)} /></div>
       </div>
       <div className="row">
         <div><label>{t('ลูกค้าในระบบ')}</label><select value={f.customer_id} onChange={e => set('customer_id', e.target.value)}><option value="">- {t('หรือกรอกชื่อชั่วคราว')} -</option>{meta.customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
         <div><label>{t('ชื่อชั่วคราว (ยังไม่สร้าง)')}</label><input value={f.client_name} onChange={e => set('client_name', e.target.value)} /></div>
-      </div>
-      <div className="row">
-        <div><label>{t('ผู้ติดต่อ')}</label><input value={f.contact_person} onChange={e => set('contact_person', e.target.value)} /></div>
-        <div><label>{t('โทรศัพท์')}</label><input value={f.phone} onChange={e => set('phone', e.target.value)} /></div>
-        <div><label>Email</label><input value={f.email} onChange={e => set('email', e.target.value)} /></div>
       </div>
       <div className="row">
         <div><label>Segment</label><select value={f.primary_segment_id} onChange={e => set('primary_segment_id', e.target.value)}><option value="">-</option>{meta.segments.map(s => <option key={s.id} value={s.id}>{s.name_en}</option>)}</select></div>
@@ -297,14 +290,12 @@ function ActivityModal({ ctx, planId, meta, t, onClose, onSaved }) {
         <div><label>{t('กิจกรรม')}</label><select value={f.activity_type_id} onChange={e => set('activity_type_id', e.target.value)}><option value="">-</option>{meta.types.map(x => <option key={x.id} value={x.id}>{x.name_en}</option>)}</select></div>
         <div><label>{t('วัตถุประสงค์')}</label><select value={f.objective_type_id} onChange={e => set('objective_type_id', e.target.value)}><option value="">-</option>{meta.objectives.map(o => <option key={o.id} value={o.id}>{o.name_en}</option>)}</select></div>
       </div>
-      <label>{t('รายละเอียดวัตถุประสงค์')}</label><input value={f.objective_detail} onChange={e => set('objective_detail', e.target.value)} />
-      <label>{t('ผลลัพธ์ที่คาดหวัง')}</label><input value={f.expected_result} onChange={e => set('expected_result', e.target.value)} />
+      <label>Details</label><input value={f.objective_detail} onChange={e => set('objective_detail', e.target.value)} />
       <div className="row">
-        <div><label>{t('มูลค่าคาดหวัง')}</label><input type="number" value={f.expected_value} onChange={e => set('expected_value', e.target.value)} /></div>
         <div><label>{t('จำนวน Pax')}</label><input type="number" value={f.expected_pax} onChange={e => set('expected_pax', e.target.value)} /></div>
         <div><label>{t('ความสำคัญ')}</label><select value={f.priority_id} onChange={e => set('priority_id', +e.target.value)}>{[1, 2, 3, 4, 5].map(p => <option key={p} value={p}>{t(PR[p - 1])}</option>)}</select></div>
       </div>
-      <label>{t('สถานที่')}</label><input value={f.location} onChange={e => set('location', e.target.value)} />
+
       {err && <div className="err">{err}</div>}
       <div style={{ marginTop: 16, display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
         <button className="btn ghost" onClick={onClose}>{t('ยกเลิก')}</button><button className="btn green" onClick={save}>{t('บันทึก')}</button>
