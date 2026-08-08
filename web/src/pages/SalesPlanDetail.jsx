@@ -292,7 +292,6 @@ function ActivityModal({ ctx, planId, meta, t, onClose, onSaved }) {
       </div>
       <label>Details</label><input value={f.objective_detail} onChange={e => set('objective_detail', e.target.value)} />
       <div className="row">
-        <div><label>{t('จำนวน Pax')}</label><input type="number" value={f.expected_pax} onChange={e => set('expected_pax', e.target.value)} /></div>
         <div><label>{t('ความสำคัญ')}</label><select value={f.priority_id} onChange={e => set('priority_id', +e.target.value)}>{[1, 2, 3, 4, 5].map(p => <option key={p} value={p}>{t(PR[p - 1])}</option>)}</select></div>
       </div>
 
