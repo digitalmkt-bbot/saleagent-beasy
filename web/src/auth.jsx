@@ -12,6 +12,7 @@ export function AuthProvider({ children }) {
     const r = await api('/login', { method: 'POST', body: { email, password } });
     setToken(r.token);
     localStorage.setItem('jubili_user', JSON.stringify(r.user));
+    try { localStorage.setItem('last_email', email); } catch (e) {}
     setUser(r.user);
   }
   async function resetPassword(email, newPassword) {
