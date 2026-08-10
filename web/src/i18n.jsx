@@ -381,7 +381,11 @@ const EN = {
   'ชื่อ': 'Name', 'หน่วย': 'Unit', 'น้ำหนัก %': 'Weight %', 'กรอก target_type': 'Enter target_type',
   'มาตรฐาน ISO 3166-1 alpha-3 + WW': 'ISO 3166-1 alpha-3 standard + WW',
   'กำลังโหลด...': 'Loading...', 'ภาษาไทย': 'Thai', 'น้ำหนัก': 'Weight',
-};
+};'ระบบบริหารงานขายครบวงจร — วางแผน ติดตาม ปิดการขาย ในที่เดียว': 'All-in-one sales management — plan, track, and close in one place',
+  'อีเมล หรือชื่อผู้ใช้': 'Email or Username',
+  'ลืมรหัสผ่าน?': 'Forgot password?',
+  'ติดต่อเรา': 'Contact Us',
+  'สัปดาห์นี้': 'This week',
 
 const Ctx = createContext({ t: (s) => s, lang: 'th', toggle: () => {} });
 export const useI18n = () => useContext(Ctx);
