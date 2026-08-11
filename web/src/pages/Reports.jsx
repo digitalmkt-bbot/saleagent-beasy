@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, baht } from '../api.js';
 import { useI18n } from '../i18n.jsx';
+import Sales7m from './Sales7m.jsx';
 
 const rtry = (fn, n = 3, ms = 1200) => new Promise((res, rej) => {
   const go = (i) => fn().then(res).catch(e => i >= n ? rej(e) : setTimeout(() => go(i + 1), ms));
@@ -268,7 +269,7 @@ export default function Reports() {
           </div>
         </div>
       </div>
-
+<Sales7m />
       {modal && <div className="modal-bg" onClick={() => setModal(null)}><div className="modal" onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><h3 style={{ margin: 0 }}>{modal.title}</h3><button type="button" aria-label="close" onClick={() => setModal(null)} style={{ background: 'none', border: 'none', fontSize: 28, cursor: 'pointer', color: 'var(--muted)' }}>×</button></div>
         <div className="panel" style={{ marginTop: 12, maxHeight: '65vh', overflow: 'auto', padding: 0 }}>
