@@ -17,6 +17,35 @@ const compact = (n) => {
 };
 
 // horizontal bars for revenue-by-program
+function TierChart({ rows, active, onSelect, t }) {
+  const tiers = ['A', 'B', 'C', 'D'].map((tier) => rows.find((r) => r.tier === tier) || { tier, agents: 0, total: 0 });
+  const total = tiers.reduce((sum, row) => sum + (+row.total || 0), 0) || 1;
+  return (
+    <div style={{ marginBottom: 16, padding: 14, border: '1px solid var(--glass-border)', borderRadius: 14, background: 'var(--glass)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
+        <div style={{ fontSize: 13, fontWeight: 800 }}>{t('สัดส่วนยอดขายตาม Tier')}</div>
+        <div style={{ fontSize: 10.5, color: 'var(--muted)' }}>{t('คลิกกราฟเพื่อกรอง')}</div>
+      </div>
+      <div style={{ display: 'flex', height: 22, overflow: 'hidden', borderRadius: 999, background: 'var(--line)' }}>
+        {tiers.map((row) => {
+          const pct = (+row.total || 0) / total * 100;
+          return <button key={row.tier} type="button" title={`Tier ${row.tier}: ${compact(row.total)} (${pct.toFixed(1)}%)`} onClick={() => onSelect(active === row.tier ? '' : row.tier)} style={{ width: pct + '%', minWidth: pct ? 4 : 0, padding: 0, border: 0, cursor: 'pointer', opacity: active && active !== row.tier ? .3 : 1, background: TIER_STYLE[row.tier].color, transition: 'opacity .2s' }} />;
+        })}
+      </div>
+      <div className="s7-tier-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginTop: 10 }}>
+        {tiers.map((row) => {
+          const pct = (+row.total || 0) / total * 100;
+          return <button key={row.tier} type="button" onClick={() => onSelect(active === row.tier ? '' : row.tier)} style={{ padding: '9px 10px', textAlign: 'left', border: active === row.tier ? `2px solid ${TIER_STYLE[row.tier].color}` : '1px solid var(--glass-border)', borderRadius: 10, cursor: 'pointer', background: TIER_STYLE[row.tier].background, color: TIER_STYLE[row.tier].color }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 800 }}><span>Tier {row.tier}</span><span>{pct.toFixed(1)}%</span></div>
+            <div style={{ fontSize: 15, fontWeight: 800, marginTop: 3 }}>{compact(row.total)}</div>
+            <div style={{ fontSize: 10.5, marginTop: 1 }}>{(+row.agents || 0).toLocaleString()} {t('ราย')}</div>
+          </button>;
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ProgBars({ rows }) {
   const mx = Math.max(1, ...rows.map((r) => +r.amount));
   return (
@@ -113,6 +142,8 @@ export default function Sales7m() {
         </div>
       </div>
 
+      <TierChart rows={data.tierSummary || []} active={tier} onSelect={setTier} t={t} />
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 16 }} className="s7-grid">
         {/* by program */}
         <div>
@@ -157,7 +188,7 @@ export default function Sales7m() {
           </div>
         </div>
       </div>
-      <style>{`@media(max-width:800px){.s7-grid{grid-template-columns:1fr!important}}`}</style>
+      <style>{`@media(max-width:800px){.s7-grid{grid-template-columns:1fr!important}}@media(max-width:560px){.s7-tier-grid{grid-template-columns:repeat(2,1fr)!important}}`}</style>
     </div>
   );
 }
