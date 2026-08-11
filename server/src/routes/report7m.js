@@ -25,14 +25,13 @@ router.get('/agent-sales-7m', wrap(async (req, res) => {
     ${baseWhere.length ? `WHERE ${baseWhere.join(' AND ')}` : ''}
   ), agent_totals AS (
     SELECT b.agent_key AS key, max(b.agent_id) AS agent_id,
-      max(COALESCE(a.code, b.agent_code)) AS code,
-      max(COALESCE(a.name, b.agent_name, b.source_name)) AS name,
+      max(b.agent_code) AS code,
+      max(COALESCE(b.agent_name, b.source_name)) AS name,
       max(b.agent_code) AS agent_code, max(b.agent_name) AS agent_name,
-      max(b.source_name) AS source_name,
-      max(COALESCE(a.market, b.agent_market)) AS market,
+      max(b.source_name) AS source_name, max(b.agent_market) AS market,
       max(b.match_status) AS match_status, sum(b.amount_7m)::float AS total,
       count(DISTINCT b.program)::int AS programs
-    FROM base b LEFT JOIN sb_agents a ON a.id = b.agent_id
+    FROM base b
     GROUP BY b.agent_key
   ), quartiles AS (
     SELECT agent_totals.*, ntile(4) OVER (ORDER BY total DESC, key) AS quartile
