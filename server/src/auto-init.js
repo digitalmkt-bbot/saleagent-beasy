@@ -109,6 +109,10 @@ async function runMigrations() {
   try {
     await require('./sales-plan-init').ensureSalesPlan();
   } catch (e) { log('sales-plan-init skipped/failed: ' + e.message); }
+  try {
+    await require('./performance-init').ensurePerformanceSchema();
+    log('migration: monthly agent/program performance tables ensured');
+  } catch (e) { log('performance-init skipped/failed: ' + e.message); }
 }
 
 async function autoInit() {
