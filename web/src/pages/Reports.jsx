@@ -139,6 +139,7 @@ export default function Reports() {
   const [modal, setModal] = useState(null);
   const [wr, setWr] = useState(null);
   const [monthly, setMonthly] = useState(null);
+  const [performanceView, setPerformanceView] = useState('compare');
 
   useEffect(() => { api('/reports/summary').then(setD).catch(() => {}); }, []);
   function loadReports(f = from, tt = to) {
@@ -270,8 +271,18 @@ export default function Reports() {
           </div>
         </div>
       </div>
-      <AgentPerformanceCompare />
-      <Sales7m />
+      <div style={{ marginTop: 18 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
+          <h2 style={{ margin: 0, fontSize: 18 }}>{t('ประสิทธิภาพ Agent')}</h2>
+          <div style={{ display: 'inline-flex', padding: 4, borderRadius: 12, background: 'var(--line)', gap: 4 }}>
+            {[
+              ['compare', t('เปรียบเทียบรายเดือน')],
+              ['tiers', t('สรุป Tier ยอดขาย')],
+            ].map(([key, label]) => <button key={key} type="button" onClick={() => setPerformanceView(key)} style={{ border: 0, borderRadius: 9, padding: '8px 13px', cursor: 'pointer', fontSize: 12.5, fontWeight: 800, background: performanceView === key ? '#FF4B26' : 'transparent', color: performanceView === key ? '#fff' : 'var(--muted)', boxShadow: performanceView === key ? '0 4px 12px rgba(255,75,38,.22)' : 'none' }}>{label}</button>)}
+          </div>
+        </div>
+        {performanceView === 'compare' ? <AgentPerformanceCompare /> : <Sales7m />}
+      </div>
       {modal && <div className="modal-bg" onClick={() => setModal(null)}><div className="modal" onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><h3 style={{ margin: 0 }}>{modal.title}</h3><button type="button" aria-label="close" onClick={() => setModal(null)} style={{ background: 'none', border: 'none', fontSize: 28, cursor: 'pointer', color: 'var(--muted)' }}>×</button></div>
         <div className="panel" style={{ marginTop: 12, maxHeight: '65vh', overflow: 'auto', padding: 0 }}>
