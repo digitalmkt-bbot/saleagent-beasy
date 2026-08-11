@@ -1,0 +1,147 @@
+import { useEffect, useState } from 'react';
+import { api, baht } from '../api.js';
+import { useI18n } from '../i18n.jsx';
+
+const PAL = ['#FF4B26', '#1A191D', '#FF9269', '#8A8790', '#FFC5AC', '#E11D48', '#F59E0B', '#5B9DF9'];
+const compact = (n) => {
+  n = +n || 0;
+  if (n >= 1e6) return '฿' + (n / 1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return '฿' + Math.round(n / 1e3) + 'K';
+  return '฿' + Math.round(n).toLocaleString();
+};
+
+// horizontal bars for revenue-by-program
+function ProgBars({ rows }) {
+  const mx = Math.max(1, ...rows.map((r) => +r.amount));
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {rows.map((r, i) => (
+        <div key={r.program}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, fontWeight: 600, marginBottom: 4 }}>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.program}</span>
+            <span style={{ fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{compact(r.amount)}</span>
+          </div>
+          <div style={{ height: 10, borderRadius: 6, background: 'var(--line, #eee)' }}>
+            <div style={{ height: '100%', width: Math.max(3, Math.round((+r.amount / mx) * 100)) + '%', borderRadius: 6, background: PAL[i % PAL.length] }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function Sales7m() {
+  const { t } = useI18n();
+  const [data, setData] = useState(null);
+  const [agent, setAgent] = useState('');
+  const [program, setProgram] = useState('');
+  const [q, setQ] = useState('');
+  const [err, setErr] = useState(false);
+
+  const load = () => {
+    api('/reports/agent-sales-7m', { params: { agent, program } })
+      .then((d) => { setData(d); setErr(false); })
+      .catch(() => setErr(true));
+  };
+  useEffect(() => { load(); }, [agent, program]); // eslint-disable-line
+
+  const lnk = { color: '#FF4B26', fontWeight: 700, fontSize: 12, cursor: 'pointer' };
+  const seg = { background: 'var(--glass)', border: '1px solid var(--glass-border)', borderRadius: 10, padding: '7px 10px', fontSize: 12.5, fontWeight: 600, color: 'var(--ink)' };
+
+  if (err) {
+    return (
+      <div className="card" style={{ marginTop: 14 }}>
+        <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 800 }}>{t('ยอดขายย้อนหลัง 7 เดือน (นำเข้า)')}</h3>
+        <div style={{ color: '#8A8790', fontSize: 12.5 }}>{t('ยังไม่มีตาราง report_agent_sales_7m_2026 ในฐานข้อมูล (โปรด import ก่อน)')}</div>
+      </div>
+    );
+  }
+  if (!data) return null;
+
+  const tot = data.total || {};
+  const agents = data.topAgents || [];
+  const shown = agents.slice(0, 12);
+
+  return (
+    <div className="card" style={{ marginTop: 14 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
+        <div>
+          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800 }}>{t('ยอดขายย้อนหลัง 7 เดือน (ม.ค.–ก.ค. 2026)')}</h3>
+          <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>{t('จากไฟล์ Agency × Trip Performance ที่นำเข้า · แยกตาม agent × โปรแกรม')}</div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <select value={program} onChange={(e) => setProgram(e.target.value)} style={seg}>
+            <option value="">{t('ทุกโปรแกรม')}</option>
+            {(data.programs || []).map((p) => <option key={p} value={p}>{p}</option>)}
+          </select>
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') setAgent(q.trim()); }}
+            placeholder={t('ค้นหา agent (ชื่อ/รหัส)')}
+            style={{ ...seg, minWidth: 190 }}
+          />
+          <button className="btn" onClick={() => setAgent(q.trim())}>{t('กรอง')}</button>
+          {(agent || program) && <a style={lnk} onClick={() => { setAgent(''); setProgram(''); setQ(''); }}>{t('ล้าง')}</a>}
+        </div>
+      </div>
+
+      {/* KPI row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 14 }}>
+        <div style={{ background: '#1C1B1F', color: '#fff', borderRadius: 16, padding: 16 }}>
+          <div style={{ fontSize: 11.5, color: '#A0A0A8', fontWeight: 600 }}>{t('ยอดรวม 7 เดือน')}</div>
+          <div style={{ fontSize: 24, fontWeight: 800, margin: '6px 0 0' }}>{compact(tot.total)}</div>
+        </div>
+        <div style={{ background: '#FF4B26', color: '#fff', borderRadius: 16, padding: 16 }}>
+          <div style={{ fontSize: 11.5, opacity: .85, fontWeight: 600 }}>{t('จำนวน Agent')}</div>
+          <div style={{ fontSize: 24, fontWeight: 800, margin: '6px 0 0' }}>{(tot.agents || 0).toLocaleString()}</div>
+        </div>
+        <div className="card" style={{ boxShadow: 'none', border: '1px solid var(--glass-border)' }}>
+          <div style={{ fontSize: 11.5, color: 'var(--muted)', fontWeight: 600 }}>{t('จำนวนโปรแกรม')}</div>
+          <div style={{ fontSize: 24, fontWeight: 800, margin: '6px 0 0' }}>{(tot.programs || 0).toLocaleString()}</div>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 16 }} className="s7-grid">
+        {/* by program */}
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10 }}>{t('ยอดตามโปรแกรม')}</div>
+          <ProgBars rows={data.byProgram || []} />
+        </div>
+        {/* agents ranked */}
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <div style={{ fontSize: 13, fontWeight: 800 }}>{t('อันดับ Agent ตามยอด')}</div>
+            <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>{agents.length} {t('ราย')}</div>
+          </div>
+          <div style={{ overflowX: 'auto', maxHeight: 420, overflowY: 'auto' }}>
+            <table>
+              <thead><tr>
+                <th>{t('Agent')}</th>
+                <th>{t('รหัส')}</th>
+                <th style={{ textAlign: 'right' }}>{t('โปรแกรม')}</th>
+                <th style={{ textAlign: 'right' }}>{t('ยอดรวม')}</th>
+              </tr></thead>
+              <tbody>
+                {shown.map((x, i) => (
+                  <tr key={x.key}>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{ width: 22, height: 22, borderRadius: 7, background: i < 3 ? '#FF4B26' : 'var(--line)', color: i < 3 ? '#fff' : 'var(--muted)', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
+                        <b style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{x.name}</b>
+                      </div>
+                    </td>
+                    <td style={{ color: 'var(--muted)', fontSize: 12 }}>{x.code || '-'}</td>
+                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{x.programs}</td>
+                    <td style={{ textAlign: 'right', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{baht(x.total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <style>{`@media(max-width:800px){.s7-grid{grid-template-columns:1fr!important}}`}</style>
+    </div>
+  );
+}
