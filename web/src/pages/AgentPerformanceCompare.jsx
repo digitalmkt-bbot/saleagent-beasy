@@ -66,7 +66,7 @@ export default function AgentPerformanceCompare() {
           <select value={owner} onChange={e => setOwner(e.target.value)} style={{ ...control, maxWidth: 240 }}>
             <option value="">{t('ทุกเซลส์')}</option>
             {(data?.owners || []).map(o => <option key={o.id} value={o.id}>{o.display_name}{o.assigned_agents != null ? ` (${o.assigned_agents})` : ''}</option>)}
-            <option value="unassigned">{t('ยังไม่ระบุผู้รับผิดชอบ')}</option>
+            <option value="unassigned">Unassigned</option>
           </select>
         </label>
         <label style={{ fontSize: 11, color: 'var(--muted)', flex: '1 1 210px' }}>{t('ค้นหา Agent')}<br />
