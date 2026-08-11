@@ -5,6 +5,42 @@ import { useI18n } from '../i18n.jsx';
 const money = n => '฿' + Math.round(+n || 0).toLocaleString('th-TH');
 const pct = n => n == null ? 'New' : `${n > 0 ? '+' : ''}${(+n).toFixed(1)}%`;
 
+function MonthRangePicker({ months, start, end, onChange, t }) {
+  const [open, setOpen] = useState(false);
+  const [pendingStart, setPendingStart] = useState('');
+  const years = [...new Set(months.map(m => m.slice(0, 4)))];
+  const choose = month => {
+    if (!pendingStart) { setPendingStart(month); return; }
+    const [from, to] = pendingStart <= month ? [pendingStart, month] : [month, pendingStart];
+    onChange(from, to); setPendingStart(''); setOpen(false);
+  };
+  const activeStart = pendingStart || start;
+  const activeEnd = pendingStart ? pendingStart : end;
+  const monthLabel = m => {
+    const [year, month] = m.split('-').map(Number);
+    return new Date(year, month - 1, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  };
+  return <div style={{ position: 'relative', alignSelf: 'flex-end' }}>
+    <button type="button" onClick={() => { setOpen(!open); setPendingStart(''); }} style={{ minWidth: 245, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, background: 'var(--glass)', border: '1px solid var(--glass-border)', borderRadius: 10, padding: '9px 12px', color: 'var(--ink)', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>
+      <span>📅 {start && end ? `${monthLabel(start)} → ${monthLabel(end)}` : t('เลือกช่วงเดือน')}</span><span>⌄</span>
+    </button>
+    {open && <div style={{ position: 'absolute', top: 'calc(100% + 7px)', left: 0, zIndex: 100, width: 330, maxWidth: 'calc(100vw - 32px)', padding: 14, borderRadius: 16, background: 'var(--panel, #fff)', border: '1px solid var(--glass-border)', boxShadow: '0 18px 50px rgba(26,25,29,.2)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}><b style={{ fontSize: 13 }}>{pendingStart ? t('เลือกเดือนสิ้นสุด') : t('เลือกเดือนเริ่มต้น')}</b><button type="button" onClick={() => setOpen(false)} style={{ border: 0, background: 'transparent', color: 'var(--muted)', fontSize: 20, cursor: 'pointer' }}>×</button></div>
+      {years.map(year => <div key={year} style={{ marginTop: 10 }}>
+        <div style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 800, marginBottom: 6 }}>{year}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6 }}>
+          {months.filter(m => m.startsWith(year)).map(m => {
+            const selected = m === activeStart || m === activeEnd;
+            const inRange = activeStart && activeEnd && m >= activeStart && m <= activeEnd;
+            return <button key={m} type="button" onClick={() => choose(m)} style={{ border: selected ? '1px solid #FF4B26' : '1px solid transparent', borderRadius: 9, padding: '7px 4px', background: selected ? '#FF4B26' : inRange ? 'rgba(255,75,38,.12)' : 'var(--glass)', color: selected ? '#fff' : 'var(--ink)', fontSize: 11.5, fontWeight: selected || inRange ? 800 : 600, cursor: 'pointer' }}>{monthLabel(m).slice(0, 3)}</button>;
+          })}
+        </div>
+      </div>)}
+      <div style={{ color: 'var(--muted)', fontSize: 10.5, marginTop: 12 }}>{t('เลือกเดือนแรกและเดือนสุดท้ายเพื่อเปรียบเทียบ')}</div>
+    </div>}
+  </div>;
+}
+
 export default function AgentPerformanceCompare() {
   const { t } = useI18n();
   const [data, setData] = useState(null);
@@ -46,15 +82,8 @@ export default function AgentPerformanceCompare() {
       </div>
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: '14px 0' }}>
-        <label style={{ fontSize: 11, color: 'var(--muted)' }}>{t('เดือนฐาน')}<br />
-          <select value={monthA} onChange={e => setMonthA(e.target.value)} style={control}>
-            {(data?.months || []).map(m => <option key={m} value={m}>{m}</option>)}
-          </select>
-        </label>
-        <label style={{ fontSize: 11, color: 'var(--muted)' }}>{t('เดือนเปรียบเทียบ')}<br />
-          <select value={monthB} onChange={e => setMonthB(e.target.value)} style={control}>
-            {(data?.months || []).map(m => <option key={m} value={m}>{m}</option>)}
-          </select>
+        <label style={{ fontSize: 11, color: 'var(--muted)' }}>{t('ช่วงเดือนเปรียบเทียบ')}<br />
+          <MonthRangePicker months={data?.months || []} start={monthA} end={monthB} onChange={(from, to) => { setMonthA(from); setMonthB(to); }} t={t} />
         </label>
         <label style={{ fontSize: 11, color: 'var(--muted)' }}>{t('โปรแกรม')}<br />
           <select value={program} onChange={e => setProgram(e.target.value)} style={{ ...control, maxWidth: 190 }}>
