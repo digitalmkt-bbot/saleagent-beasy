@@ -2,6 +2,74 @@ const router = require('express').Router();
 const { q } = require('../db');
 const { wrap } = require('./_util');
 
+// Interactive agent × program × month comparison, linked to the CRM sales owner.
+router.get('/agent-performance-monthly', wrap(async (req, res) => {
+  const companyId = req.user.company_id;
+  const monthResult = await q(`SELECT DISTINCT to_char(month,'YYYY-MM') AS month
+    FROM agent_program_monthly_performance WHERE company_id=$1 ORDER BY month`, [companyId]);
+  const months = monthResult.rows.map(x => x.month);
+  const requestedA = /^\d{4}-\d{2}$/.test(req.query.monthA || '') ? req.query.monthA : '';
+  const requestedB = /^\d{4}-\d{2}$/.test(req.query.monthB || '') ? req.query.monthB : '';
+  const monthA = requestedA && months.includes(requestedA) ? requestedA : (months.at(-2) || months.at(-1) || '');
+  const monthB = requestedB && months.includes(requestedB) ? requestedB : (months.at(-1) || '');
+
+  const where = ['m.company_id=$1'];
+  const args = [companyId];
+  let i = 2;
+  if (req.query.program) { where.push(`p.name=$${i++}`); args.push(req.query.program); }
+  if (req.query.agent) {
+    where.push(`(COALESCE(c.name,m.source_name) ILIKE '%'||$${i}||'%' OR COALESCE(m.rate_agent_id,'') ILIKE '%'||$${i}||'%')`);
+    args.push(req.query.agent); i++;
+  }
+  // Sales users only see their own assigned agents. Managers/admins can select any owner.
+  if (req.user.role === 'sales') {
+    where.push(`c.owner_user_id=$${i++}`); args.push(req.user.id);
+  } else if (req.query.owner === 'unassigned') {
+    where.push('c.owner_user_id IS NULL');
+  } else if (/^\d+$/.test(req.query.owner || '')) {
+    where.push(`c.owner_user_id=$${i++}`); args.push(+req.query.owner);
+  }
+  const monthAParam = i++; args.push(`${monthA}-01`);
+  const monthBParam = i++; args.push(`${monthB}-01`);
+
+  const rows = monthA && monthB ? (await q(`WITH compared AS (
+    SELECT COALESCE(m.customer_id::text,NULLIF(m.rate_agent_id,''),'name:'||lower(trim(m.source_name))) AS agent_key,
+      max(m.customer_id) AS customer_id, max(NULLIF(m.rate_agent_id,'')) AS rate_agent_id,
+      max(COALESCE(c.name,m.source_name)) AS agent_name,
+      max(c.owner_user_id) AS owner_id, max(COALESCE(u.display_name,'Unassigned')) AS owner_name,
+      p.name AS program,
+      sum(m.sales_amount) FILTER (WHERE m.month=$${monthAParam}::date)::float AS amount_a,
+      sum(m.sales_amount) FILTER (WHERE m.month=$${monthBParam}::date)::float AS amount_b
+    FROM agent_program_monthly_performance m
+    JOIN performance_program p ON p.id=m.program_id
+    LEFT JOIN customer c ON c.id=m.customer_id
+    LEFT JOIN app_user u ON u.id=c.owner_user_id
+    WHERE ${where.join(' AND ')} AND m.month IN ($${monthAParam}::date,$${monthBParam}::date)
+    GROUP BY 1,p.name
+  ) SELECT *, COALESCE(amount_b,0)-COALESCE(amount_a,0) AS difference,
+      CASE WHEN COALESCE(amount_a,0)=0 THEN NULL
+        ELSE round(((COALESCE(amount_b,0)-amount_a)/amount_a*100)::numeric,1)::float END AS change_pct
+    FROM compared ORDER BY COALESCE(amount_b,0) DESC,COALESCE(amount_a,0) DESC,agent_name`, args)).rows : [];
+
+  const [programResult, ownerResult] = await Promise.all([
+    q('SELECT name FROM performance_program WHERE company_id=$1 AND is_active ORDER BY name', [companyId]),
+    req.user.role === 'sales'
+      ? q('SELECT id,display_name FROM app_user WHERE id=$1', [req.user.id])
+      : q(`SELECT u.id,u.display_name,count(DISTINCT c.id)::int AS assigned_agents
+          FROM app_user u LEFT JOIN customer c ON c.owner_user_id=u.id
+          WHERE u.company_id=$1 AND u.role IN ('sales','manager')
+          GROUP BY u.id ORDER BY u.display_name`, [companyId]),
+  ]);
+  const amountA = rows.reduce((n, x) => n + (+x.amount_a || 0), 0);
+  const amountB = rows.reduce((n, x) => n + (+x.amount_b || 0), 0);
+  res.json({
+    months, monthA, monthB, programs: programResult.rows.map(x => x.name), owners: ownerResult.rows,
+    rows, summary: { amountA, amountB, difference: amountB - amountA,
+      changePct: amountA ? Math.round((amountB - amountA) / amountA * 1000) / 10 : null,
+      agents: new Set(rows.map(x => x.agent_key)).size },
+  });
+}));
+
 router.get('/agent-sales-7m', wrap(async (req, res) => {
   const { agent, program } = req.query;
   const tier = /^[ABCD]$/.test(req.query.tier || '') ? req.query.tier : '';
