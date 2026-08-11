@@ -3,6 +3,12 @@ import { api, baht } from '../api.js';
 import { useI18n } from '../i18n.jsx';
 
 const PAL = ['#FF4B26', '#1A191D', '#FF9269', '#8A8790', '#FFC5AC', '#E11D48', '#F59E0B', '#5B9DF9'];
+const TIER_STYLE = {
+  A: { background: '#DCFCE7', color: '#15803D' },
+  B: { background: '#DBEAFE', color: '#1D4ED8' },
+  C: { background: '#FEF3C7', color: '#B45309' },
+  D: { background: '#FFE4E6', color: '#BE123C' },
+};
 const compact = (n) => {
   n = +n || 0;
   if (n >= 1e6) return '฿' + (n / 1e6).toFixed(2) + 'M';
@@ -35,15 +41,16 @@ export default function Sales7m() {
   const [data, setData] = useState(null);
   const [agent, setAgent] = useState('');
   const [program, setProgram] = useState('');
+  const [tier, setTier] = useState('');
   const [q, setQ] = useState('');
   const [err, setErr] = useState(false);
 
   const load = () => {
-    api('/reports/agent-sales-7m', { params: { agent, program } })
+    api('/reports/agent-sales-7m', { params: { agent, program, tier } })
       .then((d) => { setData(d); setErr(false); })
       .catch(() => setErr(true));
   };
-  useEffect(() => { load(); }, [agent, program]); // eslint-disable-line
+  useEffect(() => { load(); }, [agent, program, tier]); // eslint-disable-line
 
   const lnk = { color: '#FF4B26', fontWeight: 700, fontSize: 12, cursor: 'pointer' };
   const seg = { background: 'var(--glass)', border: '1px solid var(--glass-border)', borderRadius: 10, padding: '7px 10px', fontSize: 12.5, fontWeight: 600, color: 'var(--ink)' };
@@ -74,6 +81,10 @@ export default function Sales7m() {
             <option value="">{t('ทุกโปรแกรม')}</option>
             {(data.programs || []).map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
+          <select value={tier} onChange={(e) => setTier(e.target.value)} style={seg}>
+            <option value="">{t('ทุก Tier')}</option>
+            {(data.tierSummary || []).map((x) => <option key={x.tier} value={x.tier}>Tier {x.tier} ({x.agents})</option>)}
+          </select>
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -82,7 +93,7 @@ export default function Sales7m() {
             style={{ ...seg, minWidth: 190 }}
           />
           <button className="btn" onClick={() => setAgent(q.trim())}>{t('กรอง')}</button>
-          {(agent || program) && <a style={lnk} onClick={() => { setAgent(''); setProgram(''); setQ(''); }}>{t('ล้าง')}</a>}
+          {(agent || program || tier) && <a style={lnk} onClick={() => { setAgent(''); setProgram(''); setTier(''); setQ(''); }}>{t('ล้าง')}</a>}
         </div>
       </div>
 
@@ -111,7 +122,10 @@ export default function Sales7m() {
         {/* agents ranked */}
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <div style={{ fontSize: 13, fontWeight: 800 }}>{t('อันดับ Agent ตามยอด')}</div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 800 }}>{t('อันดับ Agent ตามยอด')}</div>
+              <div style={{ fontSize: 10.5, color: 'var(--muted)', marginTop: 2 }}>{t('Tier A–D แบ่งตามอันดับยอดขายเป็น 4 กลุ่มเท่า ๆ กัน')}</div>
+            </div>
             <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>{agents.length} {t('ราย')}</div>
           </div>
           <div style={{ overflowX: 'auto', maxHeight: 420, overflowY: 'auto' }}>
@@ -119,6 +133,7 @@ export default function Sales7m() {
               <thead><tr>
                 <th>{t('Agent')}</th>
                 <th>{t('รหัส')}</th>
+                <th style={{ textAlign: 'center' }}>Tier</th>
                 <th style={{ textAlign: 'right' }}>{t('โปรแกรม')}</th>
                 <th style={{ textAlign: 'right' }}>{t('ยอดรวม')}</th>
               </tr></thead>
@@ -132,6 +147,7 @@ export default function Sales7m() {
                       </div>
                     </td>
                     <td style={{ color: 'var(--muted)', fontSize: 12 }}>{x.code || '-'}</td>
+                    <td style={{ textAlign: 'center' }}><span style={{ display: 'inline-flex', minWidth: 25, justifyContent: 'center', borderRadius: 999, padding: '3px 8px', fontSize: 11, fontWeight: 800, ...(TIER_STYLE[x.tier] || {}) }}>{x.tier || '-'}</span></td>
                     <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{x.programs}</td>
                     <td style={{ textAlign: 'right', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{baht(x.total)}</td>
                   </tr>
