@@ -24,6 +24,7 @@ app.use('/api/saleorders', require('./routes/saleorders'));
 app.use('/api/tags', require('./routes/tags'));
 app.use('/api/meta', require('./routes/meta'));
 app.use('/api/reports', require('./routes/reports'));
+app.use('/api/reports', require('./routes/report7m'));
 app.use('/api/sales-plans', require('./routes/sales-plan-reports'));
 app.use('/api/sales-plans', require('./routes/sales-plans'));
 app.use('/api/sales-plan-activities', require('./routes/sales-plan-activities'));
