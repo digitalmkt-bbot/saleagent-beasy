@@ -85,8 +85,9 @@ router.get('/agent-sales-7m', wrap(async (req, res) => {
   }
   if (tier) { selectedWhere.push(`tier = $${i++}`); args.push(tier); }
 
-  // Tiers are equal-size revenue quartiles within the selected program:
-  // A = highest quartile through D = lowest quartile.
+  // Revenue-contribution tiers within the selected program. Agents are sorted
+  // high-to-low; the row crossing a boundary remains in the tier it helped fill.
+  // A = first 70%, B = next 20%, C = next 8%, D = remaining 2%.
   const cte = `WITH base AS (
     SELECT r.*, COALESCE(r.agent_id, r.source_name) AS agent_key
     FROM report_agent_sales_7m_2026 r
@@ -101,12 +102,19 @@ router.get('/agent-sales-7m', wrap(async (req, res) => {
       count(DISTINCT b.program)::int AS programs
     FROM base b
     GROUP BY b.agent_key
-  ), quartiles AS (
-    SELECT agent_totals.*, ntile(4) OVER (ORDER BY total DESC, key) AS quartile
+  ), revenue_ranked AS (
+    SELECT agent_totals.*,
+      COALESCE(sum(total) OVER (ORDER BY total DESC, key ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING),0) AS revenue_before,
+      sum(total) OVER () AS revenue_all
     FROM agent_totals
   ), ranked AS (
-    SELECT quartiles.*, CASE quartile WHEN 1 THEN 'A' WHEN 2 THEN 'B' WHEN 3 THEN 'C' ELSE 'D' END AS tier
-    FROM quartiles
+    SELECT revenue_ranked.*,
+      CASE WHEN revenue_all <= 0 THEN 'D'
+        WHEN revenue_before / revenue_all < 0.70 THEN 'A'
+        WHEN revenue_before / revenue_all < 0.90 THEN 'B'
+        WHEN revenue_before / revenue_all < 0.98 THEN 'C'
+        ELSE 'D' END AS tier
+    FROM revenue_ranked
   ), selected AS (
     SELECT * FROM ranked ${selectedWhere.length ? `WHERE ${selectedWhere.join(' AND ')}` : ''}
   )`;
@@ -131,6 +139,7 @@ router.get('/agent-sales-7m', wrap(async (req, res) => {
     topAgents: topAg.rows,
     tierSummary: tierSummary.rows,
     programs: progs.rows.map((x) => x.program),
+    tierMethod: { type: 'cumulative_revenue', A: 70, B: 20, C: 8, D: 2 },
   });
 }));
 

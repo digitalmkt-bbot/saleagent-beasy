@@ -155,7 +155,7 @@ export default function Sales7m() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
             <div>
               <div style={{ fontSize: 13, fontWeight: 800 }}>{t('อันดับ Agent ตามยอด')}</div>
-              <div style={{ fontSize: 10.5, color: 'var(--muted)', marginTop: 2 }}>{t('Tier A–D แบ่งตามอันดับยอดขายเป็น 4 กลุ่มเท่า ๆ กัน')}</div>
+              <div style={{ fontSize: 10.5, color: 'var(--muted)', marginTop: 2 }}>{t('Tier ตามสัดส่วนยอดขายสะสม: A 70% · B 20% · C 8% · D 2%')}</div>
             </div>
             <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>{agents.length} {t('ราย')}</div>
           </div>

@@ -28,6 +28,8 @@ const EN = {
   'มูลค่าดีล (รายเดือน)': 'Deal value (monthly)',
   'มูลค่ารวม (Booking)': 'Total value (Booking)',
   'ยอดขายจริง': 'Actual sales',
+  'Tier ตามสัดส่วนยอดขายสะสม: A 70% · B 20% · C 8% · D 2%': 'Cumulative revenue tiers: A 70% · B 20% · C 8% · D 2%',
+  'สัดส่วนยอดขายตาม Tier': 'Revenue contribution by tier',
   'ยอดตามผู้รับผิดชอบ': 'Sales by owner',
   'ยอดรายเดือน': 'Monthly sales',
   'ยอดส่งเข้าบริษัท': 'Revenue to company',
