@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, baht } from '../api.js';
 import { useI18n } from '../i18n.jsx';
+import MonthRangeBar from '../components/MonthRangeBar.jsx';
 
 const PAL = ['#FF4B26', '#1A191D', '#FF9269', '#8A8790', '#FFC5AC', '#E11D48', '#F59E0B', '#5B9DF9'];
 const TIER_STYLE = {
@@ -15,6 +16,26 @@ const compact = (n) => {
   if (n >= 1e3) return '฿' + Math.round(n / 1e3) + 'K';
   return '฿' + Math.round(n).toLocaleString();
 };
+
+const monthLabel = (m) => {
+  if (!m) return '';
+  const [year, month] = m.split('-').map(Number);
+  return new Date(year, month - 1, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+};
+const monthSpan = (from, to) => {
+  if (!from || !to) return 0;
+  const [fy, fm] = from.split('-').map(Number), [ty, tm] = to.split('-').map(Number);
+  return (ty - fy) * 12 + (tm - fm) + 1;
+};
+// Trailing windows anchored to the newest imported month, plus the full range.
+function rangePresets(months) {
+  if (months.length < 2) return [];
+  const last = months.at(-1);
+  const list = [];
+  for (const n of [3, 6, 12]) if (months.length > n) list.push([`${n} เดือนล่าสุด`, months.at(-n), last]);
+  list.push(['ทั้งหมด', months[0], last]);
+  return list;
+}
 
 // horizontal bars for revenue-by-program
 function TierChart({ rows, active, onSelect, t }) {
@@ -72,14 +93,21 @@ export default function Sales7m() {
   const [program, setProgram] = useState('');
   const [tier, setTier] = useState('');
   const [q, setQ] = useState('');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
   const [err, setErr] = useState(false);
 
   const load = () => {
-    api('/reports/agent-sales-7m', { params: { agent, program, tier } })
-      .then((d) => { setData(d); setErr(false); })
+    api('/reports/agent-sales-7m', { params: { agent, program, tier, from, to } })
+      .then((d) => {
+        setData(d); setErr(false);
+        // Follow the range the API settled on when none was requested or a month has no data.
+        if (d.from && d.from !== from) setFrom(d.from);
+        if (d.to && d.to !== to) setTo(d.to);
+      })
       .catch(() => setErr(true));
   };
-  useEffect(() => { load(); }, [agent, program, tier]); // eslint-disable-line
+  useEffect(() => { load(); }, [agent, program, tier, from, to]); // eslint-disable-line
 
   const lnk = { color: '#FF4B26', fontWeight: 700, fontSize: 12, cursor: 'pointer' };
   const seg = { background: 'var(--glass)', border: '1px solid var(--glass-border)', borderRadius: 10, padding: '7px 10px', fontSize: 12.5, fontWeight: 600, color: 'var(--ink)' };
@@ -87,8 +115,8 @@ export default function Sales7m() {
   if (err) {
     return (
       <div className="card" style={{ marginTop: 14 }}>
-        <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 800 }}>{t('ยอดขายย้อนหลัง 7 เดือน (นำเข้า)')}</h3>
-        <div style={{ color: '#8A8790', fontSize: 12.5 }}>{t('ยังไม่มีตาราง report_agent_sales_7m_2026 ในฐานข้อมูล (โปรด import ก่อน)')}</div>
+        <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 800 }}>{t('ยอดขายตามช่วงเดือน (นำเข้า)')}</h3>
+        <div style={{ color: '#8A8790', fontSize: 12.5 }}>{t('ยังไม่มีข้อมูลผลงานที่นำเข้า (โปรด import ก่อน)')}</div>
       </div>
     );
   }
@@ -97,12 +125,14 @@ export default function Sales7m() {
   const tot = data.total || {};
   const agents = data.topAgents || [];
   const shown = agents.slice(0, 12);
+  const months = data.months || [];
+  const span = monthSpan(from, to);
 
   return (
     <div className="card" style={{ marginTop: 14 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
         <div>
-          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800 }}>{t('ยอดขายย้อนหลัง 7 เดือน (ม.ค.–ก.ค. 2026)')}</h3>
+          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800 }}>{t('ยอดขายตามช่วงเดือน')}{span ? ` (${monthLabel(from)} – ${monthLabel(to)})` : ''}</h3>
           <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>{t('จากไฟล์ Agency × Trip Performance ที่นำเข้า · แยกตาม agent × โปรแกรม')}</div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -126,10 +156,15 @@ export default function Sales7m() {
         </div>
       </div>
 
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 5 }}>{t('ช่วงเดือน')}</div>
+        <MonthRangeBar months={months} from={from} to={to} presets={rangePresets(months)} onApply={(a, b) => { setFrom(a); setTo(b); }} t={t} />
+      </div>
+
       {/* KPI row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 14 }}>
         <div style={{ background: '#1C1B1F', color: '#fff', borderRadius: 16, padding: 16 }}>
-          <div style={{ fontSize: 11.5, color: '#A0A0A8', fontWeight: 600 }}>{t('ยอดรวม 7 เดือน')}</div>
+          <div style={{ fontSize: 11.5, color: '#A0A0A8', fontWeight: 600 }}>{t('ยอดรวม')}{span ? ` ${span} ${t('เดือน')}` : ''}</div>
           <div style={{ fontSize: 24, fontWeight: 800, margin: '6px 0 0' }}>{compact(tot.total)}</div>
         </div>
         <div style={{ background: '#FF4B26', color: '#fff', borderRadius: 16, padding: 16 }}>

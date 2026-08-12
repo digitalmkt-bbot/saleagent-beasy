@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api, baht } from '../api.js';
 import { useI18n } from '../i18n.jsx';
+import MonthRangeBar from '../components/MonthRangeBar.jsx';
 
 const money = n => '฿' + Math.round(+n || 0).toLocaleString('th-TH');
 const pct = n => n == null ? 'New' : `${n > 0 ? '+' : ''}${(+n).toFixed(1)}%`;
-
-const pill = { background: 'var(--glass)', border: '1px solid var(--glass-border)', borderRadius: 12, padding: '7px 11px', fontSize: 12.5, fontWeight: 600, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', gap: 6 };
-const pillInput = { border: 'none', background: 'transparent', font: 'inherit', fontWeight: 700, width: 'auto', minWidth: 0, padding: 0, color: 'var(--ink)' };
 
 // Pairs of months to compare, anchored to the newest month that actually has data.
 function monthPresets(months) {
@@ -29,8 +27,6 @@ export default function AgentPerformanceCompare() {
   const [data, setData] = useState(null);
   const [monthA, setMonthA] = useState('');
   const [monthB, setMonthB] = useState('');
-  const [draftA, setDraftA] = useState('');
-  const [draftB, setDraftB] = useState('');
   const [program, setProgram] = useState('');
   const [owner, setOwner] = useState('');
   const [agentInput, setAgentInput] = useState('');
@@ -44,8 +40,8 @@ export default function AgentPerformanceCompare() {
       .then(r => {
         setData(r); setError('');
         // The API falls back to its own months when a requested one has no data — follow it.
-        if (r.monthA && r.monthA !== monthA) { setMonthA(r.monthA); setDraftA(r.monthA); }
-        if (r.monthB && r.monthB !== monthB) { setMonthB(r.monthB); setDraftB(r.monthB); }
+        if (r.monthA && r.monthA !== monthA) setMonthA(r.monthA);
+        if (r.monthB && r.monthB !== monthB) setMonthB(r.monthB);
       })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
@@ -57,11 +53,7 @@ export default function AgentPerformanceCompare() {
   const diffColor = +summary.difference >= 0 ? '#15803D' : '#BE123C';
   const control = { background: 'var(--glass)', border: '1px solid var(--glass-border)', borderRadius: 10, padding: '8px 10px', color: 'var(--ink)', fontSize: 12.5, fontWeight: 600 };
   const months = data?.months || [];
-  const apply = (a = draftA, b = draftB) => {
-    if (!a || !b) return;
-    const [from, to] = a <= b ? [a, b] : [b, a];
-    setDraftA(from); setDraftB(to); setMonthA(from); setMonthB(to);
-  };
+  const apply = (a, b) => { setMonthA(a); setMonthB(b); };
 
   return (
     <div className="card" style={{ marginTop: 14 }}>
@@ -75,12 +67,7 @@ export default function AgentPerformanceCompare() {
 
       <div style={{ margin: '14px 0 10px' }}>
         <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 5 }}>{t('ช่วงเดือนเปรียบเทียบ')}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <div style={pill}>📅 <input type="month" value={draftA} min={months[0]} max={months.at(-1)} onChange={e => setDraftA(e.target.value)} style={pillInput} /></div>
-          <div style={pill}>→ <input type="month" value={draftB} min={months[0]} max={months.at(-1)} onChange={e => setDraftB(e.target.value)} style={pillInput} /></div>
-          <button className="btn" onClick={() => apply()}>{t('ดูข้อมูล')}</button>
-          {monthPresets(months).map(([lb, a, b]) => { const on = monthA === a && monthB === b; return <button key={lb} onClick={() => apply(a, b)} style={{ padding: '7px 12px', borderRadius: 999, border: '1px solid var(--glass-border)', background: on ? 'var(--ink)' : 'var(--glass)', color: on ? '#fff' : 'var(--ink)', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>{t(lb)}</button>; })}
-        </div>
+        <MonthRangeBar months={months} from={monthA} to={monthB} presets={monthPresets(months)} onApply={apply} t={t} />
       </div>
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>

@@ -71,12 +71,28 @@ router.get('/agent-performance-monthly', wrap(async (req, res) => {
 }));
 
 router.get('/agent-sales-7m', wrap(async (req, res) => {
+  const companyId = req.user.company_id;
   const { agent, program } = req.query;
   const tier = /^[ABCD]$/.test(req.query.tier || '') ? req.query.tier : '';
-  const args = [];
-  let i = 1;
+
+  // Every imported month is selectable; the default range covers all of them.
+  const monthResult = await q(`SELECT DISTINCT to_char(month,'YYYY-MM') AS month
+    FROM agent_program_monthly_performance WHERE company_id=$1 ORDER BY month`, [companyId]);
+  const months = monthResult.rows.map(x => x.month);
+  const requested = key => /^\d{4}-\d{2}$/.test(req.query[key] || '') && months.includes(req.query[key]) ? req.query[key] : '';
+  let from = requested('from') || months[0] || '';
+  let to = requested('to') || months.at(-1) || '';
+  if (from > to) [from, to] = [to, from];
+  if (!months.length) {
+    return res.json({ months, from, to, total: { total: 0, agents: 0, programs: 0, rows: 0 },
+      byProgram: [], topAgents: [], tierSummary: [], programs: [],
+      tierMethod: { type: 'cumulative_revenue', A: 70, B: 20, C: 8, D: 2 } });
+  }
+
+  const args = [companyId, `${from}-01`, `${to}-01`];
+  let i = 4;
   const baseWhere = [];
-  if (program) { baseWhere.push(`r.program = $${i++}`); args.push(program); }
+  if (program) { baseWhere.push(`p.name = $${i++}`); args.push(program); }
 
   const selectedWhere = [];
   if (agent) {
@@ -89,16 +105,25 @@ router.get('/agent-sales-7m', wrap(async (req, res) => {
   // high-to-low; the row crossing a boundary remains in the tier it helped fill.
   // A = first 70%, B = next 20%, C = next 8%, D = remaining 2%.
   const cte = `WITH base AS (
-    SELECT r.*, COALESCE(r.agent_id, r.source_name) AS agent_key
-    FROM report_agent_sales_7m_2026 r
-    ${baseWhere.length ? `WHERE ${baseWhere.join(' AND ')}` : ''}
+    SELECT p.name AS program, m.sales_amount::float AS amount,
+      COALESCE(m.customer_id::text,NULLIF(m.rate_agent_id,''),'name:'||lower(trim(m.source_name))) AS agent_key,
+      NULLIF(m.rate_agent_id,'') AS agent_id,
+      COALESCE(NULLIF(m.rate_agent_id,''),c.ref_code) AS agent_code,
+      c.name AS agent_name, m.source_name, m.market AS agent_market,
+      CASE WHEN NULLIF(m.rate_agent_id,'') IS NOT NULL THEN 'matched'
+        WHEN m.customer_id IS NOT NULL THEN 'name-matched' ELSE 'unmatched' END AS match_status
+    FROM agent_program_monthly_performance m
+    JOIN performance_program p ON p.id = m.program_id
+    LEFT JOIN customer c ON c.id = m.customer_id
+    WHERE m.company_id = $1 AND m.month BETWEEN $2::date AND $3::date
+      ${baseWhere.length ? `AND ${baseWhere.join(' AND ')}` : ''}
   ), agent_totals AS (
     SELECT b.agent_key AS key, max(b.agent_id) AS agent_id,
       max(b.agent_code) AS code,
       max(COALESCE(b.agent_name, b.source_name)) AS name,
       max(b.agent_code) AS agent_code, max(b.agent_name) AS agent_name,
       max(b.source_name) AS source_name, max(b.agent_market) AS market,
-      max(b.match_status) AS match_status, sum(b.amount_7m)::float AS total,
+      max(b.match_status) AS match_status, sum(b.amount)::float AS total,
       count(DISTINCT b.program)::int AS programs
     FROM base b
     GROUP BY b.agent_key
@@ -121,19 +146,22 @@ router.get('/agent-sales-7m', wrap(async (req, res) => {
 
   const [tot, byProg, topAg, tierSummary, progs] = await Promise.all([
     q(`${cte}, filtered AS (SELECT b.* FROM base b JOIN selected s ON s.key=b.agent_key)
-      SELECT COALESCE(sum(amount_7m),0)::float total,
+      SELECT COALESCE(sum(amount),0)::float total,
         count(DISTINCT agent_key)::int agents, count(DISTINCT program)::int programs,
         count(*)::int rows FROM filtered`, args),
     q(`${cte}, filtered AS (SELECT b.* FROM base b JOIN selected s ON s.key=b.agent_key)
-      SELECT program, sum(amount_7m)::float amount FROM filtered GROUP BY program ORDER BY amount DESC`, args),
+      SELECT program, sum(amount)::float amount FROM filtered GROUP BY program ORDER BY amount DESC`, args),
     q(`${cte} SELECT key, agent_id, code, name, market, match_status, total, programs, tier
       FROM selected ORDER BY total DESC, name`, args),
     q(`${cte} SELECT tier, count(*)::int agents, sum(total)::float total
       FROM ranked GROUP BY tier ORDER BY tier`, args),
-    q('SELECT DISTINCT program FROM report_agent_sales_7m_2026 ORDER BY program'),
+    q(`SELECT DISTINCT p.name AS program FROM performance_program p
+      JOIN agent_program_monthly_performance m ON m.program_id = p.id
+      WHERE m.company_id = $1 ORDER BY 1`, [companyId]),
   ]);
 
   res.json({
+    months, from, to,
     total: tot.rows[0],
     byProgram: byProg.rows,
     topAgents: topAg.rows,
