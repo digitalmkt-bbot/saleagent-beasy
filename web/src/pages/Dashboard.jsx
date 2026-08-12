@@ -12,6 +12,7 @@ const rtry = (fn, n = 3, ms = 1200) => new Promise((res, rej) => {
 
 const IND = '#FF4B26', BLU = '#FF9269', TEAL = '#1A191D', VIO = '#FFC5AC', SKY = '#8A8790', GRN = '#34D399';
 const kfmt = (n) => { n = Number(n) || 0; if (n >= 1e6) return '฿' + (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + 'M'; if (n >= 1e3) return '฿' + Math.round(n / 1e3) + 'K'; return '฿' + Math.round(n); };
+const bfmt = (n) => '฿' + Math.round(Number(n) || 0).toLocaleString('en-US');
 const ATYPES = ['โทรติดตาม', 'นัดหมาย', 'เข้าพบ/นำเสนอ', 'ส่งสัญญา', 'ติดตามชำระเงิน', 'อื่นๆ'];
 
 function sparkEmpty(H) { return <svg viewBox={`0 0 220 ${H}`} style={{ width: '100%', height: H }}><line x1="4" y1={H - 8} x2="216" y2={H - 8} stroke="rgba(120,130,170,.22)" strokeWidth="2" strokeLinecap="round" /></svg>; }
@@ -230,26 +231,26 @@ export default function Dashboard() {
       <div className="hero3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 14 }}>
         <div style={{ background: '#1C1B1F', color: '#fff', borderRadius: 20, padding: 18, boxShadow: '0 10px 30px rgba(28,27,35,.18)' }}>
           <div style={{ fontSize: 12, color: '#A0A0A8', fontWeight: 600 }}>{t('ปิดการขายแล้ว')} <span style={{ fontSize: 10, color: '#34D399', fontWeight: 700 }}>● Live</span></div>
-          <div style={{ fontSize: 26, fontWeight: 800, margin: '8px 0 2px' }}>{kfmt(win.won_value)}</div>
+          <div style={{ fontSize: 26, fontWeight: 800, margin: '8px 0 2px' }}>{bfmt(win.won_value)}</div>
           <div style={{ fontSize: 11, color: '#A0A0A8' }}>{win.won} {t('ดีล')}</div>
           <div style={{ marginTop: 10 }}><RSpline vals={chartSeries.map(m => +m.value)} /></div>
         </div>
         <div style={{ background: '#FF4B26', color: '#fff', borderRadius: 20, padding: 18, boxShadow: '0 12px 30px rgba(255,75,38,.28)' }}>
           <div style={{ fontSize: 12, opacity: .85, fontWeight: 600 }}>{t('อัตราชนะ (Win rate)')}</div>
           <div style={{ fontSize: 26, fontWeight: 800, margin: '8px 0 2px' }}>{win.winRate}%</div>
-          <div style={{ fontSize: 11, opacity: .82 }}>{win.won} {t('ปิดได้')} · {kfmt(win.won_value)}</div>
+          <div style={{ fontSize: 11, opacity: .82 }}>{win.won} {t('ปิดได้')} · {bfmt(win.won_value)}</div>
           <div style={{ marginTop: 14 }}><RSegBar won={win.won} open={win.open} /></div>
         </div>
         <div className="card">
           <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600 }}>{t('มูลค่ารวม (Booking)')}</div>
-          <div style={{ fontSize: 26, fontWeight: 800, margin: '8px 0 2px' }}>{kfmt(win.total_value)}</div>
+          <div style={{ fontSize: 26, fontWeight: 800, margin: '8px 0 2px' }}>{bfmt(win.total_value)}</div>
           <div style={{ fontSize: 11, color: 'var(--muted)' }}>{win.total} {t('บุ๊กกิ้ง')}</div>
           <div style={{ marginTop: 14 }}><RMiniBars vals={chartSeries.map(m => +m.value)} /></div>
         </div>
       </div>
       <div className="cards" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))' }}>
         <Stat label={t('เอเจ้นท์ทั้งหมด')} value={d.customers.total} sub={`${t('ใหม่')} +${d.customers.new}`} subUp badge="b" icon="users" />
-        <Stat label={t('ยอดเฉลี่ย/บุ๊กกิ้ง')} value={kfmt(win.won ? win.won_value / win.won : 0)} sub={`${win.won} ${t('บุ๊กกิ้ง')}`} subUp badge="p" icon="target" />
+        <Stat label={t('ยอดเฉลี่ย/บุ๊กกิ้ง')} value={bfmt(win.won ? win.won_value / win.won : 0)} sub={`${win.won} ${t('บุ๊กกิ้ง')}`} subUp badge="p" icon="target" />
         <Stat label={t('งานติดตามค้าง')} value={d.activities.pending} sub={`${d.activities.overdue} ${t('เกินกำหนด')}`} subUp={d.activities.overdue === 0} badge="r" icon="clock" />
         <Stat label={t('สุขภาพการขาย')} value={hexAvg} sub={`${win.winRate}% ${t('ยืนยัน')}`} subUp badge="p" icon="gauge" />
       </div>
