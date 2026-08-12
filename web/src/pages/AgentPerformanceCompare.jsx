@@ -5,40 +5,23 @@ import { useI18n } from '../i18n.jsx';
 const money = n => '฿' + Math.round(+n || 0).toLocaleString('th-TH');
 const pct = n => n == null ? 'New' : `${n > 0 ? '+' : ''}${(+n).toFixed(1)}%`;
 
-function MonthRangePicker({ months, start, end, onChange, t }) {
-  const [open, setOpen] = useState(false);
-  const [pendingStart, setPendingStart] = useState('');
-  const years = [...new Set(months.map(m => m.slice(0, 4)))];
-  const choose = month => {
-    if (!pendingStart) { setPendingStart(month); return; }
-    const [from, to] = pendingStart <= month ? [pendingStart, month] : [month, pendingStart];
-    onChange(from, to); setPendingStart(''); setOpen(false);
-  };
-  const activeStart = pendingStart || start;
-  const activeEnd = pendingStart ? pendingStart : end;
-  const monthLabel = m => {
-    const [year, month] = m.split('-').map(Number);
-    return new Date(year, month - 1, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-  };
-  return <div style={{ position: 'relative', alignSelf: 'flex-end' }}>
-    <button type="button" onClick={() => { setOpen(!open); setPendingStart(''); }} style={{ minWidth: 245, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, background: 'var(--glass)', border: '1px solid var(--glass-border)', borderRadius: 10, padding: '9px 12px', color: 'var(--ink)', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>
-      <span>📅 {start && end ? `${monthLabel(start)} → ${monthLabel(end)}` : t('เลือกช่วงเดือน')}</span><span>⌄</span>
-    </button>
-    {open && <div style={{ position: 'absolute', top: 'calc(100% + 7px)', left: 0, zIndex: 100, width: 330, maxWidth: 'calc(100vw - 32px)', padding: 14, borderRadius: 16, background: 'var(--panel, #fff)', border: '1px solid var(--glass-border)', boxShadow: '0 18px 50px rgba(26,25,29,.2)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}><b style={{ fontSize: 13 }}>{pendingStart ? t('เลือกเดือนสิ้นสุด') : t('เลือกเดือนเริ่มต้น')}</b><button type="button" onClick={() => setOpen(false)} style={{ border: 0, background: 'transparent', color: 'var(--muted)', fontSize: 20, cursor: 'pointer' }}>×</button></div>
-      {years.map(year => <div key={year} style={{ marginTop: 10 }}>
-        <div style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 800, marginBottom: 6 }}>{year}</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6 }}>
-          {months.filter(m => m.startsWith(year)).map(m => {
-            const selected = m === activeStart || m === activeEnd;
-            const inRange = activeStart && activeEnd && m >= activeStart && m <= activeEnd;
-            return <button key={m} type="button" onClick={() => choose(m)} style={{ border: selected ? '1px solid #FF4B26' : '1px solid transparent', borderRadius: 9, padding: '7px 4px', background: selected ? '#FF4B26' : inRange ? 'rgba(255,75,38,.12)' : 'var(--glass)', color: selected ? '#fff' : 'var(--ink)', fontSize: 11.5, fontWeight: selected || inRange ? 800 : 600, cursor: 'pointer' }}>{monthLabel(m).slice(0, 3)}</button>;
-          })}
-        </div>
-      </div>)}
-      <div style={{ color: 'var(--muted)', fontSize: 10.5, marginTop: 12 }}>{t('เลือกเดือนแรกและเดือนสุดท้ายเพื่อเปรียบเทียบ')}</div>
-    </div>}
-  </div>;
+const pill = { background: 'var(--glass)', border: '1px solid var(--glass-border)', borderRadius: 12, padding: '7px 11px', fontSize: 12.5, fontWeight: 600, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', gap: 6 };
+const pillInput = { border: 'none', background: 'transparent', font: 'inherit', fontWeight: 700, width: 'auto', minWidth: 0, padding: 0, color: 'var(--ink)' };
+
+// Pairs of months to compare, anchored to the newest month that actually has data.
+function monthPresets(months) {
+  if (months.length < 2) return [];
+  const back = n => months.at(-1 - n) || '';
+  const last = months.at(-1);
+  const [y, m] = last.split('-').map(Number);
+  const sameMonthLastYear = `${y - 1}-${String(m).padStart(2, '0')}`;
+  const list = [
+    ['เดือนล่าสุด', back(1), last],
+    ['เดือนก่อน', back(2), back(1)],
+    ['3 เดือนล่าสุด', back(3), last],
+  ];
+  if (months.includes(sameMonthLastYear)) list.push(['ปีก่อน (เดือนเดียวกัน)', sameMonthLastYear, last]);
+  return list.filter(([, a, b]) => a && b && a !== b);
 }
 
 export default function AgentPerformanceCompare() {
@@ -46,6 +29,8 @@ export default function AgentPerformanceCompare() {
   const [data, setData] = useState(null);
   const [monthA, setMonthA] = useState('');
   const [monthB, setMonthB] = useState('');
+  const [draftA, setDraftA] = useState('');
+  const [draftB, setDraftB] = useState('');
   const [program, setProgram] = useState('');
   const [owner, setOwner] = useState('');
   const [agentInput, setAgentInput] = useState('');
@@ -58,8 +43,9 @@ export default function AgentPerformanceCompare() {
     api('/reports/agent-performance-monthly', { params: { monthA, monthB, program, owner, agent } })
       .then(r => {
         setData(r); setError('');
-        if (!monthA) setMonthA(r.monthA || '');
-        if (!monthB) setMonthB(r.monthB || '');
+        // The API falls back to its own months when a requested one has no data — follow it.
+        if (r.monthA && r.monthA !== monthA) { setMonthA(r.monthA); setDraftA(r.monthA); }
+        if (r.monthB && r.monthB !== monthB) { setMonthB(r.monthB); setDraftB(r.monthB); }
       })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
@@ -70,6 +56,12 @@ export default function AgentPerformanceCompare() {
   const summary = data?.summary || {};
   const diffColor = +summary.difference >= 0 ? '#15803D' : '#BE123C';
   const control = { background: 'var(--glass)', border: '1px solid var(--glass-border)', borderRadius: 10, padding: '8px 10px', color: 'var(--ink)', fontSize: 12.5, fontWeight: 600 };
+  const months = data?.months || [];
+  const apply = (a = draftA, b = draftB) => {
+    if (!a || !b) return;
+    const [from, to] = a <= b ? [a, b] : [b, a];
+    setDraftA(from); setDraftB(to); setMonthA(from); setMonthB(to);
+  };
 
   return (
     <div className="card" style={{ marginTop: 14 }}>
@@ -81,10 +73,17 @@ export default function AgentPerformanceCompare() {
         {loading && <span style={{ color: 'var(--muted)', fontSize: 12 }}>{t('กำลังโหลด...')}</span>}
       </div>
 
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: '14px 0' }}>
-        <label style={{ fontSize: 11, color: 'var(--muted)' }}>{t('ช่วงเดือนเปรียบเทียบ')}<br />
-          <MonthRangePicker months={data?.months || []} start={monthA} end={monthB} onChange={(from, to) => { setMonthA(from); setMonthB(to); }} t={t} />
-        </label>
+      <div style={{ margin: '14px 0 10px' }}>
+        <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 5 }}>{t('ช่วงเดือนเปรียบเทียบ')}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <div style={pill}>📅 <input type="month" value={draftA} min={months[0]} max={months.at(-1)} onChange={e => setDraftA(e.target.value)} style={pillInput} /></div>
+          <div style={pill}>→ <input type="month" value={draftB} min={months[0]} max={months.at(-1)} onChange={e => setDraftB(e.target.value)} style={pillInput} /></div>
+          <button className="btn" onClick={() => apply()}>{t('ดูข้อมูล')}</button>
+          {monthPresets(months).map(([lb, a, b]) => { const on = monthA === a && monthB === b; return <button key={lb} onClick={() => apply(a, b)} style={{ padding: '7px 12px', borderRadius: 999, border: '1px solid var(--glass-border)', background: on ? 'var(--ink)' : 'var(--glass)', color: on ? '#fff' : 'var(--ink)', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>{t(lb)}</button>; })}
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
         <label style={{ fontSize: 11, color: 'var(--muted)' }}>{t('โปรแกรม')}<br />
           <select value={program} onChange={e => setProgram(e.target.value)} style={{ ...control, maxWidth: 190 }}>
             <option value="">{t('ทุกโปรแกรม')}</option>
