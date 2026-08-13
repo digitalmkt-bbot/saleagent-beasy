@@ -12,7 +12,7 @@ const { ensurePerformanceSchema } = require('./performance-init');
 const PROGRAMS = new Map([
   ['Similan', { code: 'similan', name: 'Similan' }],
   ['Phi Phi Special', { code: 'phi-phi-special', name: 'Phi Phi Special' }],
-  ['Whale Shark (PP+Maiton)', { code: 'whale-shark', name: 'Whale Shark (PP+Maiton)' }],
+  ['Whale Shark (PP+Maiton)', { code: 'whale-shark', name: 'Phi Phi Maiton (Whale Shark)' }],
   ['Surin', { code: 'surin', name: 'Surin' }],
   ['Krabi + Phang Nga', { code: 'krabi-phang-nga', name: 'Krabi + Phang Nga' }],
   ['Nyaung Oo Phee', { code: 'nyaung-oo-phee', name: 'Nyaung Oo Phee' }],

@@ -11,7 +11,7 @@ const { ensurePerformanceSchema } = require('./performance-init');
 const PROGRAMS = [
   { sheet: 'Similan', code: 'similan', name: 'Similan' },
   { sheet: 'Phi Phi Special', code: 'phi-phi-special', name: 'Phi Phi Special' },
-  { sheet: 'Whale Shark', code: 'whale-shark', name: 'Whale Shark (PP+Maiton)' },
+  { sheet: 'Whale Shark', code: 'whale-shark', name: 'Phi Phi Maiton (Whale Shark)' },
   { sheet: 'Surin', code: 'surin', name: 'Surin' },
   { sheet: 'Krabi-Phang Nga', code: 'krabi-phang-nga', name: 'Krabi + Phang Nga' },
   { sheet: 'Nyaung Oo Phee', code: 'nyaung-oo-phee', name: 'Nyaung Oo Phee' },
