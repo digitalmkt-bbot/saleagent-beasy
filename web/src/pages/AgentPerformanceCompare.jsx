@@ -138,7 +138,7 @@ export default function AgentPerformanceCompare() {
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 }}>
           <label style={{ fontSize: 11, color: 'var(--muted)' }}>{L('เรียงลำดับ', 'Sort')}{' '}
             <select value={sort} onChange={e => setSort(e.target.value)} style={{ ...control, maxWidth: 260 }}>
-              <option value="">{L('ค่าเริ่มต้น (ยอดเดือนล่าสุด)', 'Default (latest month)')}</option>
+              <option value="">{L('ค่าเริ่มต้น (ยอด ' + (monthB || 'ล่าสุด') + ')', 'Default (by ' + (monthB || 'latest') + ')')}</option>
               <option value="diff_desc">{L('เปลี่ยนแปลง: มากไปน้อย (บวก→ลบ)', 'Change: high → low (gain first)')}</option>
               <option value="diff_asc">{L('เปลี่ยนแปลง: น้อยไปมาก (ลบ→บวก)', 'Change: low → high (drop first)')}</option>
             </select>
