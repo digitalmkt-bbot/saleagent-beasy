@@ -23,7 +23,8 @@ function monthPresets(months) {
 }
 
 export default function AgentPerformanceCompare() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const L = (th, en) => (lang === 'en' ? en : th);
   const [data, setData] = useState(null);
   const [monthA, setMonthA] = useState('');
   const [monthB, setMonthB] = useState('');
@@ -31,6 +32,7 @@ export default function AgentPerformanceCompare() {
   const [owner, setOwner] = useState('');
   const [agentInput, setAgentInput] = useState('');
   const [agent, setAgent] = useState('');
+  const [sort, setSort] = useState('');           // '' | 'diff_desc' | 'diff_asc'
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -48,8 +50,40 @@ export default function AgentPerformanceCompare() {
   }, [monthA, monthB, program, owner, agent]);
 
   const rows = data?.rows || [];
+  const sortedRows = useMemo(() => {
+    if (!sort) return rows;
+    const s = [...rows];
+    s.sort((x, y) => sort === 'diff_desc'
+      ? (+y.difference || 0) - (+x.difference || 0)   // บวกมาก → บวกน้อย → ลบ
+      : (+x.difference || 0) - (+y.difference || 0));  // ลบมาก → ลบน้อย → บวก
+    return s;
+  }, [rows, sort]);
   const max = useMemo(() => Math.max(1, ...rows.map(r => Math.max(+r.amount_a || 0, +r.amount_b || 0))), [rows]);
   const summary = data?.summary || {};
+
+  // ---- Export (CSV / Excel) จากแถวที่กรอง+เรียงแล้ว ----
+  function exportTable() {
+    const head = ['Agent', 'Agent ID', L('เซลส์ผู้รับผิดชอบ', 'Sales owner'), L('โปรแกรม', 'Program'), monthA, monthB, L('เปลี่ยนแปลง', 'Change'), '%'];
+    const body = sortedRows.map(r => [r.agent_name || '', r.rate_agent_id || '', r.owner_name || '', r.program || '',
+      Math.round(+r.amount_a || 0), Math.round(+r.amount_b || 0), Math.round(+r.difference || 0), r.change_pct == null ? '' : +r.change_pct]);
+    return { head, body };
+  }
+  function dl(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); }
+  const fname = `agent-performance-${monthA || 'A'}_vs_${monthB || 'B'}`;
+  function exportCsv() {
+    const { head, body } = exportTable();
+    const lines = [head, ...body].map(row => row.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','));
+    dl(new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' }), fname + '.csv');
+  }
+  function exportXls() {
+    const { head, body } = exportTable();
+    const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const cell = v => (typeof v === 'number' && isFinite(v)) ? `<Cell><Data ss:Type="Number">${v}</Data></Cell>` : `<Cell><Data ss:Type="String">${esc(v)}</Data></Cell>`;
+    const rowsXml = [`<Row>${head.map(h => `<Cell ss:StyleID="h"><Data ss:Type="String">${esc(h)}</Data></Cell>`).join('')}</Row>`,
+      ...body.map(r => `<Row>${r.map(cell).join('')}</Row>`)].join('');
+    const xml = `<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Styles><Style ss:ID="h"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#FF4B26" ss:Pattern="Solid"/></Style></Styles><Worksheet ss:Name="Agent performance"><Table>${rowsXml}</Table></Worksheet></Workbook>`;
+    dl(new Blob(['﻿' + xml], { type: 'application/vnd.ms-excel;charset=utf-8' }), fname + '.xls');
+  }
   const diffColor = +summary.difference >= 0 ? '#15803D' : '#BE123C';
   const control = { background: 'var(--glass)', border: '1px solid var(--glass-border)', borderRadius: 10, padding: '8px 10px', color: 'var(--ink)', fontSize: 12.5, fontWeight: 600 };
   const months = data?.months || [];
@@ -101,10 +135,24 @@ export default function AgentPerformanceCompare() {
           <div style={{ border: '1px solid var(--glass-border)', borderRadius: 14, padding: 13 }}><small style={{ color: 'var(--muted)' }}>{t('Agent ที่แสดง')}</small><div style={{ fontSize: 20, fontWeight: 800, marginTop: 5 }}>{(+summary.agents || 0).toLocaleString()}</div></div>
         </div>
 
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 }}>
+          <label style={{ fontSize: 11, color: 'var(--muted)' }}>{L('เรียงลำดับ', 'Sort')}{' '}
+            <select value={sort} onChange={e => setSort(e.target.value)} style={{ ...control, maxWidth: 260 }}>
+              <option value="">{L('ค่าเริ่มต้น (ยอดเดือนล่าสุด)', 'Default (latest month)')}</option>
+              <option value="diff_desc">{L('เปลี่ยนแปลง: มากไปน้อย (บวก→ลบ)', 'Change: high → low (gain first)')}</option>
+              <option value="diff_asc">{L('เปลี่ยนแปลง: น้อยไปมาก (ลบ→บวก)', 'Change: low → high (drop first)')}</option>
+            </select>
+          </label>
+          <span style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+            <button type="button" className="btn" onClick={exportCsv} disabled={!sortedRows.length} style={{ opacity: sortedRows.length ? 1 : .5 }}>{L('ส่งออก CSV', 'Export CSV')}</button>
+            <button type="button" className="btn" onClick={exportXls} disabled={!sortedRows.length} style={{ opacity: sortedRows.length ? 1 : .5 }}>{L('ส่งออก Excel', 'Export Excel')}</button>
+          </span>
+        </div>
+
         <div style={{ overflow: 'auto', maxHeight: 560 }}>
           <table>
             <thead><tr><th>{t('Agent')}</th><th>{t('เซลส์ผู้รับผิดชอบ')}</th><th>{t('โปรแกรม')}</th><th style={{ textAlign: 'right' }}>{monthA}</th><th style={{ textAlign: 'right' }}>{monthB}</th><th style={{ textAlign: 'right' }}>{t('เปลี่ยนแปลง')}</th></tr></thead>
-            <tbody>{rows.length ? rows.map((r, i) => {
+            <tbody>{sortedRows.length ? sortedRows.map((r, i) => {
               const a = +r.amount_a || 0, b = +r.amount_b || 0, positive = +r.difference >= 0;
               return <tr key={`${r.agent_key}-${r.program}-${i}`}>
                 <td><b>{r.agent_name}</b>{r.rate_agent_id && <div style={{ fontSize: 10.5, color: 'var(--muted)' }}>{r.rate_agent_id}</div>}</td>
