@@ -45,7 +45,8 @@ router.get('/sales-activity', wrap(async (req, res) => {
   const c = cid(req); const staff = isStaff(req.user);
   const { from, to } = req.query;
   // include ALL users except admin (incl managers/Director), active, even with 0 activities
-  const jc = ['a.assignee_user_id=u.id', 'a.company_id=$1']; const args = [c]; let i = 2;
+  // นับทั้งงานที่เป็นเจ้าของ และงาน/เยี่ยมที่ถูก tag (activity_mention) เช่น ไปเยี่ยมเอเจ้นท์ด้วยกัน
+  const jc = ['(a.assignee_user_id=u.id OR a.id IN (SELECT activity_id FROM activity_mention am WHERE am.user_id=u.id))', 'a.company_id=$1']; const args = [c]; let i = 2;
   if (from) { jc.push(`a.activity_at::date >= $${i++}`); args.push(from); }
   if (to) { jc.push(`a.activity_at::date <= $${i++}`); args.push(to); }
   const uc = ["u.company_id=$1", "u.is_active=true", "lower(u.role) NOT IN ('admin','executive')"];
@@ -56,10 +57,19 @@ router.get('/sales-activity', wrap(async (req, res) => {
   const mWhere = ['a.company_id=$1']; const mArgs = [c]; let j = 2;
   if (from) { mWhere.push(`a.activity_at::date >= $${j++}`); mArgs.push(from); }
   if (to) { mWhere.push(`a.activity_at::date <= $${j++}`); mArgs.push(to); }
-  if (staff) { mWhere.push(`a.assignee_user_id=$${j++}`); mArgs.push(req.user.id); }
-  const methods = (await q(`SELECT a.assignee_user_id AS uid, COALESCE(cm.name,'-') AS method, count(*)::int n
-    FROM activity a LEFT JOIN contact_method cm ON cm.id=a.contact_method_id
-    WHERE ${mWhere.join(' AND ')} GROUP BY a.assignee_user_id,cm.name`, mArgs)).rows;
+  // แยกช่องทาง: นับให้เจ้าของงาน + คนที่ถูก tag (UNION) เพื่อให้ยอดตรงกับ total ด้านบน
+  let staffCond = '';
+  if (staff) { staffCond = `WHERE x.uid=$${j++}`; mArgs.push(req.user.id); }
+  const methods = (await q(`SELECT x.uid, x.method, count(*)::int n FROM (
+      SELECT a.id, a.assignee_user_id AS uid, COALESCE(cm.name,'-') AS method
+        FROM activity a LEFT JOIN contact_method cm ON cm.id=a.contact_method_id
+        WHERE ${mWhere.join(' AND ')}
+      UNION ALL
+      SELECT a.id, am.user_id AS uid, COALESCE(cm.name,'-') AS method
+        FROM activity a JOIN activity_mention am ON am.activity_id=a.id AND am.user_id <> a.assignee_user_id
+        LEFT JOIN contact_method cm ON cm.id=a.contact_method_id
+        WHERE ${mWhere.join(' AND ')}
+    ) x ${staffCond} GROUP BY x.uid, x.method`, mArgs)).rows;
   const byU = {}; methods.forEach(m => { (byU[m.uid] = byU[m.uid] || {})[m.method] = m.n; });
   res.json({ rows: totals.map(r => ({ ...r, methods: byU[r.uid] || {} })) });
 }));
@@ -69,7 +79,7 @@ router.get('/sales-activity/:userId', wrap(async (req, res) => {
   const c = cid(req); const uid = +req.params.userId;
   // Report/Dashboard open to all roles — drill-down allowed for everyone
   const { from, to } = req.query;
-  const where = ['a.company_id=$1', 'a.assignee_user_id=$2']; const args = [c, uid]; let i = 3;
+  const where = ['a.company_id=$1', '(a.assignee_user_id=$2 OR a.id IN (SELECT activity_id FROM activity_mention WHERE user_id=$2))']; const args = [c, uid]; let i = 3;
   if (from) { where.push(`a.activity_at::date >= $${i++}`); args.push(from); }
   if (to) { where.push(`a.activity_at::date <= $${i++}`); args.push(to); }
   const rows = (await q(`SELECT a.customer_id, c2.name, count(*)::int n, max(a.activity_at) AS last_at
