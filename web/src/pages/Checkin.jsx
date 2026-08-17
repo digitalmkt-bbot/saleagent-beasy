@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import { useI18n } from '../i18n.jsx';
+import { useAuth } from '../auth.jsx';
 import { Img } from '../lib.jsx';
 function getGeo() {
   return new Promise(resolve => {
@@ -43,8 +44,36 @@ const durTxt = (a, b) => {
   return (m >= 60 ? Math.floor(m / 60) + ' ชม. ' : '') + (m % 60) + ' นาที';
 };
 const mapUrl = (lat, lng) => (lat != null && lng != null) ? `https://www.google.com/maps?q=${lat},${lng}` : null;
+// เลือกเซลส์ที่ไปเยี่ยมด้วยกัน (tag) — แสดงเป็นชิปกดเลือกได้หลายคน (ตัดตัวเองออก)
+function SalesTagPicker({ users, value, onChange, selfId, label }) {
+  const list = (users || []).filter(u => Number(u.id) !== Number(selfId));
+  const has = id => value.map(String).includes(String(id));
+  const toggle = id => onChange(has(id) ? value.filter(v => String(v) !== String(id)) : [...value, id]);
+  return (
+    <div style={{ marginTop: 10 }}>
+      <label style={{ display: 'block' }}>{label}</label>
+      {list.length ? (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+          {list.map(u => {
+            const on = has(u.id);
+            return <span key={u.id} onClick={() => toggle(u.id)}
+              style={{ cursor: 'pointer', userSelect: 'none', padding: '6px 11px', borderRadius: 999, fontSize: 13, fontWeight: 600,
+                border: '1px solid ' + (on ? 'var(--brand)' : 'var(--glass-border)'),
+                background: on ? 'var(--brand-tint)' : '#fff', color: on ? 'var(--brand-text)' : 'var(--ink)' }}>
+              {on ? '✓ ' : ''}{u.display_name}
+            </span>;
+          })}
+        </div>
+      ) : <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>-</div>}
+    </div>
+  );
+}
 export default function Checkin() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const L = (th, en) => (lang === 'en' ? en : th);
+  const { user } = useAuth();
+  const [users, setUsers] = useState([]);
+  const [mentions, setMentions] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [projects, setProjects] = useState([]);
   const [mode, setMode] = useState('in');
@@ -87,6 +116,7 @@ export default function Checkin() {
   useEffect(() => {
     api('/customers', { params: { limit: 5000 } }).then(d => setCustomers(d.rows || [])).catch(() => {});
     api('/projects', { params: { limit: 2000 } }).then(d => setProjects(d.rows || [])).catch(() => {});
+    api('/meta/users').then(d => setUsers(d.rows || [])).catch(() => {});
     loadAll();
     const id = setInterval(() => tick(x => x + 1), 30000);
     return () => clearInterval(id);
@@ -104,8 +134,9 @@ export default function Checkin() {
         contact_method: atOffice ? 'Office' : contact, note, image_url: image,
         check_in_at: backIn ? mkISO(inD, inT) : null,
         lat: g && g.lat, lng: g && g.lng,
+        mentions: atOffice ? [] : mentions,
       } });
-      setNote(''); setCid(''); setPid(''); setContact(''); setAgentQ(''); setAtOffice(false); setImage(null); setBackIn(false); setMsg('');
+      setNote(''); setCid(''); setPid(''); setContact(''); setAgentQ(''); setAtOffice(false); setImage(null); setBackIn(false); setMentions([]); setMsg('');
       loadAll();
     } catch (e) { setMsg(e.message); } finally { setBusy(false); }
   }
@@ -195,6 +226,8 @@ export default function Checkin() {
           </div>
           <label style={{ marginTop: 10, display: 'block' }}>Contact method <span style={{ color: '#F2637E' }}>*</span></label>
           <select value={contact} onChange={e => setContact(e.target.value)}><option value="">- select method -</option><option value="Tel">Tel</option><option value="Visit">Visit</option><option value="E-mail">E-mail</option><option value="Meet Online">Meet Online</option></select>
+          <SalesTagPicker users={users} value={mentions} onChange={setMentions} selfId={user?.id}
+            label={L('Tag เซลส์ที่ไปเยี่ยมด้วยกัน (ถ้ามี)', 'Tag sales who joined the visit (optional)')} />
           </>}
           <label style={{ marginTop: 10, display: 'block' }}>{t('หมายเหตุ')}</label>
           <textarea rows="2" value={note} onChange={e => setNote(e.target.value)} placeholder={t('เช่น นัดคุยเรื่องแพ็กเกจทัวร์')} />
@@ -223,7 +256,7 @@ export default function Checkin() {
           <tbody>
             {history.length ? history.map(h => (
               <tr key={h.id}>
-                <td><b>{h.customer_name || (h.contact_method === 'Office' ? '🏢 ' + t('ทำงานที่ออฟฟิศ') : '-')}</b><div className="muted">{h.user_name}</div></td>
+                <td><b>{h.customer_name || (h.contact_method === 'Office' ? '🏢 ' + t('ทำงานที่ออฟฟิศ') : '-')}</b><div className="muted">{h.user_name}</div>{h.tagged_names && h.tagged_names.length > 0 && <div className="muted" style={{ fontSize: 11.5, marginTop: 2 }}>👥 {L('ไปกับ', 'With')}: {h.tagged_names.join(', ')}</div>}</td>
                 <td className="muted">{h.project_name || '-'}{h.checkout_note && <div style={{ fontSize: 12, marginTop: 2 }}>📝 {h.checkout_note}</div>}</td>
                 <td>{fmtDT(h.check_in_at)}</td>
                 <td>{h.check_out_at ? fmtT(h.check_out_at) : <span className="pill orange">{t('ยังไม่ออก')}</span>}</td>
@@ -236,12 +269,14 @@ export default function Checkin() {
           </tbody>
         </table>
       </div>
-      {edit && <EditModal row={edit} projects={projects} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); loadAll(); }} />}
+      {edit && <EditModal row={edit} projects={projects} users={users} selfId={user?.id} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); loadAll(); }} />}
     </div>
   );
 }
-function EditModal({ row, projects, onClose, onSaved }) {
-  const { t } = useI18n();
+function EditModal({ row, projects, users, selfId, onClose, onSaved }) {
+  const { t, lang } = useI18n();
+  const L = (th, en) => (lang === 'en' ? en : th);
+  const [mentions, setMentions] = useState(() => (row.tagged_user_ids || []).map(String));
   const [inD, setInD] = useState(dPart(row.check_in_at)); const [inT, setInT] = useState(tPart(row.check_in_at));
   const [hasOut, setHasOut] = useState(!!row.check_out_at);
   const [outD, setOutD] = useState(dPart(row.check_out_at || row.check_in_at));
@@ -264,6 +299,7 @@ function EditModal({ row, projects, onClose, onSaved }) {
         check_in_at: mkISO(inD, inT),
         check_out_at: hasOut ? mkISO(outD, outT) : null,
         project_id: pid || null, contact_method: contact, note, image_url: image, checkout_note: outNote,
+        mentions,
       } });
       onSaved();
     } catch (e) { setErr(e.message); setBusy(false); }
@@ -289,6 +325,8 @@ function EditModal({ row, projects, onClose, onSaved }) {
       </div>}
       <label style={{ marginTop: 10, display: 'block' }}>Contact method <span style={{ color: '#F2637E' }}>*</span></label>
       <select value={contact} onChange={e => setContact(e.target.value)}><option value="">- select method -</option><option value="Tel">Tel</option><option value="Visit">Visit</option><option value="E-mail">E-mail</option><option value="Meet Online">Meet Online</option></select>
+      {row.contact_method !== 'Office' && <SalesTagPicker users={users} value={mentions} onChange={setMentions} selfId={selfId}
+        label={L('Tag เซลส์ที่ไปเยี่ยมด้วยกัน (ถ้ามี)', 'Tag sales who joined the visit (optional)')} />}
       <label style={{ marginTop: 10, display: 'block' }}>{t('หมายเหตุ')} ({t('ตอนเช็คอิน')})</label>
       <textarea rows="2" value={note} onChange={e => setNote(e.target.value)} />
       <label style={{ marginTop: 10, display: 'block' }}>{t('รายละเอียด / สรุปการเข้าพบ')}</label>
