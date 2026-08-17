@@ -44,7 +44,8 @@ async function syncActivity(cid, ck) {
 
 router.get('/', wrap(async (req, res) => {
   const where = ['ck.company_id=$1']; const args = [req.user.company_id]; let i = 2;
-  if (isStaff(req.user) || req.query.mine === '1') { where.push(`ck.user_id=$${i++}`); args.push(req.user.id); }
+  // เห็นเช็คอินของตัวเอง + เช็คอินที่ถูก tag ว่าไปด้วยกัน (activity_mention)
+  if (isStaff(req.user) || req.query.mine === '1') { where.push(`(ck.user_id=$${i} OR ck.activity_id IN (SELECT activity_id FROM activity_mention WHERE user_id=$${i}))`); args.push(req.user.id); i++; }
   if (req.query.customer_id) { where.push(`ck.customer_id=$${i++}`); args.push(+req.query.customer_id); }
   const rows = (await q(`${SELECT} WHERE ${where.join(' AND ')} ORDER BY ck.check_in_at DESC LIMIT 200`, args)).rows;
   res.json({ rows });
