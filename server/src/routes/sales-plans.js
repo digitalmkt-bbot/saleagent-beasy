@@ -170,7 +170,10 @@ async function transition(req, res, action, allowed, next, extra = {}) {
 }
 
 router.post('/:id/submit', wrap(async (req, res) => {
-  const r = await transition(req, res, 'submit', ['draft', 'revision_required'], 'submitted', { submitted_at: new Date().toISOString() });
+  // ไม่ต้องผ่านการอนุมัติ: กดส่ง = อนุมัติทันที (auto-approve)
+  const now = new Date().toISOString();
+  const r = await transition(req, res, 'approve', ['draft', 'revision_required', 'submitted', 'pending_review'], 'approved',
+    { submitted_at: now, approved_at: now, approved_by: req.user.id, reviewed_at: now });
   if (r) res.json(r);
 }));
 router.post('/:id/approve', wrap(async (req, res) => {
