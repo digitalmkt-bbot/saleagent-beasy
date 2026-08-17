@@ -5,6 +5,9 @@ import MonthRangeBar from '../components/MonthRangeBar.jsx';
 
 const money = n => '฿' + Math.round(+n || 0).toLocaleString('th-TH');
 const pct = n => n == null ? 'New' : `${n > 0 ? '+' : ''}${(+n).toFixed(1)}%`;
+// สัปดาห์: จันทร์ของวันที่กำหนด + บวกวัน (YYYY-MM-DD)
+const mondayOf = (d) => { const x = new Date(d); const day = x.getDay() || 7; x.setDate(x.getDate() - (day - 1)); return x.toISOString().slice(0, 10); };
+const addDays = (s, n) => { const x = new Date(s); x.setDate(x.getDate() + n); return x.toISOString().slice(0, 10); };
 
 // Pairs of months to compare, anchored to the newest month that actually has data.
 function monthPresets(months) {
@@ -33,21 +36,33 @@ export default function AgentPerformanceCompare() {
   const [agentInput, setAgentInput] = useState('');
   const [agent, setAgent] = useState('');
   const [sort, setSort] = useState('');           // '' | 'diff_desc' | 'diff_asc'
+  const [mode, setMode] = useState('monthly');    // 'monthly' | 'range' (เลือกช่วงวันที่ วัน/สัปดาห์)
+  const _mon = mondayOf(new Date());
+  const [aFrom, setAFrom] = useState(addDays(_mon, -7));  // ช่วง A เริ่ม (สัปดาห์ก่อน จ.)
+  const [aTo, setATo] = useState(addDays(_mon, -1));      // ช่วง A ถึง (อา.)
+  const [bFrom, setBFrom] = useState(_mon);               // ช่วง B เริ่ม (สัปดาห์นี้ จ.)
+  const [bTo, setBTo] = useState(addDays(_mon, 6));       // ช่วง B ถึง (อา.)
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
     setLoading(true);
-    api('/reports/agent-performance-monthly', { params: { monthA, monthB, program, owner, agent } })
-      .then(r => {
-        setData(r); setError('');
-        // The API falls back to its own months when a requested one has no data — follow it.
-        if (r.monthA && r.monthA !== monthA) setMonthA(r.monthA);
-        if (r.monthB && r.monthB !== monthB) setMonthB(r.monthB);
-      })
-      .catch(e => setError(e.message))
-      .finally(() => setLoading(false));
-  }, [monthA, monthB, program, owner, agent]);
+    const done = r => { setData(r); setError(''); };
+    const fail = e => setError(e.message);
+    if (mode === 'range') {
+      api('/reports/agent-performance-weekly', { params: { aFrom, aTo, bFrom, bTo, agent } })
+        .then(done).catch(fail).finally(() => setLoading(false));
+    } else {
+      api('/reports/agent-performance-monthly', { params: { monthA, monthB, program, owner, agent } })
+        .then(r => {
+          done(r);
+          // The API falls back to its own months when a requested one has no data — follow it.
+          if (r.monthA && r.monthA !== monthA) setMonthA(r.monthA);
+          if (r.monthB && r.monthB !== monthB) setMonthB(r.monthB);
+        })
+        .catch(fail).finally(() => setLoading(false));
+    }
+  }, [mode, monthA, monthB, aFrom, aTo, bFrom, bTo, program, owner, agent]);
 
   const rows = data?.rows || [];
   const sortedRows = useMemo(() => {
@@ -60,16 +75,18 @@ export default function AgentPerformanceCompare() {
   }, [rows, sort]);
   const max = useMemo(() => Math.max(1, ...rows.map(r => Math.max(+r.amount_a || 0, +r.amount_b || 0))), [rows]);
   const summary = data?.summary || {};
+  const labelA = mode === 'range' ? (data?.labelA || `${aFrom}~${aTo}`) : (monthA || '-');
+  const labelB = mode === 'range' ? (data?.labelB || `${bFrom}~${bTo}`) : (monthB || '-');
 
   // ---- Export (CSV / Excel) จากแถวที่กรอง+เรียงแล้ว ----
   function exportTable() {
-    const head = ['Agent', 'Agent ID', L('เซลส์ผู้รับผิดชอบ', 'Sales owner'), L('โปรแกรม', 'Program'), monthA, monthB, L('เปลี่ยนแปลง', 'Change'), '%'];
+    const head = ['Agent', 'Agent ID', L('เซลส์ผู้รับผิดชอบ', 'Sales owner'), L('โปรแกรม', 'Program'), labelA, labelB, L('เปลี่ยนแปลง', 'Change'), '%'];
     const body = sortedRows.map(r => [r.agent_name || '', r.rate_agent_id || '', r.owner_name || '', r.program || '',
       Math.round(+r.amount_a || 0), Math.round(+r.amount_b || 0), Math.round(+r.difference || 0), r.change_pct == null ? '' : +r.change_pct]);
     return { head, body };
   }
   function dl(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); }
-  const fname = `agent-performance-${monthA || 'A'}_vs_${monthB || 'B'}`;
+  const fname = `agent-performance-${(labelA || 'A').replace(/[^\w-]/g, '')}_vs_${(labelB || 'B').replace(/[^\w-]/g, '')}`;
   function exportCsv() {
     const { head, body } = exportTable();
     const lines = [head, ...body].map(row => row.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','));
@@ -99,12 +116,56 @@ export default function AgentPerformanceCompare() {
         {loading && <span style={{ color: 'var(--muted)', fontSize: 12 }}>{t('กำลังโหลด...')}</span>}
       </div>
 
-      <div style={{ margin: '14px 0 10px' }}>
-        <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 5 }}>{t('ช่วงเดือนเปรียบเทียบ')}</div>
-        <MonthRangeBar months={months} from={monthA} to={monthB} presets={monthPresets(months)} onApply={apply} t={t} />
+      {/* โหมด: รายเดือน (จาก import) / ตามวันที่ วัน-สัปดาห์ (จาก booking ระบบ rate) */}
+      <div style={{ display: 'flex', gap: 6, margin: '14px 0 8px' }}>
+        <button type="button" onClick={() => setMode('range')} style={{ ...control, cursor: 'pointer', ...(mode === 'range' ? { background: '#1A191D', color: '#fff' } : {}) }}>{L('ตามวันที่ (วัน/สัปดาห์)', 'By date (day/week)')}</button>
+        <button type="button" onClick={() => setMode('monthly')} style={{ ...control, cursor: 'pointer', ...(mode === 'monthly' ? { background: '#1A191D', color: '#fff' } : {}) }}>{L('รายเดือน', 'Monthly')}</button>
       </div>
 
+      {mode === 'range' ? (
+        <div style={{ margin: '4px 0 10px' }}>
+          <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6 }}>{L('เลือกช่วงวันที่ 2 ช่วงเพื่อเทียบ (วันเดียว หรือหลายวัน/สัปดาห์ก็ได้) — ยอดจาก booking ระบบ rate', 'Pick two date ranges to compare (a single day or several days/weeks) — from bookings in the rate system')}</div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+            {(() => {
+              const today = new Date().toISOString().slice(0, 10);
+              const mon = mondayOf(today);
+              const setR = (af, at, bf, bt) => { setAFrom(af); setATo(at); setBFrom(bf); setBTo(bt); };
+              const presets = [
+                [L('วันนี้ / เมื่อวาน', 'Today / Yesterday'), () => setR(addDays(today, -1), addDays(today, -1), today, today)],
+                [L('สัปดาห์นี้ / ก่อน', 'This / last week'), () => setR(addDays(mon, -7), addDays(mon, -1), mon, addDays(mon, 6))],
+                [L('7 วันล่าสุด / ก่อนหน้า', 'Last 7d / prev 7d'), () => setR(addDays(today, -13), addDays(today, -7), addDays(today, -6), today)],
+              ];
+              return presets.map(([lbl, fn]) => <button key={lbl} type="button" onClick={fn} style={{ ...control, cursor: 'pointer', fontSize: 11.5 }}>{lbl}</button>);
+            })()}
+          </div>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            <div>
+              <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 3 }}>{L('ช่วง A', 'Range A')}</div>
+              <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <input type="date" value={aFrom} max={aTo} onChange={e => setAFrom(e.target.value)} style={control} />
+                <span style={{ color: 'var(--muted)' }}>→</span>
+                <input type="date" value={aTo} min={aFrom} onChange={e => setATo(e.target.value)} style={control} />
+              </span>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 3 }}>{L('ช่วง B', 'Range B')}</div>
+              <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <input type="date" value={bFrom} max={bTo} onChange={e => setBFrom(e.target.value)} style={control} />
+                <span style={{ color: 'var(--muted)' }}>→</span>
+                <input type="date" value={bTo} min={bFrom} onChange={e => setBTo(e.target.value)} style={control} />
+              </span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div style={{ margin: '4px 0 10px' }}>
+          <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 5 }}>{t('ช่วงเดือนเปรียบเทียบ')}</div>
+          <MonthRangeBar months={months} from={monthA} to={monthB} presets={monthPresets(months)} onApply={apply} t={t} />
+        </div>
+      )}
+
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+        {mode !== 'range' && <>
         <label style={{ fontSize: 11, color: 'var(--muted)' }}>{t('โปรแกรม')}<br />
           <select value={program} onChange={e => setProgram(e.target.value)} style={{ ...control, maxWidth: 190 }}>
             <option value="">{t('ทุกโปรแกรม')}</option>
@@ -118,6 +179,7 @@ export default function AgentPerformanceCompare() {
             <option value="unassigned">Unassigned</option>
           </select>
         </label>
+        </>}
         <label style={{ fontSize: 11, color: 'var(--muted)', flex: '1 1 210px' }}>{t('ค้นหา Agent')}<br />
           <span style={{ display: 'flex', gap: 6 }}>
             <input value={agentInput} onChange={e => setAgentInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && setAgent(agentInput.trim())} placeholder="Agent name / ID" style={{ ...control, width: '100%' }} />
@@ -129,8 +191,8 @@ export default function AgentPerformanceCompare() {
 
       {error ? <div style={{ color: '#BE123C', padding: 12 }}>{error}</div> : <>
         <div className="ap-kpis" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 14 }}>
-          <div style={{ background: '#1C1B1F', color: '#fff', borderRadius: 14, padding: 13 }}><small style={{ color: '#A0A0A8' }}>{monthA || '-'}</small><div style={{ fontSize: 20, fontWeight: 800, marginTop: 5 }}>{money(summary.amountA)}</div></div>
-          <div style={{ background: '#FF4B26', color: '#fff', borderRadius: 14, padding: 13 }}><small style={{ opacity: .8 }}>{monthB || '-'}</small><div style={{ fontSize: 20, fontWeight: 800, marginTop: 5 }}>{money(summary.amountB)}</div></div>
+          <div style={{ background: '#1C1B1F', color: '#fff', borderRadius: 14, padding: 13 }}><small style={{ color: '#A0A0A8' }}>{labelA}</small><div style={{ fontSize: 20, fontWeight: 800, marginTop: 5 }}>{money(summary.amountA)}</div></div>
+          <div style={{ background: '#FF4B26', color: '#fff', borderRadius: 14, padding: 13 }}><small style={{ opacity: .8 }}>{labelB}</small><div style={{ fontSize: 20, fontWeight: 800, marginTop: 5 }}>{money(summary.amountB)}</div></div>
           <div style={{ border: '1px solid var(--glass-border)', borderRadius: 14, padding: 13 }}><small style={{ color: 'var(--muted)' }}>{t('ผลต่าง')}</small><div style={{ fontSize: 20, fontWeight: 800, marginTop: 5, color: diffColor }}>{summary.difference >= 0 ? '+' : ''}{money(summary.difference)}</div><div style={{ color: diffColor, fontSize: 11 }}>{pct(summary.changePct)}</div></div>
           <div style={{ border: '1px solid var(--glass-border)', borderRadius: 14, padding: 13 }}><small style={{ color: 'var(--muted)' }}>{t('Agent ที่แสดง')}</small><div style={{ fontSize: 20, fontWeight: 800, marginTop: 5 }}>{(+summary.agents || 0).toLocaleString()}</div></div>
         </div>
@@ -138,7 +200,7 @@ export default function AgentPerformanceCompare() {
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 }}>
           <label style={{ fontSize: 11, color: 'var(--muted)' }}>{L('เรียงลำดับ', 'Sort')}{' '}
             <select value={sort} onChange={e => setSort(e.target.value)} style={{ ...control, maxWidth: 260 }}>
-              <option value="">{L('ค่าเริ่มต้น (ยอด ' + (monthB || 'ล่าสุด') + ')', 'Default (by ' + (monthB || 'latest') + ')')}</option>
+              <option value="">{L('ค่าเริ่มต้น (ยอด ' + labelB + ')', 'Default (by ' + labelB + ')')}</option>
               <option value="diff_desc">{L('เปลี่ยนแปลง: มากไปน้อย (บวก→ลบ)', 'Change: high → low (gain first)')}</option>
               <option value="diff_asc">{L('เปลี่ยนแปลง: น้อยไปมาก (ลบ→บวก)', 'Change: low → high (drop first)')}</option>
             </select>
@@ -151,7 +213,7 @@ export default function AgentPerformanceCompare() {
 
         <div style={{ overflow: 'auto', maxHeight: 560 }}>
           <table>
-            <thead><tr><th>{t('Agent')}</th><th>{t('เซลส์ผู้รับผิดชอบ')}</th><th>{t('โปรแกรม')}</th><th style={{ textAlign: 'right' }}>{monthA}</th><th style={{ textAlign: 'right' }}>{monthB}</th><th style={{ textAlign: 'right' }}>{t('เปลี่ยนแปลง')}</th></tr></thead>
+            <thead><tr><th>{t('Agent')}</th><th>{t('เซลส์ผู้รับผิดชอบ')}</th><th>{t('โปรแกรม')}</th><th style={{ textAlign: 'right' }}>{labelA}</th><th style={{ textAlign: 'right' }}>{labelB}</th><th style={{ textAlign: 'right' }}>{t('เปลี่ยนแปลง')}</th></tr></thead>
             <tbody>{sortedRows.length ? sortedRows.map((r, i) => {
               const a = +r.amount_a || 0, b = +r.amount_b || 0, positive = +r.difference >= 0;
               return <tr key={`${r.agent_key}-${r.program}-${i}`}>
