@@ -263,7 +263,9 @@ export default function Checkin() {
                 <td>{durTxt(h.check_in_at, h.check_out_at)}</td>
                 <td>{h.image_url ? <Img src={h.image_url} h={38} /> : '-'}</td>
                 <td>{mapUrl(h.check_in_lat, h.check_in_lng) ? <a href={mapUrl(h.check_in_lat, h.check_in_lng)} target="_blank" rel="noreferrer">📍</a> : '-'}</td>
-                <td style={{ whiteSpace: 'nowrap' }}><a onClick={() => setEdit(h)}>{t('แก้ไข')}</a> <a onClick={() => delCheckin(h.id)} style={{ color: 'var(--red-text)', marginLeft: 8 }}>{t('ลบ')}</a></td>
+                <td style={{ whiteSpace: 'nowrap' }}>{String(h.user_id) === String(user?.id)
+                  ? <><a onClick={() => setEdit(h)}>{t('แก้ไข')}</a> <a onClick={() => delCheckin(h.id)} style={{ color: 'var(--red-text)', marginLeft: 8 }}>{t('ลบ')}</a></>
+                  : <span className="muted" style={{ fontSize: 11 }}>👥 {L('ถูก Tag', 'Tagged')}</span>}</td>
               </tr>
             )) : <tr><td colSpan="8" className="muted">{t('ยังไม่มีประวัติ')}</td></tr>}
           </tbody>
