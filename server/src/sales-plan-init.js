@@ -373,6 +373,10 @@ async function ensureSalesPlan() {
   await seedGlobal();
   const companies = await q('SELECT id FROM company');
   for (const c of companies.rows) await seedCompany(c.id);
+  // ไม่ต้องผ่านการอนุมัติแล้ว: ปรับแผนที่ค้างสถานะรออนุมัติให้เป็น 'approved' อัตโนมัติ (idempotent)
+  await q(`UPDATE sales_plan SET status='approved',
+             approved_at=COALESCE(approved_at, now()), reviewed_at=COALESCE(reviewed_at, now())
+           WHERE status IN ('submitted','pending_review')`);
   log('เสร็จสิ้น (Sales Plan schema + master data)');
 }
 
