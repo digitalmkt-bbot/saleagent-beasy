@@ -32,7 +32,8 @@ function addDays(base, n) { const d = new Date(base); d.setDate(d.getDate() + n)
 export default function SalesPlanDetail() {
   const { id } = useParams();
   const nav = useNavigate();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const L = (th, en) => (lang === 'en' ? en : th);
   const { user } = useAuth();
   const [plan, setPlan] = useState(null);
   const [meta, setMeta] = useState({ segments: [], markets: [], types: [], objectives: [], customers: [], users: [] });
@@ -116,11 +117,7 @@ export default function SalesPlanDetail() {
           <div className="card"><div className="label">{t('ช่วงวันที่')}</div><div className="value" style={{ fontSize: 14 }}>{dstr(plan.start_date)} → {dstr(plan.end_date)}</div></div>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {canEdit && <button className="btn green" onClick={() => act('/sales-plans/' + id + '/submit')}>{t('ส่งให้ตรวจสอบ')}</button>}
-          {isManager && ['submitted', 'pending_review'].includes(plan.status) && <>
-            <button className="btn green" onClick={() => act('/sales-plans/' + id + '/approve')}>{t('อนุมัติ')}</button>
-            <button className="btn" onClick={() => { const c = prompt(t('ความคิดเห็น/สิ่งที่ต้องแก้')); if (c !== null) act('/sales-plans/' + id + '/request-revision', { comment: c }); }}>{t('ขอให้แก้ไข')}</button>
-          </>}
+          {canEdit && <button className="btn green" onClick={() => act('/sales-plans/' + id + '/submit')}>{L('ยืนยันแผน (ใช้งานทันที)', 'Confirm plan (active now)')}</button>}
           {['approved', 'in_progress'].includes(plan.status) && <button className="btn" onClick={() => act('/sales-plans/' + id + '/complete')}>{t('ปิดสรุปสัปดาห์')}</button>}
           {plan.status === 'completed' && isManager && <button className="btn" onClick={() => act('/sales-plans/' + id + '/close')}>{t('ปิดแผน')}</button>}
           <button className="btn ghost" onClick={() => act('/sales-plans/' + id + '/duplicate')}>{t('ทำซ้ำสัปดาห์ถัดไป')}</button>
