@@ -7,7 +7,7 @@ const cid = (req) => req.user.company_id;
 // สรุปภาพรวมทั้งหมดสำหรับหน้ารายงาน
 router.get('/summary', wrap(async (req, res) => {
   const c = cid(req);
-  const staff = isStaff(req.user);
+  const staff = false; // Report/Dashboard open to all roles
   const A = staff ? [c, req.user.id] : [c];
   const PJ = staff ? `AND p.customer_id IN ${OWNED}` : '';
   const AC = staff ? `AND (a.assignee_user_id=$2 OR a.customer_id IN ${OWNED})` : '';
@@ -67,7 +67,7 @@ router.get('/sales-activity', wrap(async (req, res) => {
 // รายงาน 2: เซลส์คนนี้ไปเอเจ้นท์ไหนมาบ้าง
 router.get('/sales-activity/:userId', wrap(async (req, res) => {
   const c = cid(req); const uid = +req.params.userId;
-  if (isStaff(req.user) && uid !== req.user.id) return res.status(403).json({ error: 'ดูได้เฉพาะของตัวเอง' });
+  // Report/Dashboard open to all roles — drill-down allowed for everyone
   const { from, to } = req.query;
   const where = ['a.company_id=$1', 'a.assignee_user_id=$2']; const args = [c, uid]; let i = 3;
   if (from) { where.push(`a.activity_at::date >= $${i++}`); args.push(from); }

@@ -161,7 +161,7 @@ router.get('/contract/:code', wrap(async (req, res) => {
 // รายงาน 3: ลำดับเอเจ้นท์ตามยอดที่ส่งให้บริษัท (จากบุ๊กกิ้งที่ confirmed)
 router.get('/report/agent-volume', wrap(async (req, res) => {
   const { from, to } = req.query;
-  const sc = await scopeFor(req);
+  const sc = { all: true }; // Report/Dashboard open to all roles
   if (!sc.all && !sc.code) return res.json({ rows: [] });
   const where = ["b.status='confirmed'"]; const args = []; let i = 1;
   if (from) { where.push(`COALESCE(NULLIF(b.bookingdate,''),b.createdat) >= $${i++}`); args.push(from); }
@@ -179,7 +179,7 @@ router.get('/report/agent-volume', wrap(async (req, res) => {
 // รายงาน 4: Top 10 Product (เส้นทาง) ตามยอด
 router.get('/report/product-volume', wrap(async (req, res) => {
   const { from, to } = req.query;
-  const sc = await scopeFor(req);
+  const sc = { all: true }; // Report/Dashboard open to all roles
   if (!sc.all && !sc.code) return res.json({ rows: [] });
   const where = ["b.status='confirmed'"]; const args = []; let i = 1;
   if (from) { where.push(`COALESCE(NULLIF(b.bookingdate,''),b.createdat) >= $${i++}`); args.push(from); }
@@ -199,7 +199,7 @@ router.get('/report/product-volume', wrap(async (req, res) => {
 // ยอดขายตามผู้รับผิดชอบ (เซลส์) — จากยอดบุ๊กกิ้งจริงของเอเจ้นท์ที่แต่ละคนดูแล
 router.get('/report/sales-volume', wrap(async (req, res) => {
   const { from, to } = req.query;
-  const sc = await scopeFor(req);
+  const sc = { all: true }; // Report/Dashboard open to all roles
   if (!sc.all && !sc.code) return res.json({ rows: [] });
   // start from sb_sales so every sales rep shows (even 0 bookings), then LEFT JOIN bookings via their agents
   const bc = ["b.status='confirmed'"]; const args = []; let i = 1;
@@ -221,7 +221,7 @@ router.get('/report/sales-volume', wrap(async (req, res) => {
 
 router.get('/report/winrate', wrap(async (req, res) => {
   const { from, to } = req.query;
-  const sc = await scopeFor(req);
+  const sc = { all: true }; // Report/Dashboard open to all roles
   if (!sc.all && !sc.code) return res.json({ won: 0, total: 0, won_value: 0 });
   const where = []; const args = []; let i = 1;
   if (from) { where.push(`COALESCE(NULLIF(b.bookingdate,''),b.createdat) >= $${i++}`); args.push(from); }
@@ -238,7 +238,7 @@ router.get('/report/winrate', wrap(async (req, res) => {
 
 router.get('/report/monthly', wrap(async (req, res) => {
   const { from, to } = req.query;
-  const sc = await scopeFor(req);
+  const sc = { all: true }; // Report/Dashboard open to all roles
   if (!sc.all && !sc.code) return res.json({ rows: [] });
   const where = ["b.status='confirmed'"]; const args = []; let i = 1;
   if (from) { where.push(`COALESCE(NULLIF(b.bookingdate,''),b.createdat) >= $${i++}`); args.push(from); }
