@@ -3,11 +3,29 @@ const { q } = require('../db');
 const { wrap } = require('./_util');
 const { isStaff } = require('./_scope');
 
-const SELECT = `SELECT ck.*, c.name AS customer_name, u.display_name AS user_name, p.name AS project_name
+const SELECT = `SELECT ck.*, c.name AS customer_name, u.display_name AS user_name, p.name AS project_name,
+    COALESCE((SELECT array_agg(au.display_name ORDER BY au.display_name)
+       FROM activity_mention am JOIN app_user au ON au.id = am.user_id
+       WHERE am.activity_id = ck.activity_id), '{}') AS tagged_names,
+    COALESCE((SELECT array_agg(am.user_id)
+       FROM activity_mention am WHERE am.activity_id = ck.activity_id), '{}') AS tagged_user_ids
   FROM checkin ck
   LEFT JOIN customer c ON c.id = ck.customer_id
   LEFT JOIN app_user u ON u.id = ck.user_id
   LEFT JOIN project p ON p.id = ck.project_id`;
+
+// เซลส์ที่ไปเยี่ยมด้วยกัน (tag) — เก็บที่ activity_mention ของ activity ที่ผูกกับเช็คอิน
+// ตัดตัวผู้เช็คอินเองออก และยืนยันว่าผู้ถูก tag อยู่บริษัทเดียวกัน
+async function setCheckinMentions(cid, activityId, ownerId, mentions) {
+  if (!activityId) return;
+  await q('DELETE FROM activity_mention WHERE activity_id=$1', [activityId]);
+  const ids = [...new Set((mentions || []).map(Number).filter(x => x && x !== Number(ownerId)))];
+  for (const uid of ids) {
+    await q(`INSERT INTO activity_mention (activity_id, user_id)
+       SELECT $1, $2 WHERE EXISTS (SELECT 1 FROM app_user WHERE id=$2 AND company_id=$3)
+       ON CONFLICT DO NOTHING`, [activityId, uid, cid]);
+  }
+}
 
 const bkk = (d) => new Date(d).toLocaleTimeString('en-GB', { timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit' });
 const durTxt = (a, b) => { const m = Math.max(0, Math.floor((new Date(b) - new Date(a)) / 60000)); return (m >= 60 ? Math.floor(m / 60) + ' ชม. ' : '') + (m % 60) + ' นาที'; };
@@ -57,6 +75,7 @@ router.post('/', wrap(async (req, res) => {
     VALUES ($1,$2,$3,'inbound',$4,$5,$6,'done',$7,$7,$8) RETURNING id`,
     [cid, ck.customer_id, ck.project_id, ck.check_in_at, bkk(ck.check_in_at), detail, uid, ck.image_url])).rows[0];
   await q('UPDATE checkin SET activity_id=$1 WHERE id=$2', [act.id, ck.id]);
+  await setCheckinMentions(cid, act.id, uid, b.mentions);
   if (ck.customer_id) await q('UPDATE customer SET last_activity_id=$1, updated_at=now() WHERE id=$2 AND company_id=$3', [act.id, ck.customer_id, cid]);
   res.status(201).json({ ...ck, activity_id: act.id });
 }));
@@ -88,6 +107,7 @@ router.put('/:id', wrap(async (req, res) => {
      b.note || null, b.image_url || null, b.project_id || null, b.checkout_note || null, b.contact_method || null])).rows[0];
   if (!ck) return res.status(404).json({ error: 'not found' });
   await syncActivity(cid, ck);
+  if (b.mentions !== undefined) await setCheckinMentions(cid, ck.activity_id, ck.user_id, b.mentions);
   res.json(ck);
 }));
 
