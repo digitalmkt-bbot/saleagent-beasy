@@ -141,9 +141,9 @@ export default function Reports() {
   const [monthly, setMonthly] = useState(null);
   const [performanceView, setPerformanceView] = useState('compare');
 
-  useEffect(() => { api('/reports/summary').then(setD).catch(() => {}); }, []);
   function loadReports(f = from, tt = to) {
     const params = { from: f, to: tt };
+    rtry(() => api('/reports/summary', { params })).then(setD).catch(() => {});
     rtry(() => api('/reports/sales-activity', { params })).then(r => setSales(r.rows || [])).catch(() => setSales([]));
     rtry(() => api('/rates/report/agent-volume', { params })).then(r => { setAgentVol(r.rows || []); setRateErr(''); }).catch(e => { setAgentVol([]); setRateErr(e.message); });
     rtry(() => api('/rates/report/product-volume', { params })).then(r => setProducts(r.rows || [])).catch(() => setProducts([]));
