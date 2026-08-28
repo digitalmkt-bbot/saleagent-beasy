@@ -12,6 +12,12 @@ router.get('/summary', wrap(async (req, res) => {
   const PJ = staff ? `AND p.customer_id IN ${OWNED}` : '';
   const AC = staff ? `AND (a.assignee_user_id=$2 OR a.customer_id IN ${OWNED})` : '';
   const PW = staff ? `AND customer_id IN ${OWNED}` : '';
+  // กิจกรรมของทีม: กรองตามช่วงวันที่ที่เลือก (a.activity_at) ถ้ามีส่งมา
+  const fromD = /^\d{4}-\d{2}-\d{2}$/.test(req.query.from || '') ? req.query.from : null;
+  const toD = /^\d{4}-\d{2}-\d{2}$/.test(req.query.to || '') ? req.query.to : null;
+  const auArgs = [c]; let ai = 2; let auDate = '';
+  if (fromD) { auDate += ` AND a.activity_at::date >= $${ai++}`; auArgs.push(fromD); }
+  if (toD) { auDate += ` AND a.activity_at::date <= $${ai++}`; auArgs.push(toD); }
   const [funnel, byOwner, byTeam, actByUser, win, monthly] = await Promise.all([
     q(`SELECT s.seq, s.name, count(p.id)::int cnt, COALESCE(sum(p.estimated_value),0) value
        FROM pipeline_stage s LEFT JOIN project p ON p.stage_id=s.id AND p.company_id=$1 ${PJ}
@@ -27,8 +33,8 @@ router.get('/summary', wrap(async (req, res) => {
          count(a.id) FILTER (WHERE a.status='done')::int done,
          count(a.id) FILTER (WHERE a.status='pending')::int pending,
          count(a.id) FILTER (WHERE a.status='pending' AND a.due_at::date<CURRENT_DATE)::int overdue
-       FROM app_user u LEFT JOIN activity a ON a.assignee_user_id=u.id ${staff ? `AND (a.assignee_user_id=$2 OR a.customer_id IN ${OWNED})` : ''}
-       WHERE u.company_id=$1 ${staff ? 'AND u.id=$2' : ''} GROUP BY u.display_name ORDER BY done DESC`, A),
+       FROM app_user u LEFT JOIN activity a ON a.assignee_user_id=u.id${auDate}
+       WHERE u.company_id=$1 GROUP BY u.display_name ORDER BY done DESC`, auArgs),
     q(`SELECT count(*) FILTER (WHERE NOT is_open)::int won, count(*) FILTER (WHERE is_open)::int open,
          COALESCE(sum(estimated_value) FILTER (WHERE NOT is_open),0) won_value,
          COALESCE(sum(estimated_value) FILTER (WHERE is_open),0) open_value FROM project WHERE company_id=$1 ${PW}`, A),
