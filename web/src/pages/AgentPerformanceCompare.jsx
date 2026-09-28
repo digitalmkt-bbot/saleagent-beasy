@@ -10,6 +10,7 @@ const mondayOf = (d) => { const x = new Date(d); const day = x.getDay() || 7; x.
 const addDays = (s, n) => { const x = new Date(s); x.setDate(x.getDate() + n); return x.toISOString().slice(0, 10); };
 
 // Pairs of months to compare, anchored to the newest month that actually has data.
+// Each chip compares two single months (A vs B), never a range — the labels say so.
 function monthPresets(months) {
   if (months.length < 2) return [];
   const back = n => months.at(-1 - n) || '';
@@ -17,9 +18,9 @@ function monthPresets(months) {
   const [y, m] = last.split('-').map(Number);
   const sameMonthLastYear = `${y - 1}-${String(m).padStart(2, '0')}`;
   const list = [
-    ['เดือนล่าสุด', back(1), last],
-    ['เดือนก่อน', back(2), back(1)],
-    ['3 เดือนล่าสุด', back(3), last],
+    ['ล่าสุด vs เดือนก่อน', back(1), last],
+    ['เดือนก่อน vs 2 เดือนก่อน', back(2), back(1)],
+    ['ล่าสุด vs 3 เดือนก่อน', back(3), last],
   ];
   if (months.includes(sameMonthLastYear)) list.push(['ปีก่อน (เดือนเดียวกัน)', sameMonthLastYear, last]);
   return list.filter(([, a, b]) => a && b && a !== b);
