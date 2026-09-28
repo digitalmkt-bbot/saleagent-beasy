@@ -1,55 +1,76 @@
 const router = require('express').Router();
 const { q } = require('../db');
 const { wrap } = require('./_util');
+const { LIVE_FROM, isLiveMonth, liveMonths, liveMonthRows } = require('../live-performance');
 
 // Interactive agent × program × month comparison, linked to the CRM sales owner.
+// Months from LIVE_FROM on are read from live bookings in the rate system; earlier months
+// come from the Excel import (agent_program_monthly_performance). See live-performance.js.
 router.get('/agent-performance-monthly', wrap(async (req, res) => {
   const companyId = req.user.company_id;
   const monthResult = await q(`SELECT DISTINCT to_char(month,'YYYY-MM') AS month
     FROM agent_program_monthly_performance WHERE company_id=$1 ORDER BY month`, [companyId]);
-  const months = monthResult.rows.map(x => x.month);
+  const imported = monthResult.rows.map(x => x.month).filter(m => !isLiveMonth(m));
+  const months = [...new Set([...imported, ...await liveMonths()])].sort();
   const requestedA = /^\d{4}-\d{2}$/.test(req.query.monthA || '') ? req.query.monthA : '';
   const requestedB = /^\d{4}-\d{2}$/.test(req.query.monthB || '') ? req.query.monthB : '';
   const monthA = requestedA && months.includes(requestedA) ? requestedA : (months.at(-2) || months.at(-1) || '');
   const monthB = requestedB && months.includes(requestedB) ? requestedB : (months.at(-1) || '');
 
-  const where = ['m.company_id=$1'];
-  const args = [companyId];
-  let i = 2;
-  if (req.query.program) { where.push(`p.name=$${i++}`); args.push(req.query.program); }
-  if (req.query.agent) {
-    where.push(`(COALESCE(c.name,m.source_name) ILIKE '%'||$${i}||'%' OR COALESCE(m.rate_agent_id,'') ILIKE '%'||$${i}||'%')`);
-    args.push(req.query.agent); i++;
-  }
-  // Sales users only see their own assigned agents. Managers/admins can select any owner.
-  if (req.user.role === 'sales') {
-    where.push(`c.owner_user_id=$${i++}`); args.push(req.user.id);
-  } else if (req.query.owner === 'unassigned') {
-    where.push('c.owner_user_id IS NULL');
-  } else if (/^\d+$/.test(req.query.owner || '')) {
-    where.push(`c.owner_user_id=$${i++}`); args.push(+req.query.owner);
-  }
-  const monthAParam = i++; args.push(`${monthA}-01`);
-  const monthBParam = i++; args.push(`${monthB}-01`);
+  const ownerFilter = req.user.role === 'sales' ? String(req.user.id)
+    : req.query.owner === 'unassigned' ? 'unassigned'
+    : /^\d+$/.test(req.query.owner || '') ? req.query.owner : '';
+  const agentQ = String(req.query.agent || '').trim().toLowerCase();
 
-  const rows = monthA && monthB ? (await q(`WITH compared AS (
-    SELECT COALESCE(m.customer_id::text,NULLIF(m.rate_agent_id,''),'name:'||lower(trim(m.source_name))) AS agent_key,
-      max(m.customer_id) AS customer_id, max(NULLIF(m.rate_agent_id,'')) AS rate_agent_id,
-      max(COALESCE(c.name,m.source_name)) AS agent_name,
-      max(c.owner_user_id) AS owner_id, max(COALESCE(u.display_name,'Unassigned')) AS owner_name,
-      p.name AS program,
-      sum(m.sales_amount) FILTER (WHERE m.month=$${monthAParam}::date)::float AS amount_a,
-      sum(m.sales_amount) FILTER (WHERE m.month=$${monthBParam}::date)::float AS amount_b
-    FROM agent_program_monthly_performance m
-    JOIN performance_program p ON p.id=m.program_id
-    LEFT JOIN customer c ON c.id=m.customer_id
-    LEFT JOIN app_user u ON u.id=c.owner_user_id
-    WHERE ${where.join(' AND ')} AND m.month IN ($${monthAParam}::date,$${monthBParam}::date)
-    GROUP BY 1,p.name
-  ) SELECT *, COALESCE(amount_b,0)-COALESCE(amount_a,0) AS difference,
-      CASE WHEN COALESCE(amount_a,0)=0 THEN NULL
-        ELSE round(((COALESCE(amount_b,0)-amount_a)/amount_a*100)::numeric,1)::float END AS change_pct
-    FROM compared ORDER BY COALESCE(amount_b,0) DESC,COALESCE(amount_a,0) DESC,agent_name`, args)).rows : [];
+  async function importedRows(month) {
+    const where = ['m.company_id=$1', 'm.month=$2::date'];
+    const args = [companyId, `${month}-01`];
+    let i = 3;
+    if (req.query.program) { where.push(`p.name=$${i++}`); args.push(req.query.program); }
+    if (agentQ) {
+      where.push(`(COALESCE(c.name,m.source_name) ILIKE '%'||$${i}||'%' OR COALESCE(m.rate_agent_id,'') ILIKE '%'||$${i}||'%')`);
+      args.push(agentQ); i++;
+    }
+    // Sales users only see their own assigned agents. Managers/admins can select any owner.
+    if (ownerFilter === 'unassigned') where.push('c.owner_user_id IS NULL');
+    else if (ownerFilter) { where.push(`c.owner_user_id=$${i++}`); args.push(+ownerFilter); }
+    return (await q(`SELECT COALESCE(m.customer_id::text,NULLIF(m.rate_agent_id,''),'name:'||lower(trim(m.source_name))) AS agent_key,
+        max(NULLIF(m.rate_agent_id,'')) AS rate_agent_id, max(COALESCE(c.name,m.source_name)) AS agent_name,
+        max(c.owner_user_id) AS owner_id, max(COALESCE(u.display_name,'Unassigned')) AS owner_name,
+        p.name AS program, sum(m.sales_amount)::float AS amount
+      FROM agent_program_monthly_performance m
+      JOIN performance_program p ON p.id=m.program_id
+      LEFT JOIN customer c ON c.id=m.customer_id
+      LEFT JOIN app_user u ON u.id=c.owner_user_id
+      WHERE ${where.join(' AND ')}
+      GROUP BY 1,p.name`, args)).rows;
+  }
+  async function liveRows(month) {
+    return (await liveMonthRows(companyId, month)).filter(r =>
+      (!req.query.program || r.program === req.query.program) &&
+      (!agentQ || [r.agent_name, r.agent_code, r.rate_agent_id].some(v => String(v || '').toLowerCase().includes(agentQ))) &&
+      (ownerFilter === 'unassigned' ? !r.owner_id : !ownerFilter || String(r.owner_id) === ownerFilter));
+  }
+  const monthRows = m => !m ? [] : isLiveMonth(m) ? liveRows(m) : importedRows(m);
+
+  const [rowsA, rowsB] = await Promise.all([monthRows(monthA), monthB === monthA ? [] : monthRows(monthB)]);
+  const merged = new Map();
+  const put = (r, key) => {
+    const k = `${r.agent_key}|${r.program}`;
+    if (!merged.has(k)) merged.set(k, { agent_key: r.agent_key, rate_agent_id: r.rate_agent_id || null, agent_name: r.agent_name,
+      owner_id: r.owner_id || null, owner_name: r.owner_name || 'Unassigned', program: r.program, amount_a: null, amount_b: null });
+    const o = merged.get(k);
+    o[key] = (o[key] || 0) + (+r.amount || 0);
+    if (!o.rate_agent_id && r.rate_agent_id) o.rate_agent_id = r.rate_agent_id;
+    if (!o.owner_id && r.owner_id) { o.owner_id = r.owner_id; o.owner_name = r.owner_name; }
+  };
+  rowsA.forEach(r => put(r, 'amount_a'));
+  (monthB === monthA ? rowsA : rowsB).forEach(r => put(r, 'amount_b'));
+  const rows = [...merged.values()].map(o => {
+    const a = o.amount_a || 0, b = o.amount_b || 0;
+    return { ...o, difference: b - a, change_pct: a ? Math.round((b - a) / a * 1000) / 10 : null };
+  }).sort((x, y) => (y.amount_b || 0) - (x.amount_b || 0) || (y.amount_a || 0) - (x.amount_a || 0)
+    || String(x.agent_name).localeCompare(String(y.agent_name)));
 
   const [programResult, ownerResult] = await Promise.all([
     q('SELECT name FROM performance_program WHERE company_id=$1 AND is_active ORDER BY name', [companyId]),
@@ -64,6 +85,8 @@ router.get('/agent-performance-monthly', wrap(async (req, res) => {
   const amountB = rows.reduce((n, x) => n + (+x.amount_b || 0), 0);
   res.json({
     months, monthA, monthB, programs: programResult.rows.map(x => x.name), owners: ownerResult.rows,
+    liveFrom: isLiveMonth(LIVE_FROM) ? LIVE_FROM : null,
+    sources: { [monthA]: isLiveMonth(monthA) ? 'live' : 'import', [monthB]: isLiveMonth(monthB) ? 'live' : 'import' },
     rows, summary: { amountA, amountB, difference: amountB - amountA,
       changePct: amountA ? Math.round((amountB - amountA) / amountA * 1000) / 10 : null,
       agents: new Set(rows.map(x => x.agent_key)).size },

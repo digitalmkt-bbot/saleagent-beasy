@@ -116,7 +116,7 @@ export default function AgentPerformanceCompare() {
         {loading && <span style={{ color: 'var(--muted)', fontSize: 12 }}>{t('กำลังโหลด...')}</span>}
       </div>
 
-      {/* โหมด: รายเดือน (จาก import) / ตามวันที่ วัน-สัปดาห์ (จาก booking ระบบ rate) */}
+      {/* โหมด: รายเดือน (booking ระบบ rate ตั้งแต่ liveFrom, ก่อนหน้านั้นจาก import) / ตามวันที่ วัน-สัปดาห์ (booking ระบบ rate) */}
       <div style={{ display: 'flex', gap: 6, margin: '14px 0 8px' }}>
         <button type="button" onClick={() => setMode('range')} style={{ ...control, cursor: 'pointer', ...(mode === 'range' ? { background: '#1A191D', color: '#fff' } : {}) }}>{L('ตามวันที่ (วัน/สัปดาห์)', 'By date (day/week)')}</button>
         <button type="button" onClick={() => setMode('monthly')} style={{ ...control, cursor: 'pointer', ...(mode === 'monthly' ? { background: '#1A191D', color: '#fff' } : {}) }}>{L('รายเดือน', 'Monthly')}</button>
@@ -161,6 +161,7 @@ export default function AgentPerformanceCompare() {
         <div style={{ margin: '4px 0 10px' }}>
           <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 5 }}>{t('ช่วงเดือนเปรียบเทียบ')}</div>
           <MonthRangeBar months={months} from={monthA} to={monthB} presets={monthPresets(months)} onApply={apply} t={t} />
+          {data?.liveFrom && <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 5 }}>{L(`ตั้งแต่ ${data.liveFrom}: ยอดจริงจาก booking ระบบ rate (confirmed · ตามวันเดินทาง) · ก่อนหน้านั้น: จากไฟล์ import`, `From ${data.liveFrom}: live confirmed bookings from the rate system, by trip date · earlier months: Excel import`)}</div>}
         </div>
       )}
 
