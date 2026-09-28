@@ -1,17 +1,19 @@
 const router = require('express').Router();
 const { q } = require('../db');
 const { wrap } = require('./_util');
-const { LIVE_FROM, isLiveMonth, liveMonths, liveMonthRows } = require('../live-performance');
+const { rateReady, nextMonth, liveMonths, liveMonthRows } = require('../live-performance');
 
 // Interactive agent × program × month comparison, linked to the CRM sales owner.
-// Months from LIVE_FROM on are read from live bookings in the rate system; earlier months
-// come from the Excel import (agent_program_monthly_performance). See live-performance.js.
+// Months covered by the Excel import (agent_program_monthly_performance) keep using it; every month
+// after the last imported one is read from live bookings in the rate system. See live-performance.js.
 router.get('/agent-performance-monthly', wrap(async (req, res) => {
   const companyId = req.user.company_id;
   const monthResult = await q(`SELECT DISTINCT to_char(month,'YYYY-MM') AS month
     FROM agent_program_monthly_performance WHERE company_id=$1 ORDER BY month`, [companyId]);
-  const imported = monthResult.rows.map(x => x.month).filter(m => !isLiveMonth(m));
-  const months = [...new Set([...imported, ...await liveMonths()])].sort();
+  const imported = monthResult.rows.map(x => x.month);
+  const liveFrom = !rateReady() ? null : imported.length ? nextMonth(imported.at(-1)) : '0000-00';
+  const isLiveMonth = m => liveFrom != null && m >= liveFrom;
+  const months = [...imported, ...(liveFrom ? await liveMonths(liveFrom) : [])];
   const requestedA = /^\d{4}-\d{2}$/.test(req.query.monthA || '') ? req.query.monthA : '';
   const requestedB = /^\d{4}-\d{2}$/.test(req.query.monthB || '') ? req.query.monthB : '';
   const monthA = requestedA && months.includes(requestedA) ? requestedA : (months.at(-2) || months.at(-1) || '');
@@ -85,7 +87,7 @@ router.get('/agent-performance-monthly', wrap(async (req, res) => {
   const amountB = rows.reduce((n, x) => n + (+x.amount_b || 0), 0);
   res.json({
     months, monthA, monthB, programs: programResult.rows.map(x => x.name), owners: ownerResult.rows,
-    liveFrom: isLiveMonth(LIVE_FROM) ? LIVE_FROM : null,
+    liveFrom: months.find(isLiveMonth) || null,
     sources: { [monthA]: isLiveMonth(monthA) ? 'live' : 'import', [monthB]: isLiveMonth(monthB) ? 'live' : 'import' },
     rows, summary: { amountA, amountB, difference: amountB - amountA,
       changePct: amountA ? Math.round((amountB - amountA) / amountA * 1000) / 10 : null,

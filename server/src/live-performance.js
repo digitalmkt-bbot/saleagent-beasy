@@ -5,10 +5,6 @@
 const { q } = require('./db');
 const { rq, rateReady } = require('./rate-db');
 
-// Months before this come from the Excel import; from it on, from live bookings.
-// Go-live was mid-June 2026, so June's live data is incomplete and the import is the better record.
-const LIVE_FROM = /^\d{4}-\d{2}$/.test(process.env.PERF_LIVE_FROM || '') ? process.env.PERF_LIVE_FROM : '2026-07';
-
 // route name -> performance_program.name (the 7 programs of the Excel workbook); other routes
 // (transfers, shows, parks) are not in the workbook either and are left out.
 // Order matters: Whale Shark is a Phi Phi trip, and the Khao Lak airport transfer mentions Phang Nga.
@@ -26,16 +22,16 @@ const programOf = name => (PROGRAM_RULES.find(([re]) => re.test(name || '')) || 
 // Trips booked ahead would otherwise make a future month the default comparison.
 const bangkokMonth = () => new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 7);
 const nextMonth = m => { const [y, mo] = m.split('-').map(Number); return mo === 12 ? `${y + 1}-01` : `${y}-${String(mo + 1).padStart(2, '0')}`; };
-const isLiveMonth = m => rateReady() && m >= LIVE_FROM;
 
-async function liveMonths() {
+// Months that have confirmed trips, from fromMonth up to the current month.
+async function liveMonths(fromMonth) {
   if (!rateReady()) return [];
   const { rows } = await rq(`SELECT DISTINCT substr(t.date,1,7) AS m
     FROM operation_schemas.sb_bookings b
     JOIN operation_schemas.sb_bookings__trips t ON t.sb_bookings_id = b.id
     WHERE b.status = 'confirmed' AND t.date ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'
       AND substr(t.date,1,7) BETWEEN $1 AND $2
-    ORDER BY 1`, [LIVE_FROM, bangkokMonth()]);
+    ORDER BY 1`, [fromMonth, bangkokMonth()]);
   return rows.map(r => r.m);
 }
 
@@ -85,4 +81,4 @@ async function liveMonthRows(companyId, month) {
   return [...out.values()];
 }
 
-module.exports = { LIVE_FROM, isLiveMonth, liveMonths, liveMonthRows };
+module.exports = { rateReady, nextMonth, liveMonths, liveMonthRows };
