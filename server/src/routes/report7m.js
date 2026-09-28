@@ -1,19 +1,24 @@
 const router = require('express').Router();
 const { q } = require('../db');
 const { wrap } = require('./_util');
-const { rateReady, nextMonth, liveMonths, liveMonthRows } = require('../live-performance');
+const { rateReady, nextMonth, liveMonths, liveRows } = require('../live-performance');
 
-// Interactive agent × program × month comparison, linked to the CRM sales owner.
 // Months covered by the Excel import (agent_program_monthly_performance) keep using it; every month
 // after the last imported one is read from live bookings in the rate system. See live-performance.js.
-router.get('/agent-performance-monthly', wrap(async (req, res) => {
-  const companyId = req.user.company_id;
+async function performanceMonths(companyId) {
   const monthResult = await q(`SELECT DISTINCT to_char(month,'YYYY-MM') AS month
     FROM agent_program_monthly_performance WHERE company_id=$1 ORDER BY month`, [companyId]);
   const imported = monthResult.rows.map(x => x.month);
   const liveFrom = !rateReady() ? null : imported.length ? nextMonth(imported.at(-1)) : '0000-00';
   const isLiveMonth = m => liveFrom != null && m >= liveFrom;
   const months = [...imported, ...(liveFrom ? await liveMonths(liveFrom) : [])];
+  return { months, isLiveMonth };
+}
+
+// Interactive agent × program × month comparison, linked to the CRM sales owner.
+router.get('/agent-performance-monthly', wrap(async (req, res) => {
+  const companyId = req.user.company_id;
+  const { months, isLiveMonth } = await performanceMonths(companyId);
   const requestedA = /^\d{4}-\d{2}$/.test(req.query.monthA || '') ? req.query.monthA : '';
   const requestedB = /^\d{4}-\d{2}$/.test(req.query.monthB || '') ? req.query.monthB : '';
   const monthA = requestedA && months.includes(requestedA) ? requestedA : (months.at(-2) || months.at(-1) || '');
@@ -47,13 +52,13 @@ router.get('/agent-performance-monthly', wrap(async (req, res) => {
       WHERE ${where.join(' AND ')}
       GROUP BY 1,p.name`, args)).rows;
   }
-  async function liveRows(month) {
-    return (await liveMonthRows(companyId, month)).filter(r =>
+  async function liveMonthRows(month) {
+    return (await liveRows(companyId, month)).filter(r =>
       (!req.query.program || r.program === req.query.program) &&
       (!agentQ || [r.agent_name, r.agent_code, r.rate_agent_id].some(v => String(v || '').toLowerCase().includes(agentQ))) &&
       (ownerFilter === 'unassigned' ? !r.owner_id : !ownerFilter || String(r.owner_id) === ownerFilter));
   }
-  const monthRows = m => !m ? [] : isLiveMonth(m) ? liveRows(m) : importedRows(m);
+  const monthRows = m => !m ? [] : isLiveMonth(m) ? liveMonthRows(m) : importedRows(m);
 
   const [rowsA, rowsB] = await Promise.all([monthRows(monthA), monthB === monthA ? [] : monthRows(monthB)]);
   const merged = new Map();
@@ -100,10 +105,8 @@ router.get('/agent-sales-7m', wrap(async (req, res) => {
   const { agent, program } = req.query;
   const tier = /^[ABCD]$/.test(req.query.tier || '') ? req.query.tier : '';
 
-  // Every imported month is selectable; the default range covers all of them.
-  const monthResult = await q(`SELECT DISTINCT to_char(month,'YYYY-MM') AS month
-    FROM agent_program_monthly_performance WHERE company_id=$1 ORDER BY month`, [companyId]);
-  const months = monthResult.rows.map(x => x.month);
+  // Every month (imported or live) is selectable; the default range covers all of them.
+  const { months, isLiveMonth } = await performanceMonths(companyId);
   const requested = key => /^\d{4}-\d{2}$/.test(req.query[key] || '') && months.includes(req.query[key]) ? req.query[key] : '';
   let from = requested('from') || months[0] || '';
   let to = requested('to') || months.at(-1) || '';
@@ -118,6 +121,14 @@ router.get('/agent-sales-7m', wrap(async (req, res) => {
   let i = 4;
   const baseWhere = [];
   if (program) { baseWhere.push(`p.name = $${i++}`); args.push(program); }
+
+  // Live months in the range join the imported rows inside `base`, so the tiering below is unchanged.
+  const firstLive = months.find(m => m >= from && m <= to && isLiveMonth(m));
+  const live = firstLive ? await liveRows(companyId, firstLive, to) : [];
+  const liveParam = i++;
+  args.push(JSON.stringify(live.filter(r => !program || r.program === program).map(r => ({
+    program: r.program, amount: r.amount, agent_key: r.agent_key, agent_id: r.rate_agent_id,
+    agent_name: r.agent_name, source_name: r.source_name }))));
 
   const selectedWhere = [];
   if (agent) {
@@ -142,6 +153,10 @@ router.get('/agent-sales-7m', wrap(async (req, res) => {
     LEFT JOIN customer c ON c.id = m.customer_id
     WHERE m.company_id = $1 AND m.month BETWEEN $2::date AND $3::date
       ${baseWhere.length ? `AND ${baseWhere.join(' AND ')}` : ''}
+    UNION ALL
+    SELECT x.program, x.amount, x.agent_key, x.agent_id, x.agent_id, x.agent_name, x.source_name, NULL, 'matched'
+    FROM jsonb_to_recordset($${liveParam}::jsonb)
+      AS x(program text, amount float, agent_key text, agent_id text, agent_name text, source_name text)
   ), agent_totals AS (
     SELECT b.agent_key AS key, max(b.agent_id) AS agent_id,
       max(b.agent_code) AS code,
@@ -191,7 +206,7 @@ router.get('/agent-sales-7m', wrap(async (req, res) => {
     byProgram: byProg.rows,
     topAgents: topAg.rows,
     tierSummary: tierSummary.rows,
-    programs: progs.rows.map((x) => x.program),
+    programs: [...new Set([...progs.rows.map((x) => x.program), ...live.map((x) => x.program)])].sort(),
     tierMethod: { type: 'cumulative_revenue', A: 70, B: 20, C: 8, D: 2 },
   });
 }));
