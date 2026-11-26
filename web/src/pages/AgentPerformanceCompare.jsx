@@ -215,7 +215,7 @@ export default function AgentPerformanceCompare() {
 
         <div style={{ overflow: 'auto', maxHeight: 560 }}>
           <table>
-            <thead><tr><th>{t('Agent')}</th><th>{t('เซลส์ผู้รับผิดชอบ')}</th><th>{t('โปรแกรม')}</th><th style={{ textAlign: 'right' }}>{labelA}</th><th style={{ textAlign: 'right' }}>{labelB}</th><th style={{ textAlign: 'right' }}>{t('เปลี่ยนแปลง')}</th></tr></thead>
+            <thead><tr><th>{t('Agent')}</th><th>{t('เซลส์ผู้รับผิดชอบ')}</th><th>{t('โปรแกรม')}</th><th style={{ textAlign: 'right' }}>{labelA}</th><th style={{ textAlign: 'right' }}>{labelB}</th><th style={{ textAlign: 'right', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }} onClick={() => setSort(x => x === 'diff_desc' ? 'diff_asc' : 'diff_desc')} title={L('คลิกเพื่อเรียงตามการเปลี่ยนแปลง', 'Click to sort by change')}>{t('เปลี่ยนแปลง')} <span style={{ fontSize: 10, color: (sort === 'diff_desc' || sort === 'diff_asc') ? '#FF4B26' : 'var(--muted)' }}>{sort === 'diff_asc' ? '▲' : sort === 'diff_desc' ? '▼' : '↕'}</span></th></tr></thead>
             <tbody>{sortedRows.length ? sortedRows.map((r, i) => {
               const a = +r.amount_a || 0, b = +r.amount_b || 0, positive = +r.difference >= 0;
               return <tr key={`${r.agent_key}-${r.program}-${i}`}>
